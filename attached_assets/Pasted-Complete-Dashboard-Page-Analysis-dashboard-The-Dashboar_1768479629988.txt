@@ -1,0 +1,401 @@
+Complete Dashboard Page Analysis (/dashboard)
+The Dashboard page is the central hub for students after login. It displays profile info, enrolled courses, progress, upcoming classes, instructors, and notifications.
+
+Page Structure Overview
+
+Diagram
+1. Main Page Component: Dashboard.tsx
+File: src/pages/Dashboard.tsx
+
+Purpose: Orchestrates all dashboard sections and handles authentication check.
+
+
+// Key implementation:
+const checkAuth = async () => {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) {
+    navigate('/auth');  // Redirect if not logged in
+  }
+};
+Components Used:
+
+Component	Purpose
+SEOHead	Page title & meta description
+DashboardHeader	Top navigation bar
+StudentIDCard	Profile, attendance, DPT stats
+EnrolledCoursesSection	Tabbed courses with subjects
+UpcomingClasses	Next scheduled classes
+InstructorsList	Teachers for enrolled courses
+Footer	Site footer
+2. DashboardHeader Component
+File: src/components/dashboard/DashboardHeader.tsx
+
+Purpose: Top navigation with logo, search, notifications, profile, and menu.
+
+API Calls:
+
+Endpoint	Purpose	Query Key
+supabase.auth.getUser()	Get current user ID	dashboard-header-profile
+GET /rest/v1/profiles?id=eq.{userId}	Fetch user profile	dashboard-header-profile
+GET /rest/v1/notices + notice_reads	Get notifications	notices (via useNotices)
+Sample API Response - Profile:
+
+
+{
+  "id": "23a809e0-6193-49ac-850f-7c4f1099de79",
+  "full_name": "Pramod",
+  "avatar_url": null,
+  "email": "scholerly23@gmail.com"
+}
+UI Elements:
+
+Logo with link to home
+MegaMenu - Navigation dropdown
+Search Input field (hidden on mobile)
+Notification Button with Badge showing unread count
+Profile Avatar with name
+DashboardMenu - Side sheet with full navigation
+3. StudentIDCard Component
+File: src/components/dashboard/StudentIDCard.tsx
+
+Purpose: Displays student profile, attendance stats, and Daily Practice Test progress.
+
+Hooks Used:
+
+Hook	Purpose
+useQuery	Fetch profile from profiles table
+useAttendance()	Calculate attendance percentage
+useDPT()	Get DPT streak, average score, weekly data
+API Calls:
+
+3.1 Profile API:
+
+
+SELECT * FROM profiles WHERE id = {user_id}
+Response:
+
+
+{
+  "id": "23a809e0-6193-49ac-850f-7c4f1099de79",
+  "full_name": "Pramod",
+  "avatar_url": null,
+  "phone_number": null,
+  "created_at": "2025-10-15T12:39:22.638Z"
+}
+3.2 Attendance API (useAttendance):
+
+
+-- Step 1: Get scheduled classes for enrolled courses (last 30 days)
+SELECT id, scheduled_at FROM scheduled_classes
+WHERE course_id IN (enrolled_course_ids)
+  AND scheduled_at >= {30_days_ago}
+  AND scheduled_at <= NOW()
+  AND is_cancelled = false;
+
+-- Step 2: Get student's attendance records
+SELECT *, scheduled_class:scheduled_classes(scheduled_at, subject)
+FROM class_attendance
+WHERE student_id = {user_id}
+  AND scheduled_class_id IN (class_ids);
+Calculated Values:
+
+percentage: (present_count / total_classes) * 100
+present: Count of status = 'present'
+total: Total scheduled classes
+3.3 DPT API (useDPT):
+
+
+SELECT * FROM dpp_topic_submissions
+WHERE student_id = {user_id}
+ORDER BY test_date DESC;
+Response:
+
+
+[
+  {
+    "id": "1a7bcd9c-b64d-4715-98cd-d991edc881c7",
+    "student_id": "47a9b651-79d6-440b-a18c-9612ecf68b5a",
+    "test_date": "2026-01-12",
+    "score": 1,
+    "total_questions": 10,
+    "time_taken_seconds": 20
+  }
+]
+Calculated Values:
+
+streak: Count of consecutive days with submissions starting from today
+averageScore: sum(score/total_questions) / count * 100
+todayCompleted: Boolean - has today's date in submissions
+weeklyData: Array of last 7 days with completion status
+UI Elements:
+
+Avatar with fallback initials
+Welcome message with name
+Attendance percentage display
+Student ID (first 8 chars of UUID)
+Weekly DPT grid (7 days)
+Streak count with Flame icon
+Average score percentage
+4. EnrolledCoursesSection Component
+File: src/components/dashboard/EnrolledCoursesSection.tsx
+
+Purpose: Displays enrolled courses with subjects in a tabbed interface.
+
+Hook Used: useDashboardCourseDetails()
+
+API Calls (6 batch queries):
+
+
+-- Batch 1: Get enrolled course IDs
+SELECT course_id, batch_id, enrolled_at FROM enrollments
+WHERE student_id = {user_id} AND is_active = true;
+
+-- Batch 2: Get course details
+SELECT id, name, slug, thumbnail_url FROM courses
+WHERE id IN (enrolled_course_ids);
+
+-- Batch 3: Get course subjects
+SELECT course_id, subject_id, display_order,
+       popular_subjects(id, name, description, thumbnail_url)
+FROM course_subjects
+WHERE course_id IN (enrolled_course_ids)
+ORDER BY display_order;
+
+-- Batch 4: Get all chapters for subjects
+SELECT id, subject_id FROM subject_chapters
+WHERE subject_id IN (all_subject_ids);
+
+-- Batch 5: Get student progress
+SELECT chapter_id FROM student_progress
+WHERE student_id = {user_id}
+  AND is_completed = true
+  AND chapter_id IN (all_chapter_ids);
+
+-- Batch 6: Get assignments and submissions
+SELECT id, chapter_id, course_id FROM assignments
+WHERE course_id IN (enrolled_course_ids) AND is_active = true;
+
+SELECT assignment_id FROM assignment_submissions
+WHERE student_id = {user_id} AND assignment_id IN (assignment_ids);
+Sample Response - Course Subjects:
+
+
+{
+  "course_id": "d106db94-58ce-41a7-8d73-d0baa3ad9f43",
+  "course_name": "JEE Main + Advanced Bundle",
+  "subjects": [
+    {
+      "id": "bc7e6984-8a22-4869-b1d8-732009468abb",
+      "name": "Physics (NEET/JEE)",
+      "chaptersTotal": 15,
+      "chaptersCompleted": 5,
+      "pendingAssignments": 2
+    },
+    {
+      "id": "4da2da37-aa0d-4c51-93b4-b8974f7b320d",
+      "name": "Chemistry (Organic/Inorganic)",
+      "chaptersTotal": 12,
+      "chaptersCompleted": 3,
+      "pendingAssignments": 1
+    }
+  ]
+}
+UI Elements:
+
+Card container
+Tabs + TabsList + TabsTrigger for course selection
+TabsContent wrapping CourseTabContent
+Empty state with "Browse Courses" CTA
+CourseTabContent + CourseSubjectCard:
+
+Subject cards in 3-column grid
+Progress bar showing chapter completion
+Pending assignments badge
+"Study" button → navigates to learning page
+"Ask AI Teacher" button → opens AI assistant
+5. UpcomingClasses Component
+File: src/components/dashboard/UpcomingClasses.tsx
+
+Purpose: Displays next 5 scheduled classes with join functionality.
+
+Hook Used: useUpcomingClasses()
+
+API Calls:
+
+
+-- Step 1: Get enrolled course IDs
+SELECT course_id FROM enrollments
+WHERE student_id = {user_id} AND is_active = true;
+
+-- Step 2: Get scheduled classes
+SELECT id, subject, subject_id, notes, scheduled_at, 
+       duration_minutes, meeting_link, is_live, teacher_id, course_id
+FROM scheduled_classes
+WHERE course_id IN (enrolled_course_ids)
+  AND scheduled_at >= NOW()
+  AND is_cancelled = false
+ORDER BY scheduled_at ASC
+LIMIT 10;
+
+-- Step 3: Batch fetch related data
+SELECT id, name FROM popular_subjects WHERE id IN (subject_ids);
+SELECT id, full_name, avatar_url FROM teacher_profiles WHERE id IN (teacher_ids);
+SELECT id, name FROM courses WHERE id IN (course_ids);
+Sample Response:
+
+
+[
+  {
+    "id": "b27647ab-1d8e-4705-80e0-1633f956ec4b",
+    "subject": "Physics (NEET/JEE)",
+    "subject_name": "Physics (NEET/JEE)",
+    "course_name": "JEE Main + Advanced Bundle",
+    "notes": "Kinematics revision",
+    "scheduled_at": "2026-01-16T11:57:00.000Z",
+    "duration_minutes": 60,
+    "meeting_link": "https://lovable.dev/projects/...",
+    "is_live": false,
+    "teacher": {
+      "id": "3e137495-e53d-4b43-8c56-aa6e56638ca9",
+      "full_name": "nalini",
+      "avatar_url": null
+    }
+  }
+]
+UI Elements:
+
+Card container with title
+Empty state with BookOpen icon
+For each class:
+Subject name + "LIVE" Badge (pulsing if live)
+Course name subtitle
+Notes text
+Full date display
+Time + duration with Clock icon
+Teacher avatar + name
+"Join Class" Button (if meeting_link exists)
+6. InstructorsList Component
+File: src/components/dashboard/InstructorsList.tsx
+
+Purpose: Displays teachers assigned to the student's enrolled courses.
+
+Hook Used: useTeachers()
+
+API Calls:
+
+
+-- Step 1: Get subject IDs from enrolled courses
+SELECT subject_id FROM course_subjects
+WHERE course_id IN (enrolled_course_ids);
+
+-- Step 2: Get instructor assignments
+SELECT instructor_id, subject_id, popular_subjects!inner(name)
+FROM instructor_subjects
+WHERE subject_id IN (subject_ids);
+
+-- Step 3: Get teacher profiles
+SELECT * FROM teacher_profiles
+WHERE id IN (instructor_ids);
+Sample Response:
+
+
+[
+  {
+    "id": "23a809e0-6193-49ac-850f-7c4f1099de79",
+    "full_name": "Pramod",
+    "email": "scholerly23@gmail.com",
+    "avatar_url": null,
+    "specialization": null,
+    "bio": "MBA",
+    "subjects": ["Physics (NEET/JEE)", "Chemistry"]
+  }
+]
+UI Elements:
+
+Horizontal scrollable container
+Navigation buttons (left/right) for scrolling
+For each teacher:
+Avatar with fallback
+Name
+Subject badges (max 2)
+Specialization text
+Bio (line-clamped to 2 lines)
+"Contact" email button
+7. NotificationModal Component
+File: src/components/dashboard/NotificationModal.tsx
+
+Purpose: Shows all notices/notifications in a modal dialog.
+
+Hook Used: useNotices()
+
+API Calls:
+
+
+-- Get notices
+SELECT * FROM notices
+WHERE is_active = true
+ORDER BY created_at DESC;
+
+-- Get read status
+SELECT notice_id FROM notice_reads
+WHERE user_id = {user_id};
+
+-- Mark as read (UPSERT)
+INSERT INTO notice_reads (notice_id, user_id)
+VALUES ({notice_id}, {user_id})
+ON CONFLICT DO UPDATE SET notice_id = EXCLUDED.notice_id;
+UI Elements:
+
+Dialog with ScrollArea
+Unread count badge
+"Mark all as read" button
+For each notice:
+Category icon (exam/holiday/general)
+Priority badge
+Title + description
+Created date
+Unread indicator (pulsing dot)
+8. DashboardMenu Component
+File: src/components/dashboard/DashboardMenu.tsx
+
+Purpose: Side navigation sheet with all app sections.
+
+Navigation Items:
+
+Label	Route
+Dashboard	/dashboard
+My Courses	/my-courses
+Live Classes	/live
+My Recordings	/recordings
+IRE	/ire
+Forum	/forum
+Support	/support
+Profile	/profile
+Complete API Summary Table
+Component	API Endpoint	Tables Used	Query Key
+DashboardHeader	GET /profiles	profiles	dashboard-header-profile
+DashboardHeader	GET /notices + notice_reads	notices, notice_reads	notices
+StudentIDCard	GET /profiles	profiles	dashboard-header-profile
+StudentIDCard	GET /scheduled_classes + class_attendance	scheduled_classes, class_attendance	student-attendance
+StudentIDCard	GET /dpp_topic_submissions	dpp_topic_submissions	dpp-submissions
+EnrolledCoursesSection	GET /enrollments	enrollments	student-enrollments
+EnrolledCoursesSection	GET /courses + course_subjects	courses, course_subjects, popular_subjects	dashboard-course-details
+EnrolledCoursesSection	GET /subject_chapters + student_progress	subject_chapters, student_progress	dashboard-course-details
+EnrolledCoursesSection	GET /assignments + assignment_submissions	assignments, assignment_submissions	dashboard-course-details
+UpcomingClasses	GET /scheduled_classes	scheduled_classes, popular_subjects, teacher_profiles, courses	upcoming-classes-dashboard
+InstructorsList	GET /course_subjects + instructor_subjects + teacher_profiles	course_subjects, instructor_subjects, teacher_profiles, popular_subjects	student-teachers
+Data Flow Diagram
+
+Diagram
+Caching Strategy
+Query Key	Stale Time	Description
+current-auth-user	5 min	User auth state
+student-enrollments	2 min	Course enrollments
+dashboard-header-profile	5 min	User profile data
+dashboard-course-details	5 min	Course + subjects + progress
+upcoming-classes-dashboard	default	Scheduled classes
+student-attendance	default	Attendance records
+dpp-submissions	default	DPT submissions
+student-teachers	default	Instructor list
+notices	default	Notifications
+This is the complete implementati

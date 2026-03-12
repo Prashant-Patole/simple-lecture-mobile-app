@@ -1,0 +1,244 @@
+GST Implementation in SimpleLecture
+1. Course Purchase (Enroll Page) — GST is Applied
+GST Calculation Functions (from src/pages/Enroll.tsx, lines 188-189):
+
+
+// GST rate: 18%
+const calculateGST = (amount) => Math.round(amount * 0.18);
+const calculateTotalWithGST = (amount) => amount + calculateGST(amount);
+Price Breakdown Flow:
+
+
+┌──────────────────────────────────────────┐
+│  1. Course Price (from DB)   = price_inr │
+│  2. Apply Discount (if any)              │
+│     - % discount: price - (price * %)    │
+│     - flat discount: price - amount      │
+│  3. Subtotal = priceAfterDiscount        │
+│  4. GST (18%) = round(subtotal * 0.18)   │
+│  5. Total = subtotal + GST              │
+│  6. Send TOTAL to Razorpay              │
+└──────────────────────────────────────────┘
+Exact code logic:
+
+
+const originalPrice = course.price_inr || 0;
+
+// Step 1: Apply promo discount to base price
+let priceAfterDiscount = originalPrice;
+if (discount.discount_percent) {
+  priceAfterDiscount = originalPrice - (originalPrice * discount.discount_percent / 100);
+} else if (discount.discount_amount) {
+  priceAfterDiscount = Math.max(0, originalPrice - discount.discount_amount);
+}
+
+// Step 2: Calculate GST on discounted price
+const discountAmount = originalPrice - priceAfterDiscount;
+const gstAmount = Math.round(priceAfterDiscount * 0.18);
+const totalWithGST = priceAfterDiscount + gstAmount;
+
+// Step 3: Send totalWithGST as the amount to create-payment-order
+UI Price Breakdown (Order Summary card):
+
+
+┌─────────────────────────────────┐
+│  Price Details                  │
+│─────────────────────────────────│
+│  Course Price        ₹1,000    │
+│  Discount            -₹200     │  ← only if promo applied
+│  Subtotal             ₹800     │  ← only if discount > 0
+│  GST (18%)            ₹144     │
+│─────────────────────────────────│
+│  Total Amount        ₹944      │
+└─────────────────────────────────┘
+API Call to create order:
+
+
+POST /functions/v1/create-payment-order
+Authorization: Bearer <user_jwt>
+{
+  "userId": "<user_id>",
+  "amount": 944,           // ← totalWithGST (subtotal + 18% GST)
+  "courses": [{ "id": "<course_id>", "name": "Course Name", "price": 944 }],
+  "customerInfo": { "fullName": "...", "email": "...", "phone": "..." },
+  "promoCode": "SAVE20" | null
+}
+Razorpay amount: totalWithGST * 100 (paise)
+
+2. Language Top-Up Purchase — NO GST Currently
+The language top-up page (src/pages/LanguageTopup.tsx) does NOT add GST. It sends the raw price directly:
+
+
+// Price calculation (no GST)
+const pricePerLanguage = course.language_topup_price || 0;
+const totalPrice = pricePerLanguage * selectedLanguages.length;
+
+// Sent directly to edge function - NO GST added
+POST /functions/v1/create-topup-order
+{
+  "userId": "<user_id>",
+  "courseId": "<course_id>",
+  "languages": ["hindi", "tamil", "telugu"]
+}
+// The edge function calculates: amount = pricePerLanguage * languages.length
+3. Cart/Checkout Flow — NO GST Currently
+The Cart page (src/pages/Cart.tsx) and Checkout page (src/pages/Checkout.tsx) also do NOT add GST. They send the raw total:
+
+
+// Cart total = sum of all course prices
+const total = items.reduce((sum, item) => sum + item.course_price, 0);
+const finalAmount = total - discount;  // No GST added
+
+// Checkout sends finalAmount directly to create-payment-order
+Summary Table
+Flow	GST Applied?	Rate	Formula
+Enroll (single course)	YES	18%	(price - discount) + round((price - discount) * 0.18)
+Cart → Checkout	NO	—	sum(prices) - discount
+Language Top-Up	NO	—	pricePerLanguage * count
+For Replit Implementation
+If you want GST everywhere, use this universal function:
+
+
+function calculateGST(amount) {
+  return Math.round(amount * 0.18);
+}
+
+function getPriceBreakdown(basePrice, discountPercent = 0, discountFlat = 0) {
+  let subtotal = basePrice;
+  if (discountPercent > 0) subtotal -= Math.round(basePrice * discountPercent / 100);
+  if (discountFlat > 0) subtotal = Math.max(0, subtotal - discountFlat);
+  
+  const gst = calculateGST(subtotal);
+  return {
+    originalPrice: basePrice,
+    discount: basePrice - subtotal,
+    subtotal: subtotal,
+    gstRate: 18,
+    gstAmount: gst,
+    total: subtotal + gst
+  };
+}
+Now I have all the information needed. Here's the complete GST documentation for Replit:
+
+Here's the complete GST implementation guide for your Replit mobile app:
+
+GST Implementation in SimpleLecture
+1. Course Purchase (Enroll Page) — GST is Applied
+GST Calculation Functions (from src/pages/Enroll.tsx, lines 188-189):
+
+
+// GST rate: 18%
+const calculateGST = (amount) => Math.round(amount * 0.18);
+const calculateTotalWithGST = (amount) => amount + calculateGST(amount);
+Price Breakdown Flow:
+
+
+┌──────────────────────────────────────────┐
+│  1. Course Price (from DB)   = price_inr │
+│  2. Apply Discount (if any)              │
+│     - % discount: price - (price * %)    │
+│     - flat discount: price - amount      │
+│  3. Subtotal = priceAfterDiscount        │
+│  4. GST (18%) = round(subtotal * 0.18)   │
+│  5. Total = subtotal + GST              │
+│  6. Send TOTAL to Razorpay              │
+└──────────────────────────────────────────┘
+Exact code logic:
+
+
+const originalPrice = course.price_inr || 0;
+
+// Step 1: Apply promo discount to base price
+let priceAfterDiscount = originalPrice;
+if (discount.discount_percent) {
+  priceAfterDiscount = originalPrice - (originalPrice * discount.discount_percent / 100);
+} else if (discount.discount_amount) {
+  priceAfterDiscount = Math.max(0, originalPrice - discount.discount_amount);
+}
+
+// Step 2: Calculate GST on discounted price
+const discountAmount = originalPrice - priceAfterDiscount;
+const gstAmount = Math.round(priceAfterDiscount * 0.18);
+const totalWithGST = priceAfterDiscount + gstAmount;
+
+// Step 3: Send totalWithGST as the amount to create-payment-order
+UI Price Breakdown (Order Summary card):
+
+
+┌─────────────────────────────────┐
+│  Price Details                  │
+│─────────────────────────────────│
+│  Course Price        ₹1,000    │
+│  Discount            -₹200     │  ← only if promo applied
+│  Subtotal             ₹800     │  ← only if discount > 0
+│  GST (18%)            ₹144     │
+│─────────────────────────────────│
+│  Total Amount        ₹944      │
+└─────────────────────────────────┘
+API Call to create order:
+
+
+POST /functions/v1/create-payment-order
+Authorization: Bearer <user_jwt>
+{
+  "userId": "<user_id>",
+  "amount": 944,           // ← totalWithGST (subtotal + 18% GST)
+  "courses": [{ "id": "<course_id>", "name": "Course Name", "price": 944 }],
+  "customerInfo": { "fullName": "...", "email": "...", "phone": "..." },
+  "promoCode": "SAVE20" | null
+}
+Razorpay amount: totalWithGST * 100 (paise)
+
+2. Language Top-Up Purchase — NO GST Currently
+The language top-up page (src/pages/LanguageTopup.tsx) does NOT add GST. It sends the raw price directly:
+
+
+// Price calculation (no GST)
+const pricePerLanguage = course.language_topup_price || 0;
+const totalPrice = pricePerLanguage * selectedLanguages.length;
+
+// Sent directly to edge function - NO GST added
+POST /functions/v1/create-topup-order
+{
+  "userId": "<user_id>",
+  "courseId": "<course_id>",
+  "languages": ["hindi", "tamil", "telugu"]
+}
+// The edge function calculates: amount = pricePerLanguage * languages.length
+3. Cart/Checkout Flow — NO GST Currently
+The Cart page (src/pages/Cart.tsx) and Checkout page (src/pages/Checkout.tsx) also do NOT add GST. They send the raw total:
+
+
+// Cart total = sum of all course prices
+const total = items.reduce((sum, item) => sum + item.course_price, 0);
+const finalAmount = total - discount;  // No GST added
+
+// Checkout sends finalAmount directly to create-payment-order
+Summary Table
+Flow	GST Applied?	Rate	Formula
+Enroll (single course)	YES	18%	(price - discount) + round((price - discount) * 0.18)
+Cart → Checkout	NO	—	sum(prices) - discount
+Language Top-Up	NO	—	pricePerLanguage * count
+For Replit Implementation
+If you want GST everywhere, use this universal function:
+
+
+function calculateGST(amount) {
+  return Math.round(amount * 0.18);
+}
+
+function getPriceBreakdown(basePrice, discountPercent = 0, discountFlat = 0) {
+  let subtotal = basePrice;
+  if (discountPercent > 0) subtotal -= Math.round(basePrice * discountPercent / 100);
+  if (discountFlat > 0) subtotal = Math.max(0, subtotal - discountFlat);
+  
+  const gst = calculateGST(subtotal);
+  return {
+    originalPrice: basePrice,
+    discount: basePrice - subtotal,
+    subtotal: subtotal,
+    gstRate: 18,
+    gstAmount: gst,
+    total: subtotal + gst
+  };
+}

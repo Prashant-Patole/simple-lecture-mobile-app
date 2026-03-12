@@ -1,0 +1,264 @@
+Multi-Language System: Complete Technical Guide for Mobile App
+PART 1: How to Detect if User Has Purchased Languages
+Database Table: language_topup_purchases
+
+Query (Supabase):
+
+
+SELECT id, status, selected_languages
+FROM language_topup_purchases
+WHERE course_id = :courseId
+  AND user_id = :userId
+  AND status = 'success'
+LIMIT 1;
+Interpretation:
+
+No row returned → User has NOT purchased any language → purchasedLanguages = []
+Row returned → purchasedLanguages = selected_languages (e.g., ["kannada"])
+The selected_languages column is a JSONB array of language code strings.
+
+Course-level config comes from the courses table (fetched via get_learning_course_data RPC):
+
+available_languages (jsonb) — e.g., ["english", "hindi", "kannada", "telugu"]
+language_topup_price (numeric) — price per language
+English is always free and included by default.
+PART 2: What to Show on Lecture Cards
+Decision tree per lecture:
+
+If course.available_languages.length <= 1 → No language badges, no unlock button. English-only course.
+
+If purchasedLanguages.length === 0 → Show only "English" badge + "Unlock Your Language" button (links to /language-topup/:courseId).
+
+If purchasedLanguages.length > 0 → Show "English" badge + one badge per purchased language. The selected badge is filled (variant="default"), others are outlined (variant="outline"). User taps a badge to select that language BEFORE opening the player.
+
+Additional filter: Only show a language badge if AI avatar videos actually exist for that lecture. This is checked via:
+
+
+SELECT section_id, language, status
+FROM language_avatar_jobs
+WHERE external_job_id = :lectureExternalJobId
+  AND status = 'completed';
+So the final filter is:
+
+show badge = purchasedLanguages.includes(lang) AND avatarJobsExist(lang, lectureJobId)
+PART 3: How the Player Works After Selecting a Language
+Props passed to the player:
+
+
+{
+  presentationData: { sections: [...] },  // from presentation_json
+  jobId: "external_job_id_string",
+  initialLanguage: "kannada",             // or null for English
+  purchasedLanguages: ["kannada"],         // from topup query
+  courseAvailableLanguages: ["english", "kannada", "hindi"]  // from course config
+}
+Language Picker inside player shows only languages that are BOTH purchased AND have completed avatars.
+
+Avatar URL Resolution (per section):
+
+When a non-English language is selected, the player resolves the avatar URL using this priority chain:
+
+Priority 1: presentation.json → avatar_languages array
+
+Each section in the presentation JSON may contain:
+
+
+{
+  "section_id": 0,
+  "avatar_languages": [
+    {
+      "language": "kannada",
+      "status": "completed",
+      "video_path": "avatars/kannada/section_0_avatar.mp4",
+      "vimeo_url": "https://vimeo.com/..."
+    }
+  ]
+}
+Resolution order within this entry:
+
+If video_path exists → CDN URL: https://server1.simplelecture.com/video/{jobId}/{video_path}
+Else if vimeo_url exists → Use Vimeo proxy URL
+Priority 2: language_avatar_jobs table fallback
+
+If presentation.json has no matching entry, construct URL directly:
+
+https://server1.simplelecture.com/video/{jobId}/avatars/{language}/section_{sectionId}_avatar.mp4
+Priority 3: Fall back to English avatar (if language avatar fails to load).
+
+PART 4: What Changes When Language is Selected
+Only the avatar video changes. Everything else stays the same:
+
+Slide images/text — unchanged
+Beat/content videos — unchanged
+Bullet points / visual content — unchanged
+The language avatar MP4 contains BOTH the dubbed audio AND the lip-synced AI video baked together. So swapping the avatar file automatically swaps the narration language too.
+
+Per-section loading: Each section loads its own avatar file:
+
+Section 0: avatars/kannada/section_0_avatar.mp4
+Section 1: avatars/kannada/section_1_avatar.mp4
+etc.
+Mid-playback language switch: When user changes language via the picker dropdown:
+
+Failed sources cache is cleared
+Avatar URL is re-resolved for the current section in the new language
+Avatar video source is swapped (no full restart needed)
+PART 5: Mobile Implementation Summary
+
+1. On course load:
+   → Query: language_topup_purchases WHERE user_id + course_id + status='success'
+   → Extract purchasedLanguages[] from selected_languages column
+
+2. On lecture list:
+   → If purchasedLanguages has items: show language badges on cards
+   → If empty but course has languages: show "Unlock" button
+
+3. On badge tap:
+   → Set selectedLanguage state (e.g., "kannada")
+   → Open player with initialLanguage="kannada"
+
+4. In player, for each section:
+   → Check presentation_json.sections[i].avatar_languages for matching language
+   → Use video_path to build CDN URL: server1.simplelecture.com/video/{jobId}/{video_path}
+   → Fallback: construct URL pattern from language_avatar_jobs table
+   → Avatar MP4 = dubbed audio + lip-synced video (single file)
+   → Slides, beats, bullets remain English
+
+5. Language switch mid-playback:
+   → Swap avatar video source for current section
+   → Clear error cache, no restart needed
+Here is the complete technical documentation for Replit to implement the multi-language system in the mobile app:
+
+Multi-Language System: Complete Technical Guide for Mobile App
+PART 1: How to Detect if User Has Purchased Languages
+Database Table: language_topup_purchases
+
+Query (Supabase):
+
+
+SELECT id, status, selected_languages
+FROM language_topup_purchases
+WHERE course_id = :courseId
+  AND user_id = :userId
+  AND status = 'success'
+LIMIT 1;
+Interpretation:
+
+No row returned → User has NOT purchased any language → purchasedLanguages = []
+Row returned → purchasedLanguages = selected_languages (e.g., ["kannada"])
+The selected_languages column is a JSONB array of language code strings.
+
+Course-level config comes from the courses table (fetched via get_learning_course_data RPC):
+
+available_languages (jsonb) — e.g., ["english", "hindi", "kannada", "telugu"]
+language_topup_price (numeric) — price per language
+English is always free and included by default.
+PART 2: What to Show on Lecture Cards
+Decision tree per lecture:
+
+If course.available_languages.length <= 1 → No language badges, no unlock button. English-only course.
+
+If purchasedLanguages.length === 0 → Show only "English" badge + "Unlock Your Language" button (links to /language-topup/:courseId).
+
+If purchasedLanguages.length > 0 → Show "English" badge + one badge per purchased language. The selected badge is filled (variant="default"), others are outlined (variant="outline"). User taps a badge to select that language BEFORE opening the player.
+
+Additional filter: Only show a language badge if AI avatar videos actually exist for that lecture. This is checked via:
+
+
+SELECT section_id, language, status
+FROM language_avatar_jobs
+WHERE external_job_id = :lectureExternalJobId
+  AND status = 'completed';
+So the final filter is:
+
+show badge = purchasedLanguages.includes(lang) AND avatarJobsExist(lang, lectureJobId)
+PART 3: How the Player Works After Selecting a Language
+Props passed to the player:
+
+
+{
+  presentationData: { sections: [...] },  // from presentation_json
+  jobId: "external_job_id_string",
+  initialLanguage: "kannada",             // or null for English
+  purchasedLanguages: ["kannada"],         // from topup query
+  courseAvailableLanguages: ["english", "kannada", "hindi"]  // from course config
+}
+Language Picker inside player shows only languages that are BOTH purchased AND have completed avatars.
+
+Avatar URL Resolution (per section):
+
+When a non-English language is selected, the player resolves the avatar URL using this priority chain:
+
+Priority 1: presentation.json → avatar_languages array
+
+Each section in the presentation JSON may contain:
+
+
+{
+  "section_id": 0,
+  "avatar_languages": [
+    {
+      "language": "kannada",
+      "status": "completed",
+      "video_path": "avatars/kannada/section_0_avatar.mp4",
+      "vimeo_url": "https://vimeo.com/..."
+    }
+  ]
+}
+Resolution order within this entry:
+
+If video_path exists → CDN URL: https://server1.simplelecture.com/video/{jobId}/{video_path}
+Else if vimeo_url exists → Use Vimeo proxy URL
+Priority 2: language_avatar_jobs table fallback
+
+If presentation.json has no matching entry, construct URL directly:
+
+https://server1.simplelecture.com/video/{jobId}/avatars/{language}/section_{sectionId}_avatar.mp4
+Priority 3: Fall back to English avatar (if language avatar fails to load).
+
+PART 4: What Changes When Language is Selected
+Only the avatar video changes. Everything else stays the same:
+
+Slide images/text — unchanged
+Beat/content videos — unchanged
+Bullet points / visual content — unchanged
+The language avatar MP4 contains BOTH the dubbed audio AND the lip-synced AI video baked together. So swapping the avatar file automatically swaps the narration language too.
+
+Per-section loading: Each section loads its own avatar file:
+
+Section 0: avatars/kannada/section_0_avatar.mp4
+Section 1: avatars/kannada/section_1_avatar.mp4
+etc.
+Mid-playback language switch: When user changes language via the picker dropdown:
+
+Failed sources cache is cleared
+Avatar URL is re-resolved for the current section in the new language
+Avatar video source is swapped (no full restart needed)
+PART 5: Mobile Implementation Summary
+
+1. On course load:
+   → Query: language_topup_purchases WHERE user_id + course_id + status='success'
+   → Extract purchasedLanguages[] from selected_languages column
+
+2. On lecture list:
+   → If purchasedLanguages has items: show language badges on cards
+   → If empty but course has languages: show "Unlock" button
+
+3. On badge tap:
+   → Set selectedLanguage state (e.g., "kannada")
+   → Open player with initialLanguage="kannada"
+
+4. In player, for each section:
+   → Check presentation_json.sections[i].avatar_languages for matching language
+   → Use video_path to build CDN URL: server1.simplelecture.com/video/{jobId}/{video_path}
+   → Fallback: construct URL pattern from language_avatar_jobs table
+   → Avatar MP4 = dubbed audio + lip-synced video (single file)
+   → Slides, beats, bullets remain English
+
+5. Language switch mid-playback:
+   → Swap avatar video source for current section
+   → Clear error cache, no restart needed
+
+
+
+

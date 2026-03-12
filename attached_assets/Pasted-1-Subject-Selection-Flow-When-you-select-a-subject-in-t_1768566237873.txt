@@ -1,0 +1,229 @@
+1. Subject Selection Flow
+When you select a subject in the Learning page:
+
+Step	Component	Action
+1	Learning.tsx	User selects a subject from sidebar
+2	Learning.tsx	Passes subjectName prop to AITeachingAssistant
+3	AITeachingAssistant.tsx	Receives subjectName, topicId, chapterId
+4	TeacherAvatarPanel.tsx	Fetches appropriate avatar based on language
+5	Edge Function	Uses subjectName to validate question relevance
+2. Teacher Avatar System
+File: src/components/learning/TeacherAvatarPanel.tsx
+
+
+// Avatar fetching based on language (gender selection)
+useEffect(() => {
+  const fetchAvatar = async () => {
+    const gender = language === 'hi-IN' ? 'female' : 'male';
+    
+    const { data } = await supabase
+      .from('counselor_avatars')
+      .select('*')
+      .eq('gender', gender)
+      .eq('is_active', true)
+      .order('display_order')
+      .limit(1)
+      .maybeSingle();
+
+    if (data) {
+      setAvatarUrl(data.image_url);
+      setAvatarName(data.name);
+    }
+  };
+  fetchAvatar();
+}, [language]);
+
+// Dynamic professor title based on subject
+const professorTitle = subjectName 
+  ? `${subjectName} AI Professor` 
+  : language === 'hi-IN' ? 'AI प्रोफेसर' : 'AI Professor';
+Database Table: counselor_avatars
+
+Column	Type	Purpose
+id	uuid	Primary key
+name	text	Avatar name (e.g., "Dr. Priya")
+gender	text	'male' or 'female'
+image_url	text	Avatar image URL
+is_active	boolean	Active status
+display_order	int	Priority order
+3. Question Submission Flow
+File: src/hooks/useTeachingAssistant.ts
+
+
+const askQuestion = useCallback(async (
+  question: string,
+  topicId?: string,
+  chapterId?: string,
+  language: string = 'en-IN',
+  subjectName?: string  // ← Subject name passed here
+): Promise<TeachingResponse | null> => {
+  
+  // Invoke edge function with all context
+  const { data, error } = await supabase.functions.invoke('ai-teaching-assistant', {
+    body: { question, topicId, chapterId, language, subjectName }
+  });
+  
+  // Process and normalize response...
+  return response;
+}, []);
+4. Edge Function Processing
+File: supabase/functions/ai-teaching-assistant/index.ts
+
+This is where the magic happens:
+
+Step 1: Subject Relevance Check
+
+// Check if question is relevant to the subject
+function isQuestionRelevant(question: string, subjectName: string): boolean {
+  const subjectKeywords: Record<string, string[]> = {
+    'physics': ['force', 'motion', 'energy', 'velocity', 'acceleration', ...],
+    'chemistry': ['atom', 'molecule', 'element', 'compound', 'reaction', ...],
+    'mathematics': ['equation', 'formula', 'algebra', 'geometry', ...],
+    'biology': ['cell', 'organism', 'dna', 'gene', 'protein', ...],
+  };
+  
+  // Returns true if question contains subject-related keywords
+  return hasRelevantKeyword || mentionsSubject || isEducational;
+}
+Step 2: If NOT Relevant → Redirect
+
+if (subjectName !== 'General' && !isQuestionRelevant(question, subjectName)) {
+  return {
+    answer: `I am the ${subjectName} AI Professor. This question doesn't seem 
+             to be related to ${subjectName}. Please consult the respective 
+             subject's AI Professor for this query.`,
+    presentationSlides: [/* redirect message slide */]
+  };
+}
+Step 3: Fetch Subject Context from Database
+
+if (topicId) {
+  const { data: topic } = await supabase
+    .from('subject_topics')
+    .select('*, content_json, chapter:subject_chapters(*, content_json, subject:popular_subjects(name))')
+    .eq('id', topicId)
+    .single();
+  
+  context += `Topic: ${topic.title}\n`;
+  context += `Content: ${topic.content_markdown}\n`;
+  context += `Chapter: ${topic.chapter.title}\n`;
+  detectedSubject = topic.chapter.subject.name; // Auto-detect subject!
+}
+Step 4: AI System Prompt with Subject Context
+
+const systemPrompt = `You are Professor AI, an expert Indian teacher 
+specializing in ${detectedSubject}. 
+
+SUBJECT EXPERTISE: ${detectedSubject}
+- If the question is NOT related to ${detectedSubject}, politely redirect: 
+  "I am the ${detectedSubject} AI Professor. For questions about [other topic], 
+   please consult the respective AI Professor."
+
+CONTEXT FROM COURSE MATERIAL:
+${context || 'No specific context available.'}
+
+// ... slide generation instructions
+`;
+Step 5: Call AI Gateway
+
+const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+  method: "POST",
+  headers: {
+    Authorization: `Bearer ${LOVABLE_API_KEY}`,
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    model: "google/gemini-2.5-flash",
+    max_tokens: 8000,
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: question }
+    ],
+    response_format: { type: "json_object" }
+  }),
+});
+Step 6: Generate Infographics for Each Slide
+
+// For each slide with an infographic description
+const imageResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+  body: JSON.stringify({
+    model: "google/gemini-2.5-flash-image-preview",
+    modalities: ["image", "text"],
+    messages: [{
+      role: "user",
+      content: `Create educational infographic for: ${slide.title}\n${slide.infographic}`
+    }]
+  })
+});
+5. Text-to-Speech System
+File: src/hooks/useGoogleTTS.ts
+
+Supports 14 Indian languages:
+
+
+export const SUPPORTED_LANGUAGES = {
+  'en-IN': { name: 'English (India)' },
+  'hi-IN': { name: 'Hindi' },
+  'ta-IN': { name: 'Tamil' },
+  'te-IN': { name: 'Telugu' },
+  'kn-IN': { name: 'Kannada' },
+  'ml-IN': { name: 'Malayalam' },
+  // ... + 8 more Indian languages
+};
+TTS Flow:
+
+Pre-cache all slide narrations before presentation starts
+Use Sarvam TTS API (primary) for Indian language support
+Falls back to Web Speech API if TTS fails
+Converts LaTeX formulas to speakable text
+6. Response Structure
+
+interface TeachingResponse {
+  cached: boolean;
+  answer: string;
+  presentationSlides: PresentationSlide[];  // 6 slides
+  latexFormulas: LatexFormula[];
+  keyPoints?: string[];
+  followUpQuestions?: string[];
+  narrationText: string;
+  subjectName?: string;
+  detectedTopic?: string;
+  relatedConcepts?: string[];
+}
+
+interface PresentationSlide {
+  title: string;
+  content: string;
+  keyPoints: string[];
+  formula?: string;          // LaTeX formula
+  narration: string;         // 150-250 words for TTS
+  isStory?: boolean;         // Slide 5: Story slide
+  isTips?: boolean;          // Slide 6: Tips slide
+  infographic?: string;      // Description for image gen
+  infographicUrl?: string;   // Generated image URL
+  videoUrl?: string;         // Optional video for story
+}
+7. Complete Data Flow Summary
+Stage	Component	API/Database	Purpose
+1	Learning.tsx	-	User selects subject
+2	TeacherAvatarPanel	counselor_avatars	Fetch matching avatar
+3	AITeachingAssistant	useSpeechRecognition	Capture voice/text input
+4	useTeachingAssistant	ai-teaching-assistant edge function	Send question
+5	Edge Function	subject_topics, subject_chapters	Fetch context
+6	Edge Function	Lovable AI Gateway (Gemini)	Generate 6-slide presentation
+7	Edge Function	Gemini Image Preview	Generate infographics
+8	Edge Function	teaching_qa_cache	Cache response
+9	useGoogleTTS	sarvam-tts edge function	Pre-cache audio
+10	PresentationSlide	-	Render slides with images
+11	TeacherAvatarPanel	-	Show speaking animation
+8. Key Features
+Feature	Implementation
+Subject-specific answers	AI prompt includes subject name + keywords check
+Dynamic teacher avatar	Fetches from counselor_avatars based on language
+Question validation	isQuestionRelevant() checks against subject keywords
+Context-aware responses	Fetches topic/chapter content from database
+6-slide presentations	Mandatory structure: Intro, Concept, Example, Details, Story, Tips
+AI-generated infographics	Gemini image generation for each slide
+Multi-language TTS	14 Indian languages via Sarvam TTS
+Voice input	react-speech-recognition for voice questions
+Response caching	teaching_qa_cache table for repeat questions

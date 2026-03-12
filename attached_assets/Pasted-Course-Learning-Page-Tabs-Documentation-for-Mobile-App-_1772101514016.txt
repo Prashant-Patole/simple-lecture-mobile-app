@@ -1,0 +1,54 @@
+Course Learning Page — Tabs Documentation for Mobile App
+Navigation Hierarchy
+Course → Subjects → Chapters → Topics
+The user first picks a subject, then sees chapters (with expandable topics). Selecting a topic or chapter shows the tabbed content area.
+
+Tabs Available (7 total for regular users, 2 for checkers)
+#	Tab ID	Label	Available At	Data Source	Description
+1	videos	Classes	Topic + Chapter	lectures table (filtered by topic_id or chapter_id)	Recorded video lectures. Uses HLS streaming via B2 proxy. Each lecture has: title, duration, video URL, thumbnail.
+2	ai-assistant	AI	Topic + Chapter	teaching_qa_cache table + Edge functions (ai-teaching-assistant)	AI Teaching Assistant — users ask questions, get AI-generated presentations with slides, infographic images, and TTS narration. All cached in B2.
+3	all-questions	Questions	Topic + Chapter	questions table (filtered by topic_id or chapter_id + subject_id)	MCQ practice questions. Each has: question text, 4 options, correct answer, explanation, difficulty level.
+4	assignments	Assignments	Topic + Chapter	assignments table (filtered by topic_id or chapter_id)	Homework/assignments with PDF attachments, due dates, submission tracking.
+5	dpp	DPP	Topic only (not chapter level)	dpp_questions table (filtered by topic_id)	Daily Practice Problems — timed quizzes specific to a topic.
+6	my-results	Results	Topic + Chapter	test_results / paper_test_results tables (filtered by subject_id)	Shows user's test scores, with option to "clear doubts" (sends to AI tab).
+7	doubts	Doubts	Topic + Chapter	doubts table (filtered by subject_id)	Users post doubts about lectures, get community/admin answers.
+Checker Role (limited access)
+Checkers only see 2 tabs:
+
+#	Tab ID	Label
+1	videos	Classes
+2	questions	Questions
+Mobile-Specific UI Patterns
+Quick Actions Grid: Below content, a 2-column grid of cards lets users switch tabs. Each card has: icon, label, short description.
+Mobile Sidebar (Sheet): A hamburger menu opens a slide-out sidebar listing all available tabs as navigation buttons.
+No TabsList on Mobile: The desktop horizontal tab bar is hidden on mobile — navigation happens via Quick Actions grid or sidebar only.
+Video Player Dialog: When watching a video, Quick Actions appear below the player so users can jump to AI/Questions/etc without closing the player first.
+Key Props Passed to Each Tab Component
+Classes (RecordedVideos):
+  - topicId OR chapterId
+  - courseId
+  - availableLanguages (for language topup)
+
+AI (AITeachingAssistant):
+  - topicId, chapterId, topicTitle, subjectName
+  - availableLanguages
+  - aiPresentationJson, aiGeneratedVideoUrl
+
+Questions (QuestionsTab):
+  - topicId OR chapterId
+  - subjectId
+
+Assignments (AssignmentViewer):
+  - topicId OR chapterId  
+  - subjectId
+
+DPP (DPPTab):
+  - subjectId, topicId
+
+Results (PaperTestResults):
+  - subjectId, subjectName
+
+Doubts (DoubtsTab):
+  - subjectId, subjectName
+Data Fetching Pattern
+All tabs query Supabase directly using @supabase/supabase-js. The mobile app should use the same Supabase client with the user's auth token. No special edge functions needed for tab data — it's all direct table queries with RLS (Row Level Security) enforcing access control based on course purchase.

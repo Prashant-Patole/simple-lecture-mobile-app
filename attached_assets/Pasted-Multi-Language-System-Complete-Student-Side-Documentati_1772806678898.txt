@@ -1,0 +1,328 @@
+Multi-Language System — Complete Student-Side Documentation for Mobile App
+1. Overview
+The multi-language system allows students to watch AI-generated lectures in regional Indian languages (Hindi, Kannada, Tamil, Telugu, Malayalam, Marathi, Bengali, Gujarati, Punjabi, Odia, Assamese, Urdu). English is always free. Other languages require a paid top-up purchase per course.
+
+2. Data Model
+Key Tables
+courses table columns:
+
+available_languages (jsonb array) — Admin-configured languages for this course, e.g. ["english", "hindi", "kannada"]
+language_topup_price (number) — Price per language in INR (e.g. 99)
+language_topup_original_price (number) — Strike-through / original price for showing discount
+language_topup_purchases table:
+
+user_id (uuid)
+course_id (uuid)
+selected_languages (jsonb array) — e.g. ["hindi", "kannada"]
+status — "success" for completed purchases
+amount_paid (number)
+language_avatar_jobs table:
+
+external_job_id, section_id, language, status
+Used to determine which language avatars actually exist for a lecture
+3. Two States: Purchased vs Not Purchased
+Checking Purchase Status
+Query: language_topup_purchases
+  WHERE course_id = X AND user_id = Y AND status = 'success'
+Returns purchasedLanguages array (e.g. ["hindi"]) or empty.
+
+State A: User Has NOT Purchased Any Language
+Lecture Card UI:
+
+Only shows English badge (🇬🇧 EN) — no other language badges
+Shows a "Unlock Your Language" button (gradient violet, with shine animation)
+Clicking the button navigates to /language-topup/{courseId}
+Show Unlock Button condition:
+
+
+showUnlockButton = 
+  courseId &&
+  availableLanguages.length > 1 &&      // Admin configured >1 language
+  !topupStatus.hasPurchased &&           // User hasn't bought any
+  (languageTopupPrice || 0) > 0;         // Price is set
+Player (LanguagePicker):
+
+The LanguagePicker dropdown is hidden (returns null) because availableLanguages array is empty after filtering
+State B: User HAS Purchased Language(s)
+Lecture Card UI:
+
+Shows English badge + purchased language badges (e.g. 🇮🇳 Hindi, 🇮🇳 Kannada)
+Each badge is clickable — toggles selectedAILanguage state
+The "Unlock" button still shows if there are more unpurchased languages available
+Clicking a badge selects that language BEFORE opening the player
+Language filtering logic on lecture cards:
+
+
+const aiLanguages = allAiLanguages.filter(lang => {
+  if (!courseAvailableLanguages || courseAvailableLanguages.length <= 1) return false;
+  return purchasedLanguages.includes(lang);
+});
+Only languages that are: (1) admin-configured, (2) user-purchased, AND (3) have completed avatar jobs are shown.
+
+Player (LanguagePicker):
+
+Dropdown appears in player controls with English + purchased languages
+Same filtering: allAvailableLanguages.filter(lang => purchasedLanguages.includes(lang))
+4. Language Top-Up Purchase Flow (Route: /language-topup/:courseId)
+Step 1: Page Load
+Fetches course data (available_languages, prices)
+Fetches existing purchase (if any)
+Computes languagesToBuy = available_languages minus "english" minus already purchased
+Step 2: If ALL Languages Already Purchased
+Shows a success screen: "All Languages Unlocked! 🎉"
+No purchase form
+Step 3: Selection UI
+Checkbox list of unpurchased languages with native script names (e.g. "Hindi — हिन्दी")
+"Select All" / "Clear" buttons
+Price calculation: pricePerLanguage × selectedCount
+Shows discount if original_price > price
+Step 4: Payment (Razorpay)
+1. Call edge function: create-topup-order
+   Body: { userId, courseId, languages: ["hindi", "tamil"] }
+   Returns: { razorpayOrderId, razorpayKeyId, orderId, amount }
+
+2. Open Razorpay checkout with returned order details
+
+3. On success handler, call: verify-topup-payment
+   Body: { razorpay_order_id, razorpay_payment_id, razorpay_signature, orderId, userId, courseId, languages }
+
+4. On verification success → toast "Languages Unlocked!" → navigate back to learning page
+Edge Functions Involved:
+create-topup-order — Creates Razorpay order + DB record
+verify-topup-payment — Verifies signature, updates language_topup_purchases.status to "success"
+5. Player Behavior After Language Selection
+Language Selection Flow
+User selects language badge on lecture card → sets selectedAILanguage
+This is passed as initialLanguage prop to EducationalVideoPlayer
+Player also has a LanguagePicker dropdown in controls for switching mid-playback
+Avatar Resolution Priority (when non-English language selected)
+HIGHEST PRIORITY — Presentation JSON avatar_languages array:
+
+
+if (selectedLanguage && selectedLanguage !== 'english') {
+  const langEntry = currentSection.avatar_languages?.find(
+    l => l.language.toLowerCase() === selectedLanguage.toLowerCase() 
+      && l.status === 'completed'
+  );
+  if (langEntry) {
+    // Priority 1: CDN video_path
+    if (langEntry.video_path) {
+      url = getCdnMediaUrl(jobId, langEntry.video_path, cdnBaseUrl);
+      // e.g. https://server1.simplelecture.com/video/{jobId}/avatars/hindi/section_1_avatar.mp4
+    }
+    // Priority 2: Vimeo URL (fallback only if no video_path)
+    else if (langEntry.vimeo_url) {
+      url = getVimeoProxyUrl(langEntry.vimeo_url);
+    }
+  }
+}
+LOWER PRIORITY — language_avatar_jobs table (via useAvailableLanguages hook):
+
+Only used with language_priority source setting
+Constructs URL pattern: https://server1.simplelecture.com/video/{jobId}/avatars/{language}/section_{id}_avatar.mp4
+When Language Changes Mid-Playback
+
+useEffect(() => {
+  setFailedSources(new Set()); // Reset failed source tracking
+}, [selectedLanguage]);
+Clears the failed sources cache so the new language URL is attempted fresh
+Avatar video element is re-loaded with the new language URL
+English (Default) Behavior
+When selectedLanguage is null or 'english', the player uses the standard avatar resolution chain (CDN → local → Vimeo) without checking avatar_languages
+6. Supported Languages Reference
+
+const LANGUAGE_DATA = {
+  english:   { label: "English",   native: "English",  flag: "🇬🇧" },
+  hindi:     { label: "Hindi",     native: "हिन्दी",    flag: "🇮🇳" },
+  kannada:   { label: "Kannada",   native: "ಕನ್ನಡ",    flag: "🇮🇳" },
+  tamil:     { label: "Tamil",     native: "தமிழ்",    flag: "🇮🇳" },
+  telugu:    { label: "Telugu",    native: "తెలుగు",   flag: "🇮🇳" },
+  malayalam: { label: "Malayalam", native: "മലയാളം",  flag: "🇮🇳" },
+  marathi:   { label: "Marathi",   native: "मराठी",    flag: "🇮🇳" },
+  bengali:   { label: "Bengali",   native: "বাংলা",    flag: "🇮🇳" },
+  gujarati:  { label: "Gujarati",  native: "ગુજરાતી",  flag: "🇮🇳" },
+  punjabi:   { label: "Punjabi",   native: "ਪੰਜਾਬੀ",   flag: "🇮🇳" },
+  odia:      { label: "Odia",      native: "ଓଡ଼ିଆ",    flag: "🇮🇳" },
+  assamese:  { label: "Assamese",  native: "অসমীয়া",  flag: "🇮🇳" },
+  urdu:      { label: "Urdu",      native: "اردو",     flag: "🇮🇳" },
+};
+7. Summary for Mobile Implementation
+Scenario	Lecture Card	Player
+No languages configured by admin	No badges, no unlock button	No LanguagePicker
+Languages configured, user hasn't purchased	Only EN badge + "Unlock" button	No LanguagePicker (English only)
+User purchased some languages	EN + purchased badges + optional "Unlock" for remaining	LanguagePicker with EN + purchased
+User purchased ALL languages	EN + all badges, no unlock button	Full LanguagePicker
+API calls needed for mobile:
+
+GET courses.available_languages, language_topup_price — what's available
+GET language_topup_purchases WHERE user_id AND course_id AND status='success' — what's purchased
+GET language_avatar_jobs WHERE external_job_id AND status='completed' — what avatars exist
+POST create-topup-order + POST verify-topup-payment — purchase flow
+Avatar URL pattern: https://server1.simplelecture.com/video/{jobId}/avatars/{language}/section_{sectionId}_avatar.mp4
+Now I have a comprehensive understanding. This is a research/documentation request, not an implementation task — so I'll provide the explanation directly without a plan.
+
+Multi-Language System — Complete Student-Side Documentation for Mobile App
+1. Overview
+The multi-language system allows students to watch AI-generated lectures in regional Indian languages (Hindi, Kannada, Tamil, Telugu, Malayalam, Marathi, Bengali, Gujarati, Punjabi, Odia, Assamese, Urdu). English is always free. Other languages require a paid top-up purchase per course.
+
+2. Data Model
+Key Tables
+courses table columns:
+
+available_languages (jsonb array) — Admin-configured languages for this course, e.g. ["english", "hindi", "kannada"]
+language_topup_price (number) — Price per language in INR (e.g. 99)
+language_topup_original_price (number) — Strike-through / original price for showing discount
+language_topup_purchases table:
+
+user_id (uuid)
+course_id (uuid)
+selected_languages (jsonb array) — e.g. ["hindi", "kannada"]
+status — "success" for completed purchases
+amount_paid (number)
+language_avatar_jobs table:
+
+external_job_id, section_id, language, status
+Used to determine which language avatars actually exist for a lecture
+3. Two States: Purchased vs Not Purchased
+Checking Purchase Status
+Query: language_topup_purchases
+  WHERE course_id = X AND user_id = Y AND status = 'success'
+Returns purchasedLanguages array (e.g. ["hindi"]) or empty.
+
+State A: User Has NOT Purchased Any Language
+Lecture Card UI:
+
+Only shows English badge (🇬🇧 EN) — no other language badges
+Shows a "Unlock Your Language" button (gradient violet, with shine animation)
+Clicking the button navigates to /language-topup/{courseId}
+Show Unlock Button condition:
+
+
+showUnlockButton = 
+  courseId &&
+  availableLanguages.length > 1 &&      // Admin configured >1 language
+  !topupStatus.hasPurchased &&           // User hasn't bought any
+  (languageTopupPrice || 0) > 0;         // Price is set
+Player (LanguagePicker):
+
+The LanguagePicker dropdown is hidden (returns null) because availableLanguages array is empty after filtering
+State B: User HAS Purchased Language(s)
+Lecture Card UI:
+
+Shows English badge + purchased language badges (e.g. 🇮🇳 Hindi, 🇮🇳 Kannada)
+Each badge is clickable — toggles selectedAILanguage state
+The "Unlock" button still shows if there are more unpurchased languages available
+Clicking a badge selects that language BEFORE opening the player
+Language filtering logic on lecture cards:
+
+
+const aiLanguages = allAiLanguages.filter(lang => {
+  if (!courseAvailableLanguages || courseAvailableLanguages.length <= 1) return false;
+  return purchasedLanguages.includes(lang);
+});
+Only languages that are: (1) admin-configured, (2) user-purchased, AND (3) have completed avatar jobs are shown.
+
+Player (LanguagePicker):
+
+Dropdown appears in player controls with English + purchased languages
+Same filtering: allAvailableLanguages.filter(lang => purchasedLanguages.includes(lang))
+4. Language Top-Up Purchase Flow (Route: /language-topup/:courseId)
+Step 1: Page Load
+Fetches course data (available_languages, prices)
+Fetches existing purchase (if any)
+Computes languagesToBuy = available_languages minus "english" minus already purchased
+Step 2: If ALL Languages Already Purchased
+Shows a success screen: "All Languages Unlocked! 🎉"
+No purchase form
+Step 3: Selection UI
+Checkbox list of unpurchased languages with native script names (e.g. "Hindi — हिन्दी")
+"Select All" / "Clear" buttons
+Price calculation: pricePerLanguage × selectedCount
+Shows discount if original_price > price
+Step 4: Payment (Razorpay)
+1. Call edge function: create-topup-order
+   Body: { userId, courseId, languages: ["hindi", "tamil"] }
+   Returns: { razorpayOrderId, razorpayKeyId, orderId, amount }
+
+2. Open Razorpay checkout with returned order details
+
+3. On success handler, call: verify-topup-payment
+   Body: { razorpay_order_id, razorpay_payment_id, razorpay_signature, orderId, userId, courseId, languages }
+
+4. On verification success → toast "Languages Unlocked!" → navigate back to learning page
+Edge Functions Involved:
+create-topup-order — Creates Razorpay order + DB record
+verify-topup-payment — Verifies signature, updates language_topup_purchases.status to "success"
+5. Player Behavior After Language Selection
+Language Selection Flow
+User selects language badge on lecture card → sets selectedAILanguage
+This is passed as initialLanguage prop to EducationalVideoPlayer
+Player also has a LanguagePicker dropdown in controls for switching mid-playback
+Avatar Resolution Priority (when non-English language selected)
+HIGHEST PRIORITY — Presentation JSON avatar_languages array:
+
+
+if (selectedLanguage && selectedLanguage !== 'english') {
+  const langEntry = currentSection.avatar_languages?.find(
+    l => l.language.toLowerCase() === selectedLanguage.toLowerCase() 
+      && l.status === 'completed'
+  );
+  if (langEntry) {
+    // Priority 1: CDN video_path
+    if (langEntry.video_path) {
+      url = getCdnMediaUrl(jobId, langEntry.video_path, cdnBaseUrl);
+      // e.g. https://server1.simplelecture.com/video/{jobId}/avatars/hindi/section_1_avatar.mp4
+    }
+    // Priority 2: Vimeo URL (fallback only if no video_path)
+    else if (langEntry.vimeo_url) {
+      url = getVimeoProxyUrl(langEntry.vimeo_url);
+    }
+  }
+}
+LOWER PRIORITY — language_avatar_jobs table (via useAvailableLanguages hook):
+
+Only used with language_priority source setting
+Constructs URL pattern: https://server1.simplelecture.com/video/{jobId}/avatars/{language}/section_{id}_avatar.mp4
+When Language Changes Mid-Playback
+
+useEffect(() => {
+  setFailedSources(new Set()); // Reset failed source tracking
+}, [selectedLanguage]);
+Clears the failed sources cache so the new language URL is attempted fresh
+Avatar video element is re-loaded with the new language URL
+English (Default) Behavior
+When selectedLanguage is null or 'english', the player uses the standard avatar resolution chain (CDN → local → Vimeo) without checking avatar_languages
+6. Supported Languages Reference
+
+const LANGUAGE_DATA = {
+  english:   { label: "English",   native: "English",  flag: "🇬🇧" },
+  hindi:     { label: "Hindi",     native: "हिन्दी",    flag: "🇮🇳" },
+  kannada:   { label: "Kannada",   native: "ಕನ್ನಡ",    flag: "🇮🇳" },
+  tamil:     { label: "Tamil",     native: "தமிழ்",    flag: "🇮🇳" },
+  telugu:    { label: "Telugu",    native: "తెలుగు",   flag: "🇮🇳" },
+  malayalam: { label: "Malayalam", native: "മലയാളം",  flag: "🇮🇳" },
+  marathi:   { label: "Marathi",   native: "मराठी",    flag: "🇮🇳" },
+  bengali:   { label: "Bengali",   native: "বাংলা",    flag: "🇮🇳" },
+  gujarati:  { label: "Gujarati",  native: "ગુજરાતી",  flag: "🇮🇳" },
+  punjabi:   { label: "Punjabi",   native: "ਪੰਜਾਬੀ",   flag: "🇮🇳" },
+  odia:      { label: "Odia",      native: "ଓଡ଼ିଆ",    flag: "🇮🇳" },
+  assamese:  { label: "Assamese",  native: "অসমীয়া",  flag: "🇮🇳" },
+  urdu:      { label: "Urdu",      native: "اردو",     flag: "🇮🇳" },
+};
+7. Summary for Mobile Implementation
+Scenario	Lecture Card	Player
+No languages configured by admin	No badges, no unlock button	No LanguagePicker
+Languages configured, user hasn't purchased	Only EN badge + "Unlock" button	No LanguagePicker (English only)
+User purchased some languages	EN + purchased badges + optional "Unlock" for remaining	LanguagePicker with EN + purchased
+User purchased ALL languages	EN + all badges, no unlock button	Full LanguagePicker
+API calls needed for mobile:
+
+GET courses.available_languages, language_topup_price — what's available
+GET language_topup_purchases WHERE user_id AND course_id AND status='success' — what's purchased
+GET language_avatar_jobs WHERE external_job_id AND status='completed' — what avatars exist
+POST create-topup-order + POST verify-topup-payment — purchase flow
+Avatar URL pattern: https://server1.simplelecture.com/video/{jobId}/avatars/{language}/section_{sectionId}_avatar.mp4
+
+
+
+

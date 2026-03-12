@@ -1,0 +1,160 @@
+Doubts Tab — AI Chat Feature Documentation
+Overview
+The Doubts tab is an AI-powered Q&A chat where students ask questions about their course content. The AI answers based on the actual lecture content (extracted from presentation JSONs stored in the database). It supports text input and voice input (via browser Speech Recognition).
+
+API Endpoint
+Single endpoint used:
+
+POST /functions/v1/ai-doubts-chat
+Base URL: https://oxwhqvsoelqqsblmqkxx.supabase.co
+
+Headers:
+
+
+{
+  "Content-Type": "application/json",
+  "Authorization": "Bearer <SUPABASE_ANON_KEY>"
+}
+Request Body:
+
+
+{
+  "question": "What is Newton's third law?",
+  "subjectId": "uuid-of-the-subject",
+  "messages": [
+    { "role": "user", "content": "previous user message" },
+    { "role": "assistant", "content": "previous AI response" }
+  ],
+  "studentId": "uuid-of-the-student (optional)"
+}
+Field	Type	Required	Description
+question	string	Yes	The current question text
+subjectId	string (UUID)	Yes	The subject the student is studying
+messages	array	No	Previous conversation history for multi-turn chat
+studentId	string (UUID)	No	The logged-in student's user ID
+Response (200):
+
+
+{
+  "answer": "Newton's third law states that for every action..."
+}
+Error Response:
+
+
+{
+  "error": "AI API not configured..."
+}
+How It Works (Backend)
+Receives the question + subjectId + conversation history
+Fetches all lecture content for that subject:
+All chapters from subject_chapters table (filtered by subject_id)
+All topics from subject_topics table (joined via chapter_id)
+All completed video generation jobs from video_generation_jobs table
+Extracts narration text from ai_presentation_json fields (title, narration segments, bullet points, content)
+Builds a ~8000 character context window from the extracted lecture content
+Sends to AI (Google Gemini or OpenAI, configured in ai_settings table) with a system prompt instructing it to answer based on lecture content
+Returns the AI response
+UI Flow (for Mobile App)
+Requires a selected subject — show "Please select a subject" if none selected
+Chat interface with:
+Message bubbles (user on right, AI on left)
+AI responses rendered as Markdown
+Text input field at bottom
+Send button
+Optional: Mic button for voice-to-text (uses device speech recognition)
+Loading spinner while AI responds
+Conversation is in-memory only — not persisted to database. Refreshing clears the chat.
+Multi-turn: Previous messages array is sent with each request for context continuity
+Error handling: On failure, the user message is removed from the chat and restored to the input field
+Key Behaviors
+No persistence: Chat history lives only in component state (RAM). Not saved to any table.
+Subject-scoped: AI only knows about the content of the selected subject
+Markdown rendering: AI responses may contain headers, bullet points, code blocks, bold/italic text
+Enter key sends (without Shift). Shift+Enter for newline.
+Voice input: Uses Web Speech API (SpeechRecognition). On mobile, use platform-native speech-to-text equivalent.
+Authentication
+The user must be authenticated. The Authorization header uses the Supabase anon key, and the student's session is implied through the Supabase client. For the mobile app, pass the anon key in the Authorization header and include the studentId in the body.
+
+Here's the complete documentation for your Replit mobile app developer:
+
+Doubts Tab — AI Chat Feature Documentation
+Overview
+The Doubts tab is an AI-powered Q&A chat where students ask questions about their course content. The AI answers based on the actual lecture content (extracted from presentation JSONs stored in the database). It supports text input and voice input (via browser Speech Recognition).
+
+API Endpoint
+Single endpoint used:
+
+POST /functions/v1/ai-doubts-chat
+Base URL: https://oxwhqvsoelqqsblmqkxx.supabase.co
+
+Headers:
+
+
+{
+  "Content-Type": "application/json",
+  "Authorization": "Bearer <SUPABASE_ANON_KEY>"
+}
+Request Body:
+
+
+{
+  "question": "What is Newton's third law?",
+  "subjectId": "uuid-of-the-subject",
+  "messages": [
+    { "role": "user", "content": "previous user message" },
+    { "role": "assistant", "content": "previous AI response" }
+  ],
+  "studentId": "uuid-of-the-student (optional)"
+}
+Field	Type	Required	Description
+question	string	Yes	The current question text
+subjectId	string (UUID)	Yes	The subject the student is studying
+messages	array	No	Previous conversation history for multi-turn chat
+studentId	string (UUID)	No	The logged-in student's user ID
+Response (200):
+
+
+{
+  "answer": "Newton's third law states that for every action..."
+}
+Error Response:
+
+
+{
+  "error": "AI API not configured..."
+}
+How It Works (Backend)
+Receives the question + subjectId + conversation history
+Fetches all lecture content for that subject:
+All chapters from subject_chapters table (filtered by subject_id)
+All topics from subject_topics table (joined via chapter_id)
+All completed video generation jobs from video_generation_jobs table
+Extracts narration text from ai_presentation_json fields (title, narration segments, bullet points, content)
+Builds a ~8000 character context window from the extracted lecture content
+Sends to AI (Google Gemini or OpenAI, configured in ai_settings table) with a system prompt instructing it to answer based on lecture content
+Returns the AI response
+UI Flow (for Mobile App)
+Requires a selected subject — show "Please select a subject" if none selected
+Chat interface with:
+Message bubbles (user on right, AI on left)
+AI responses rendered as Markdown
+Text input field at bottom
+Send button
+Optional: Mic button for voice-to-text (uses device speech recognition)
+Loading spinner while AI responds
+Conversation is in-memory only — not persisted to database. Refreshing clears the chat.
+Multi-turn: Previous messages array is sent with each request for context continuity
+Error handling: On failure, the user message is removed from the chat and restored to the input field
+Key Behaviors
+No persistence: Chat history lives only in component state (RAM). Not saved to any table.
+Subject-scoped: AI only knows about the content of the selected subject
+Markdown rendering: AI responses may contain headers, bullet points, code blocks, bold/italic text
+Enter key sends (without Shift). Shift+Enter for newline.
+Voice input: Uses Web Speech API (SpeechRecognition). On mobile, use platform-native speech-to-text equivalent.
+Authentication
+The user must be authenticated. The Authorization header uses the Supabase anon key, and the student's session is implied through the Supabase client. For the mobile app, pass the anon key in the Authorization header and include the studentId in the body.
+
+
+
+
+

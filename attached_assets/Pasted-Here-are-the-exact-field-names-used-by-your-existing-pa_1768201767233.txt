@@ -1,0 +1,386 @@
+Here are the exact field names used by your existing payment Edge Functions:
+
+1. Validate Promo Code
+Endpoint: POST /functions/v1/validate-promo-code
+
+Request Body (Exact Fields)
+
+{
+  "code": "WELCOME10",        // Required - string (auto-converted to uppercase)
+  "course_id": "uuid-here"    // Optional - string (not used currently, but accepted)
+}
+Success Response
+
+{
+  "valid": true,
+  "id": "discount-uuid",
+  "code": "WELCOME10",
+  "description": "Welcome discount",
+  "discount_percent": 10,        // OR null
+  "discount_amount": null,       // OR fixed amount in INR
+  "message": "Promo code applied successfully"
+}
+Error Response
+
+{
+  "valid": false,
+  "message": "Invalid promo code"  // Various messages based on failure reason
+}
+2. Create Payment Order
+Endpoint: POST /functions/v1/create-payment-order
+
+Request Body (Exact Fields)
+
+{
+  "amount": 2000,                    // Required - number (in INR, NOT paise)
+  "userId": "user-uuid",             // Required - string (user's UUID)
+  "courses": [                       // Required - array (at least 1 course)
+    {
+      "id": "course-uuid",           // Required - course UUID
+      "price": 2000                  // Optional - course price in INR
+    }
+  ],
+  "customerInfo": {                  // Optional - object
+    "fullName": "John Doe",
+    "email": "john@example.com",
+    "phone": "9876543210"
+  },
+  "promoCode": "WELCOME10"           // Optional - string
+}
+Success Response
+
+{
+  "orderId": "ORD-1736694000000-abc123xyz",   // Internal order ID
+  "amount": 1800,                              // Final amount after discount
+  "status": "created",
+  "paymentId": "payment-uuid",                 // Payment record UUID
+  "razorpayOrderId": "order_PxxxxxxxxYyyyy",   // Razorpay order ID
+  "razorpayKeyId": "rzp_test_xxxxxxxxx"        // Razorpay key for checkout
+}
+Error Response
+
+{
+  "error": "Missing required fields"
+}
+3. Verify Payment
+Endpoint: POST /functions/v1/verify-payment
+
+Request Body (Exact Fields)
+
+{
+  "razorpay_order_id": "order_PxxxxxxxxYyyyy",      // Required - from Razorpay callback
+  "razorpay_payment_id": "pay_PxxxxxxxxYyyyy",      // Required - from Razorpay callback
+  "razorpay_signature": "hex-signature-string",     // Required - from Razorpay callback
+  "orderId": "ORD-1736694000000-abc123xyz",         // Required - internal order ID
+  "userId": "user-uuid",                             // Required - user's UUID
+  "courses": [                                       // Required - array of courses
+    {
+      "id": "course-uuid"                            // Required - course UUID
+    }
+  ]
+}
+Success Response
+
+{
+  "verified": true,
+  "message": "Payment verified and enrollment created"
+}
+Error Response
+
+{
+  "error": "Payment verification failed",
+  "verified": false
+}
+Complete Mobile Integration Code (React Native / Flutter)
+
+// ============================================
+// CONFIGURATION
+// ============================================
+const SUPABASE_URL = "https://epfvygoxuxfeupbyefth.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVwZnZ5Z294dXhmZXVwYnllZnRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzUyMTQ4NjcsImV4cCI6MjA1MDc5MDg2N30.svG8KHY-6J_F_MkXjqx1s4OAVquqn0p0YibHyVRCzCc";
+
+// ============================================
+// 1. VALIDATE PROMO CODE
+// ============================================
+async function validatePromoCode(code) {
+  const response = await fetch(
+    `${SUPABASE_URL}/functions/v1/validate-promo-code`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": SUPABASE_ANON_KEY,
+        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
+      },
+      body: JSON.stringify({
+        code: code,           // EXACT field name
+        course_id: null       // Optional
+      })
+    }
+  );
+  return await response.json();
+}
+
+// ============================================
+// 2. CREATE PAYMENT ORDER
+// ============================================
+async function createPaymentOrder(userToken, data) {
+  const response = await fetch(
+    `${SUPABASE_URL}/functions/v1/create-payment-order`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": SUPABASE_ANON_KEY,
+        "Authorization": `Bearer ${userToken}`  // User's JWT token
+      },
+      body: JSON.stringify({
+        amount: data.amount,              // EXACT: number in INR
+        userId: data.userId,              // EXACT: user UUID string
+        courses: data.courses,            // EXACT: array with {id, price}
+        customerInfo: data.customerInfo,  // EXACT: {fullName, email, phone}
+        promoCode: data.promoCode         // EXACT: string or null
+      })
+    }
+  );
+  return await response.json();
+}
+
+// ============================================
+// 3. VERIFY PAYMENT (After Razorpay Callback)
+// ============================================
+async function verifyPayment(userToken, paymentData) {
+  const response = await fetch(
+    `${SUPABASE_URL}/functions/v1/verify-payment`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": SUPABASE_ANON_KEY,
+        "Authorization": `Bearer ${userToken}`
+      },
+      body: JSON.stringify({
+        razorpay_order_id: paymentData.razorpay_order_id,      // EXACT
+        razorpay_payment_id: paymentData.razorpay_payment_id,  // EXACT
+        razorpay_signature: paymentData.razorpay_signature,    // EXACT
+        orderId: paymentData.orderId,                          // EXACT
+        userId: paymentData.userId,                            // EXACT
+        courses: paymentData.courses                           // EXACT: [{id}]
+      })
+    }
+  );
+  return await response.json();
+}
+Field Name Summary Table
+Endpoint	Field	Type	Required	Notes
+validate-promo-code	code	string	✅	Auto uppercased
+course_id	string	❌	Not used currently
+create-payment-order	amount	number	✅	In INR (not paise)
+userId	string	✅	User UUID
+courses	array	✅	[{id, price}]
+courses[].id	string	✅	Course UUID
+courses[].price	number	❌	Price in INR
+customerInfo	object	❌	Customer details
+customerInfo.fullName	string	❌	
+customerInfo.email	string	❌	
+customerInfo.phone	string	❌	
+promoCode	string	❌	Discount code
+verify-payment	razorpay_order_id	string	✅	From Razorpay
+razorpay_payment_id	string	✅	From Razorpay
+razorpay_signature	string	✅	From Razorpay
+orderId	string	✅	Internal order ID
+userId	string	✅	User UUID
+courses	array	✅	[{id}]
+Here are the exact field names used by your existing payment Edge Functions:
+
+1. Validate Promo Code
+Endpoint: POST /functions/v1/validate-promo-code
+
+Request Body (Exact Fields)
+
+{
+  "code": "WELCOME10",        // Required - string (auto-converted to uppercase)
+  "course_id": "uuid-here"    // Optional - string (not used currently, but accepted)
+}
+Success Response
+
+{
+  "valid": true,
+  "id": "discount-uuid",
+  "code": "WELCOME10",
+  "description": "Welcome discount",
+  "discount_percent": 10,        // OR null
+  "discount_amount": null,       // OR fixed amount in INR
+  "message": "Promo code applied successfully"
+}
+Error Response
+
+{
+  "valid": false,
+  "message": "Invalid promo code"  // Various messages based on failure reason
+}
+2. Create Payment Order
+Endpoint: POST /functions/v1/create-payment-order
+
+Request Body (Exact Fields)
+
+{
+  "amount": 2000,                    // Required - number (in INR, NOT paise)
+  "userId": "user-uuid",             // Required - string (user's UUID)
+  "courses": [                       // Required - array (at least 1 course)
+    {
+      "id": "course-uuid",           // Required - course UUID
+      "price": 2000                  // Optional - course price in INR
+    }
+  ],
+  "customerInfo": {                  // Optional - object
+    "fullName": "John Doe",
+    "email": "john@example.com",
+    "phone": "9876543210"
+  },
+  "promoCode": "WELCOME10"           // Optional - string
+}
+Success Response
+
+{
+  "orderId": "ORD-1736694000000-abc123xyz",   // Internal order ID
+  "amount": 1800,                              // Final amount after discount
+  "status": "created",
+  "paymentId": "payment-uuid",                 // Payment record UUID
+  "razorpayOrderId": "order_PxxxxxxxxYyyyy",   // Razorpay order ID
+  "razorpayKeyId": "rzp_test_xxxxxxxxx"        // Razorpay key for checkout
+}
+Error Response
+
+{
+  "error": "Missing required fields"
+}
+3. Verify Payment
+Endpoint: POST /functions/v1/verify-payment
+
+Request Body (Exact Fields)
+
+{
+  "razorpay_order_id": "order_PxxxxxxxxYyyyy",      // Required - from Razorpay callback
+  "razorpay_payment_id": "pay_PxxxxxxxxYyyyy",      // Required - from Razorpay callback
+  "razorpay_signature": "hex-signature-string",     // Required - from Razorpay callback
+  "orderId": "ORD-1736694000000-abc123xyz",         // Required - internal order ID
+  "userId": "user-uuid",                             // Required - user's UUID
+  "courses": [                                       // Required - array of courses
+    {
+      "id": "course-uuid"                            // Required - course UUID
+    }
+  ]
+}
+Success Response
+
+{
+  "verified": true,
+  "message": "Payment verified and enrollment created"
+}
+Error Response
+
+{
+  "error": "Payment verification failed",
+  "verified": false
+}
+Complete Mobile Integration Code (React Native / Flutter)
+
+// ============================================
+// CONFIGURATION
+// ============================================
+const SUPABASE_URL = "https://epfvygoxuxfeupbyefth.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVwZnZ5Z294dXhmZXVwYnllZnRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzUyMTQ4NjcsImV4cCI6MjA1MDc5MDg2N30.svG8KHY-6J_F_MkXjqx1s4OAVquqn0p0YibHyVRCzCc";
+
+// ============================================
+// 1. VALIDATE PROMO CODE
+// ============================================
+async function validatePromoCode(code) {
+  const response = await fetch(
+    `${SUPABASE_URL}/functions/v1/validate-promo-code`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": SUPABASE_ANON_KEY,
+        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
+      },
+      body: JSON.stringify({
+        code: code,           // EXACT field name
+        course_id: null       // Optional
+      })
+    }
+  );
+  return await response.json();
+}
+
+// ============================================
+// 2. CREATE PAYMENT ORDER
+// ============================================
+async function createPaymentOrder(userToken, data) {
+  const response = await fetch(
+    `${SUPABASE_URL}/functions/v1/create-payment-order`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": SUPABASE_ANON_KEY,
+        "Authorization": `Bearer ${userToken}`  // User's JWT token
+      },
+      body: JSON.stringify({
+        amount: data.amount,              // EXACT: number in INR
+        userId: data.userId,              // EXACT: user UUID string
+        courses: data.courses,            // EXACT: array with {id, price}
+        customerInfo: data.customerInfo,  // EXACT: {fullName, email, phone}
+        promoCode: data.promoCode         // EXACT: string or null
+      })
+    }
+  );
+  return await response.json();
+}
+
+// ============================================
+// 3. VERIFY PAYMENT (After Razorpay Callback)
+// ============================================
+async function verifyPayment(userToken, paymentData) {
+  const response = await fetch(
+    `${SUPABASE_URL}/functions/v1/verify-payment`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": SUPABASE_ANON_KEY,
+        "Authorization": `Bearer ${userToken}`
+      },
+      body: JSON.stringify({
+        razorpay_order_id: paymentData.razorpay_order_id,      // EXACT
+        razorpay_payment_id: paymentData.razorpay_payment_id,  // EXACT
+        razorpay_signature: paymentData.razorpay_signature,    // EXACT
+        orderId: paymentData.orderId,                          // EXACT
+        userId: paymentData.userId,                            // EXACT
+        courses: paymentData.courses                           // EXACT: [{id}]
+      })
+    }
+  );
+  return await response.json();
+}
+Field Name Summary Table
+Endpoint	Field	Type	Required	Notes
+validate-promo-code	code	string	✅	Auto uppercased
+course_id	string	❌	Not used currently
+create-payment-order	amount	number	✅	In INR (not paise)
+userId	string	✅	User UUID
+courses	array	✅	[{id, price}]
+courses[].id	string	✅	Course UUID
+courses[].price	number	❌	Price in INR
+customerInfo	object	❌	Customer details
+customerInfo.fullName	string	❌	
+customerInfo.email	string	❌	
+customerInfo.phone	string	❌	
+promoCode	string	❌	Discount code
+verify-payment	razorpay_order_id	string	✅	From Razorpay
+razorpay_payment_id	string	✅	From Razorpay
+razorpay_signature	string	✅	From Razorpay
+orderId	string	✅	Internal order ID
+userId	string	✅	User UUID
+courses	array	✅	[{id}]

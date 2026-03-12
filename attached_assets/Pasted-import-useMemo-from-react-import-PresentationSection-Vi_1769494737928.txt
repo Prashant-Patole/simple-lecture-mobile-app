@@ -1,0 +1,155 @@
+import { useMemo } from 'react';
+import { PresentationSection, VisualBeat } from '../types';
+import { ContentRenderer } from '../ContentRenderer';
+import { cn } from '@/lib/utils';
+
+interface QuizSectionProps {
+  section: PresentationSection;
+  revealedIndices: number[];
+  currentSegmentIndex: number;
+  currentTime: number;
+  totalDuration: number;
+}
+
+interface QuizQuestion {
+  questionBeat: VisualBeat;
+  pauseBeat?: VisualBeat;
+  answerBeat?: VisualBeat;
+  groupIndex: number;
+}
+
+// Helper to normalize display_text from various formats
+const normalizeDisplayText = (displayText: string | string[] | { text: string }[] | undefined): string => {
+  if (!displayText) return '';
+  if (typeof displayText === 'string') return displayText;
+  if (Array.isArray(displayText)) {
+    return displayText.map(item => 
+      typeof item === 'string' ? item : item.text
+    ).join('\n');
+  }
+  return '';
+};
+
+export const QuizSection = ({
+  section,
+  revealedIndices,
+  currentSegmentIndex,
+  currentTime,
+  totalDuration,
+}: QuizSectionProps) => {
+  // Parse quiz questions from visual beats
+  // Quiz format: each question has 3 segments (Introduce 15-20s, Pause 3-5s, Reveal 15-20s)
+  const questions = useMemo(() => {
+    const beats = [
+      ...(section.visual_beats || []),
+      ...(section.explanation_plan?.visual_beats || []),
+    ];
+
+    const quizQuestions: QuizQuestion[] = [];
+
+    // Group beats by 3 (question, pause, answer)
+    for (let i = 0; i < beats.length; i += 3) {
+      quizQuestions.push({
+        questionBeat: beats[i],
+        pauseBeat: beats[i + 1],
+        answerBeat: beats[i + 2],
+        groupIndex: Math.floor(i / 3),
+      });
+    }
+
+    return quizQuestions;
+  }, [section]);
+
+  // Calculate which question group is currently active based on timing
+  const activeGroupIndex = useMemo(() => {
+    if (questions.length === 0 || totalDuration === 0) return -1;
+    
+    const timePerGroup = totalDuration / questions.length;
+    return Math.min(
+      Math.floor(currentTime / timePerGroup),
+      questions.length - 1
+    );
+  }, [currentTime, totalDuration, questions]);
+
+  // Calculate phase within current question (0 = question, 1 = pause, 2 = answer)
+  const currentPhase = useMemo(() => {
+    if (questions.length === 0 || totalDuration === 0) return 0;
+    
+    const timePerGroup = totalDuration / questions.length;
+    const groupStartTime = activeGroupIndex * timePerGroup;
+    const timeInGroup = currentTime - groupStartTime;
+    
+    // Typical timing: 60% question, 15% pause, 25% answer
+    const questionEndTime = timePerGroup * 0.6;
+    const pauseEndTime = timePerGroup * 0.75;
+    
+    if (timeInGroup < questionEndTime) return 0; // Question phase
+    if (timeInGroup < pauseEndTime) return 1; // Pause phase
+    return 2; // Answer phase
+  }, [currentTime, totalDuration, questions, activeGroupIndex]);
+
+  return (
+    <div className="h-full flex flex-col">
+      {/* Section Title */}
+      <h2 className="section-title">{section.title}</h2>
+
+      {/* Quiz Questions with V2.6 styling */}
+      <div className="quiz-container content-box">
+        {questions.map((question, index) => {
+          const isCurrentGroup = index === activeGroupIndex;
+          const isPastGroup = index < activeGroupIndex;
+          const showQuestion = isPastGroup || isCurrentGroup;
+          const showPause = isCurrentGroup && currentPhase === 1;
+          const showAnswer = isPastGroup || (isCurrentGroup && currentPhase === 2);
+
+          return (
+            <div
+              key={question.questionBeat.beat_id}
+              className={cn(
+                "quiz-card",
+                showQuestion && "revealed",
+                isCurrentGroup && "quiz-active"
+              )}
+            >
+              {/* Question Text */}
+              <div className="quiz-question-text">
+                <ContentRenderer 
+                  content={normalizeDisplayText(question.questionBeat.display_text) || `Question ${index + 1}`}
+                  type="markdown"
+                />
+              </div>
+
+              {/* Pause Indicator */}
+              {showPause && (
+                <div className="quiz-pause-indicator">
+                  <span>⏸️</span>
+                  <span>Think about your answer...</span>
+                </div>
+              )}
+
+              {/* Answer Reveal */}
+              {question.answerBeat && (
+                <div className={cn(
+                  "quiz-answer",
+                  showAnswer && "revealed"
+                )}>
+                  <div className="markdown-content-container">
+                    <ContentRenderer 
+                      content={normalizeDisplayText(question.answerBeat.display_text) || 'Answer revealed'}
+                      type="markdown"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Progress */}
+      <div className="mt-4 text-center text-sm opacity-70">
+        Question {Math.min(activeGroupIndex + 1, questions.length)} of {questions.length}
+      </div>
+    </div>
+  );
+};

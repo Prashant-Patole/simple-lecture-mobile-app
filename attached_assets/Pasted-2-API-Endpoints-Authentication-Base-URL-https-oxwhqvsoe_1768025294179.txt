@@ -1,0 +1,540 @@
+2. API Endpoints & Authentication
+Base URL
+https://oxwhqvsoelqqsblmqkxx.supabase.co
+Authentication Header
+Authorization: Bearer <user_jwt_token>
+apikey: <supabase_anon_key>
+3. API #1: List All Recordings
+Endpoint
+GET https://oxwhqvsoelqqsblmqkxx.supabase.co/rest/v1/class_recordings?select=*,scheduled_class:scheduled_classes(id,scheduled_at,subject,course_id,course:courses(id,name),teacher:teacher_profiles(id,full_name)),course:courses!course_id(id,name),subject:popular_subjects!subject_id(id,name),chapter:subject_chapters!chapter_id(id,title,chapter_number),topic:subject_topics!topic_id(id,title,topic_number)&processing_status=in.(ready,uploaded,processing)&order=created_at.desc
+Response Structure
+
+interface RecordingListResponse {
+  id: string;                          // UUID
+  scheduled_class_id: string | null;   // UUID (for live class recordings)
+  duration_seconds: number | null;     // Video duration
+  file_size_bytes: number | null;      // File size
+  processing_status: string;           // "ready" | "uploaded" | "processing" | "failed"
+  available_qualities: string[];       // ["360p", "480p", "720p", "1080p"]
+  default_quality: string;             // "720p"
+  created_at: string;                  // ISO timestamp
+  processed_at: string | null;
+  
+  // Topic-based recording fields (new)
+  course_id: string | null;
+  subject_id: string | null;
+  chapter_id: string | null;
+  topic_id: string | null;
+  recording_title: string | null;
+  recording_type: string | null;       // "topic" | "class"
+  
+  // Related data
+  course: { id: string; name: string } | null;
+  subject: { id: string; name: string } | null;
+  chapter: { id: string; title: string; chapter_number: number } | null;
+  topic: { id: string; title: string; topic_number: string } | null;
+  
+  // Class-based recording fields (legacy)
+  scheduled_class: {
+    id: string;
+    scheduled_at: string;
+    subject: string;
+    course_id: string;
+    course: { id: string; name: string };
+    teacher: { id: string; full_name: string };
+  } | null;
+}
+Example Response
+
+[
+  {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "duration_seconds": 3600,
+    "file_size_bytes": 524288000,
+    "processing_status": "ready",
+    "available_qualities": ["360p", "480p", "720p", "1080p"],
+    "default_quality": "720p",
+    "created_at": "2026-01-10T10:00:00Z",
+    "recording_title": "Introduction to Calculus",
+    "subject": {
+      "id": "sub-123",
+      "name": "Mathematics"
+    },
+    "course": {
+      "id": "course-456",
+      "name": "JEE Advanced 2026"
+    },
+    "chapter": {
+      "id": "ch-789",
+      "title": "Differential Calculus",
+      "chapter_number": 1
+    },
+    "topic": {
+      "id": "topic-101",
+      "title": "Limits and Continuity",
+      "topic_number": "1.1"
+    },
+    "scheduled_class": null
+  }
+]
+4. API #2: Get Single Recording Details
+Endpoint
+GET https://oxwhqvsoelqqsblmqkxx.supabase.co/rest/v1/class_recordings?id=eq.{recording_id}&select=id,duration_seconds,available_qualities,default_quality,processing_status,b2_original_path,scheduled_class:scheduled_classes(id,scheduled_at,subject:popular_subjects(id,name),course:courses(id,name),teacher:teacher_profiles(id,full_name))
+5. API #3: Get Playback URL (Edge Function)
+This is the main API for video playback. It returns CDN URLs for fast streaming.
+
+Endpoint
+POST https://oxwhqvsoelqqsblmqkxx.supabase.co/functions/v1/streaming-api
+Request Payload
+
+{
+  "action": "get-playback-url",
+  "recording_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "quality": "720p"
+}
+Request Headers
+Content-Type: application/json
+Authorization: Bearer <user_jwt_token>
+apikey: <supabase_anon_key>
+Response
+
+interface PlaybackUrlResponse {
+  hlsUrl: string | null;           // HLS streaming URL (for adaptive bitrate)
+  directUrl: string | null;        // Direct MP4 URL (for simple playback)
+  quality: string;                 // Current quality: "360p" | "480p" | "720p" | "1080p" | "original"
+  availableQualities: string[];    // All available qualities
+  duration: number | null;         // Duration in seconds
+  expiresAt: number;               // Unix timestamp when URL expires (1 hour)
+  usingCdn: boolean;               // true if CDN is active (fast), false if direct B2 (slow)
+}
+Example Response (CDN Enabled - Fast)
+
+{
+  "hlsUrl": null,
+  "directUrl": "https://cdn.yourdomain.com/file/class-recordings/videos/2026/01/recording-abc123.mp4",
+  "quality": "original",
+  "availableQualities": ["original"],
+  "duration": 3600,
+  "expiresAt": 1736506800000,
+  "usingCdn": true
+}
+Example Response (No CDN - Slow)
+
+{
+  "hlsUrl": null,
+  "directUrl": "https://f002.backblazeb2.com/file/class-recordings/videos/2026/01/recording-abc123.mp4?Authorization=xxxxx",
+  "quality": "original",
+  "availableQualities": ["original"],
+  "duration": 3600,
+  "expiresAt": 1736506800000,
+  "usingCdn": false
+}
+6. API #4: Get Watch Progress
+Endpoint
+GET https://oxwhqvsoelqqsblmqkxx.supabase.co/rest/v1/video_watch_progress?recording_id=eq.{recording_id}&user_id=eq.{user_id}&select=*
+Response
+
+interface WatchProgress {
+  id: string;
+  recording_id: string;
+  user_id: string;
+  progress_seconds: number;      // Last watched position
+  progress_percent: number;      // 0-100
+  completed: boolean;            // true if >=95%
+  last_watched_at: string;       // ISO timestamp
+}
+7. API #5: Save/Update Watch Progress
+Endpoint
+POST https://oxwhqvsoelqqsblmqkxx.supabase.co/rest/v1/video_watch_progress
+Request Headers
+Content-Type: application/json
+Authorization: Bearer <user_jwt_token>
+apikey: <supabase_anon_key>
+Prefer: resolution=merge-duplicates
+Request Payload
+
+{
+  "recording_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "user_id": "user-uuid-here",
+  "progress_seconds": 1800,
+  "progress_percent": 50.0,
+  "completed": false,
+  "last_watched_at": "2026-01-10T11:30:00Z"
+}
+Upsert Logic
+The API uses upsert with onConflict: 'recording_id,user_id' to update existing progress or create new entry.
+
+8. API #6: List Recordings via Edge Function
+Endpoint
+POST https://oxwhqvsoelqqsblmqkxx.supabase.co/functions/v1/streaming-api
+Request Payload
+
+{
+  "action": "list-recordings",
+  "course_id": "optional-course-uuid",
+  "limit": 50
+}
+Response
+
+{
+  "recordings": [
+    {
+      "id": "rec-123",
+      "duration_seconds": 3600,
+      "available_qualities": ["360p", "720p"],
+      "default_quality": "720p",
+      "processing_status": "ready",
+      "created_at": "2026-01-10T10:00:00Z",
+      "scheduled_class": {
+        "id": "class-456",
+        "subject": "Physics",
+        "scheduled_at": "2026-01-10T09:00:00Z",
+        "course": {
+          "id": "course-789",
+          "name": "NEET 2026"
+        }
+      }
+    }
+  ]
+}
+9. API #7: Report Network Quality
+Endpoint
+POST https://oxwhqvsoelqqsblmqkxx.supabase.co/functions/v1/streaming-api
+Request Payload
+
+{
+  "action": "report-quality",
+  "recording_id": "rec-123",
+  "user_id": "user-456",
+  "metrics": {
+    "connectionType": "4g",
+    "bandwidth": 5.5,
+    "latency": 45,
+    "initialQuality": "720p",
+    "currentQuality": "1080p",
+    "bufferEvents": 2
+  }
+}
+Response
+
+{
+  "recommendedQuality": "1080p"
+}
+10. Secrets/API Keys Used
+Secret Name	Purpose
+B2_KEY_ID	Backblaze B2 Key ID for storage
+B2_APPLICATION_KEY	Backblaze B2 Application Key
+B2_BUCKET_ID	Backblaze B2 Bucket ID
+B2_BUCKET_NAME	Backblaze B2 Bucket Name
+Note: These are used server-side in the streaming-api edge function. Mobile app only needs the Supabase anon key.
+
+11. Database Tables Schema
+Table: class_recordings
+
+id                  UUID PRIMARY KEY
+scheduled_class_id  UUID (FK to scheduled_classes)
+bbb_recording_id    TEXT
+original_filename   TEXT
+duration_seconds    INTEGER
+file_size_bytes     BIGINT
+b2_original_path    TEXT        -- Path in B2 storage
+b2_hls_360p_path    TEXT        -- HLS segment paths
+b2_hls_480p_path    TEXT
+b2_hls_720p_path    TEXT
+b2_hls_1080p_path   TEXT
+bunny_video_guid    TEXT        -- Bunny CDN video ID
+bunny_status        TEXT
+cdn_base_url        TEXT
+processing_status   TEXT        -- "pending", "processing", "ready", "failed"
+processing_error    TEXT
+processed_at        TIMESTAMP
+available_qualities JSONB       -- ["360p", "480p", "720p", "1080p"]
+default_quality     TEXT
+created_at          TIMESTAMP
+updated_at          TIMESTAMP
+course_id           UUID (FK to courses)
+subject_id          UUID (FK to popular_subjects)
+chapter_id          UUID (FK to subject_chapters)
+topic_id            UUID (FK to subject_topics)
+recording_title     TEXT
+recording_type      TEXT        -- "topic" | "class"
+Table: video_watch_progress
+
+id                UUID PRIMARY KEY
+recording_id      UUID (FK to class_recordings)
+user_id           UUID (FK to auth.users)
+progress_seconds  INTEGER
+progress_percent  NUMERIC
+completed         BOOLEAN
+last_watched_at   TIMESTAMP
+12. UI Components & Layout
+Recordings List Page (/recordings)
+┌─────────────────────────────────────────────┐
+│ [Header] My Recordings                       │
+│ [X recordings available]                     │
+├─────────────────────────────────────────────┤
+│ ┌─────────────────────────────────────────┐ │
+│ │ FILTERS                                   │ │
+│ │ [🔍 Search...                          ] │ │
+│ │ [Course ▼] [Subject ▼] [Chapter ▼]      │ │
+│ │ [All Time] [Today] [Week] [Month]        │ │
+│ │ [From: ___] - [To: ___]                  │ │
+│ │ Group by: [Subject ▼]                    │ │
+│ └─────────────────────────────────────────┘ │
+├─────────────────────────────────────────────┤
+│ ▶ Mathematics (3)                           │
+│ ┌───────┐ ┌───────┐ ┌───────┐              │
+│ │ Card  │ │ Card  │ │ Card  │              │
+│ └───────┘ └───────┘ └───────┘              │
+│                                             │
+│ ▶ Physics (2)                               │
+│ ┌───────┐ ┌───────┐                        │
+│ │ Card  │ │ Card  │                        │
+│ └───────┘ └───────┘                        │
+└─────────────────────────────────────────────┘
+Recording Card Component
+┌─────────────────────────────────┐
+│ ┌─────────────────────────────┐ │
+│ │     [Video Thumbnail]       │ │
+│ │         [▶ Play]            │ │
+│ │                   [45 min]  │ │
+│ │ ███████░░░ 70% progress     │ │
+│ └─────────────────────────────┘ │
+│ Limits and Continuity           │
+│ Mathematics                     │
+│ JEE Advanced 2026               │
+│ 👤 Dr. Sharma  📅 Jan 10        │
+│ [720p] [480p] [360p]            │
+│ 70% watched                     │
+└─────────────────────────────────┘
+Card Interactions:
+
+Hover: Show play button overlay with scale animation
+Progress bar at bottom (green if completed, primary color otherwise)
+Click navigates to /watch/{recordingId}
+13. Watch Recording Page (/watch/{recordingId})
+┌─────────────────────────────────────────────┐
+│ [←] Differential Calculus | JEE Advanced    │
+│                              [720p] [1080p] │
+├─────────────────────────────────────────────┤
+│                                             │
+│            ┌───────────────────┐            │
+│            │                   │            │
+│            │   VIDEO PLAYER    │            │
+│            │                   │            │
+│            │    [⏸ Pause]      │            │
+│            │                   │            │
+│            └───────────────────┘            │
+│  ━━━━━━━━━━━━━━●━━━━━━━━━━━━━━━━━           │
+│  12:45 ─────────────────────── 45:00       │
+│  [⏮] [⏪] [▶/⏸] [⏩] [⏭]  🔊 [==] ⛶       │
+│                                             │
+├─────────────────────────────────────────────┤
+│ ┌─────────────────────────────────────────┐ │
+│ │ RECORDING DETAILS                        │ │
+│ │ 📖 Subject: Mathematics                  │ │
+│ │ 👤 Instructor: Dr. Sharma                │ │
+│ │ 📅 Recorded On: Jan 10, 2026            │ │
+│ │ ⏱ Duration: 45 min                      │ │
+│ └─────────────────────────────────────────┘ │
+└─────────────────────────────────────────────┘
+14. Video Player Controls
+Control	Icon	Function
+Play/Pause	▶/⏸	Toggle playback
+Skip Back	⏪	-10 seconds
+Skip Forward	⏩	+10 seconds
+Volume	🔊	Slider 0-100%
+Mute	🔇	Toggle mute
+Fullscreen	⛶	Enter/exit fullscreen
+Quality	⚙	Select 360p/480p/720p/1080p
+Progress Slider	━━●━━	Seek to position
+15. Network Quality Detection
+The app detects network quality to recommend video quality:
+
+
+interface NetworkQuality {
+  connectionType: 'wifi' | '4g' | '3g' | '2g' | 'unknown';
+  effectiveBandwidth: number;    // Mbps
+  latency: number;               // ms
+  recommendedQuality: '360p' | '480p' | '720p' | '1080p';
+  isOnline: boolean;
+  isSaveData: boolean;
+}
+
+// Quality thresholds (Mbps)
+const thresholds = {
+  '1080p': 5.0,    // >= 5 Mbps
+  '720p': 2.5,     // >= 2.5 Mbps
+  '480p': 1.0,     // >= 1 Mbps
+  '360p': 0.5      // >= 0.5 Mbps
+};
+Implementation:
+
+Use navigator.connection API (Web) or native network APIs (Mobile)
+Poll every 30 seconds for changes
+Listen to online/offline events
+Auto-adjust quality based on bandwidth
+16. UI Animations & Transitions
+Recording Card Hover
+
+/* Card hover effect */
+.recording-card {
+  transition: all 0.2s ease;
+}
+.recording-card:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  border-color: var(--primary-color);
+}
+
+/* Play button overlay */
+.play-overlay {
+  opacity: 0;
+  transform: scale(0.9);
+  transition: all 0.2s ease;
+}
+.recording-card:hover .play-overlay {
+  opacity: 1;
+  transform: scale(1);
+}
+Video Player Controls
+
+/* Auto-hide controls after 3 seconds */
+.video-controls {
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+.video-controls.hidden {
+  opacity: 0;
+}
+
+/* Gradient overlay */
+.controls-overlay {
+  background: linear-gradient(
+    to top,
+    rgba(0,0,0,0.8) 0%,
+    transparent 50%,
+    rgba(0,0,0,0.4) 100%
+  );
+}
+Loading States
+
+/* Buffering spinner */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.buffering-spinner {
+  animation: spin 1s linear infinite;
+}
+17. Video Playback Flow
+1. User navigates to /watch/{recordingId}
+   ↓
+2. Fetch recording metadata from Supabase
+   ↓
+3. Call streaming-api with action: "get-playback-url"
+   ↓
+4. Receive playback URL (CDN or B2)
+   ↓
+5. Check for HLS URL:
+   - If HLS available → Use hls.js for adaptive streaming
+   - If only directUrl → Use native <video> with MP4
+   ↓
+6. Load saved progress from video_watch_progress table
+   ↓
+7. Seek to last watched position
+   ↓
+8. Start playback
+   ↓
+9. Every 10 seconds: Save progress to database
+   ↓
+10. On video end: Mark as completed (100%)
+18. Filtering Logic
+Available Filters
+Filter	Type	Description
+Course	Dropdown	Filter by course ID
+Subject	Dropdown	Filter by subject ID
+Chapter	Dropdown	Filter by chapter ID (appears after subject selected)
+Topic	Dropdown	Filter by topic ID (appears after chapter selected)
+Date Preset	Buttons	All Time, Today, This Week, This Month
+Custom Date	Calendar	From/To date pickers
+Search	Text Input	Search in title, subject, course, teacher name
+Group By	Dropdown	None, Subject, Course, Date
+Date Presets
+
+type DatePreset = 'all' | 'today' | 'week' | 'month';
+
+const getDateRange = (preset: DatePreset) => {
+  const now = new Date();
+  switch (preset) {
+    case 'today':
+      return { from: startOfDay(now), to: endOfDay(now) };
+    case 'week':
+      return { from: startOfWeek(now), to: endOfDay(now) };
+    case 'month':
+      return { from: startOfMonth(now), to: endOfDay(now) };
+    default:
+      return { from: undefined, to: undefined };
+  }
+};
+19. Progress Tracking
+Auto-Save Logic
+
+// Save progress every 10 seconds while playing
+useEffect(() => {
+  if (isPlaying && duration > 0) {
+    const interval = setInterval(() => {
+      const percent = (currentTime / duration) * 100;
+      saveProgress({
+        recordingId,
+        progressSeconds: Math.floor(currentTime),
+        progressPercent: percent,
+        completed: percent >= 95
+      });
+    }, 10000); // 10 seconds
+    
+    return () => clearInterval(interval);
+  }
+}, [isPlaying, currentTime, duration]);
+Resume Playback
+
+// On video load, seek to saved position
+const savedPosition = savedProgress?.progress_seconds || 0;
+if (savedPosition > 0) {
+  videoElement.currentTime = savedPosition;
+}
+20. Error Handling
+Error	User Message	Action
+Recording not found	"Recording not found"	Show back button
+Still processing	"Recording Processing"	Show "check back later" message
+Network error	"Failed to load video"	Show retry button
+Playback error	"Playback error"	Show reload button
+Auth required	"Please login"	Redirect to login
+21. Mobile Implementation Checklist
+ Recordings List Screen
+
+ Fetch recordings with filters
+ Display grid/list of recording cards
+ Show watch progress on each card
+ Implement search functionality
+ Add filter dropdowns
+ Handle empty states
+ Watch Recording Screen
+
+ Call streaming-api for playback URL
+ Native video player (ExoPlayer/AVPlayer)
+ Play/Pause controls
+ Seek slider
+ Volume control
+ Quality selection
+ Fullscreen toggle
+ Auto-hide controls
+ Resume from last position
+ Save progress every 10s
+ Network Handling
+
+ Detect network type
+ Auto-select quality
+ Handle offline state
+ Show buffering indicator
+ Handle playback errors

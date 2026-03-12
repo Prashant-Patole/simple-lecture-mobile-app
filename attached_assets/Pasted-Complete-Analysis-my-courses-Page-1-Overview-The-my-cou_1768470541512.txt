@@ -1,0 +1,273 @@
+Complete Analysis: /my-courses Page
+1. Overview
+The /my-courses page displays all courses a student is enrolled in with:
+
+Category-based filtering
+Progress tracking
+Course thumbnails and details
+Navigation to learning page
+2. Database Schema Used
+enrollments Table
+Column	Type	Description
+id	uuid	Primary key
+student_id	uuid	Reference to auth user
+course_id	uuid	Reference to courses
+enrolled_at	timestamp	Enrollment date
+expires_at	timestamp	Subscription expiry
+is_active	boolean	Active enrollment flag
+batch_id	uuid	Optional batch reference
+courses Table
+Column	Type	Description
+id	uuid	Primary key
+name	text	Course name
+slug	text	URL-friendly identifier
+thumbnail_url	text	Course image
+short_description	text	Brief description
+duration_months	integer	Course duration
+price_inr	integer	Course price
+course_categories Table (Junction Table)
+Column	Type	Description
+id	uuid	Primary key
+course_id	uuid	Reference to courses
+category_id	uuid	Reference to categories
+categories Table
+Column	Type	Description
+id	uuid	Primary key
+name	text	Category name
+slug	text	URL identifier
+icon	text	Emoji/icon
+parent_id	uuid	Parent category reference
+level	integer	Hierarchy level (1=parent)
+display_order	integer	Sort order
+is_active	boolean	Active status
+chapters Table
+Column	Type	Description
+id	uuid	Primary key
+course_id	uuid	Reference to courses
+subject	text	Subject name
+title	text	Chapter title
+student_progress Table
+Column	Type	Description
+id	uuid	Primary key
+student_id	uuid	Reference to auth user
+chapter_id	uuid	Reference to chapters
+is_completed	boolean	Completion status
+score	integer	Progress score
+3. API Endpoints Used
+Get User
+Supabase Auth → supabase.auth.getUser()
+Fetch Enrollments with Course Details
+
+GET /rest/v1/enrollments?
+  select=id,enrolled_at,course_id,courses(id,name,slug,thumbnail_url,short_description,duration_months,price_inr)
+  &student_id=eq.{userId}
+  &is_active=eq.true
+Fetch Parent Categories (for filter tabs)
+
+GET /rest/v1/categories?
+  select=id,name,slug,icon
+  &is_active=eq.true
+  &level=eq.1
+  &order=display_order
+Fetch Course Categories
+
+GET /rest/v1/course_categories?
+  select=course_id,category_id,categories(id,name,slug,parent_id,level)
+  &course_id=in.({courseIds})
+Fetch Chapters
+
+GET /rest/v1/chapters?
+  select=id,course_id
+  &course_id=in.({courseIds})
+Fetch Parent Categories
+
+GET /rest/v1/categories?
+  select=id,name,slug
+  &id=in.({parentIds})
+Fetch Student Progress
+
+GET /rest/v1/student_progress?
+  select=chapter_id,is_completed
+  &student_id=eq.{userId}
+  &chapter_id=in.({chapterIds})
+4. React Hooks Used
+useEnrolledCoursesWithCategories
+
+// Location: src/hooks/useEnrolledCoursesWithCategories.ts
+// Purpose: Fetch all enrolled courses with categories and progress
+
+return useQuery({
+  queryKey: ['enrolled-courses-with-categories'],
+  queryFn: async () => {
+    // 1. Get current user
+    // 2. Fetch enrollments with course details
+    // 3. Bulk fetch: course_categories, chapters (parallel)
+    // 4. Build category mapping
+    // 5. Fetch: parent categories, student progress (parallel)
+    // 6. Calculate progress per course
+    // 7. Return EnrolledCourse[]
+  },
+  staleTime: 5 * 60 * 1000, // 5 minutes cache
+});
+useEnrolledCourseIds (Helper Hook)
+
+// Quick lookup for enrolled course IDs
+// Returns: Set<string> of course IDs
+5. UI Components Used
+shadcn/ui Components
+Component	Usage
+Card, CardContent	Course cards
+Button	Continue/Start Learning
+Badge	Enrolled status, Category
+Progress	Progress bar
+Tabs, TabsList, TabsTrigger	Category filter
+Skeleton	Loading state
+Lucide React Icons
+Icon	Usage
+BookOpen	Empty state, Enrolled date
+Clock	Duration display
+Home	Breadcrumb
+ChevronRight	Breadcrumb separator
+CheckCircle	Enrolled badge
+Custom Components
+Component	Usage
+SEOHead	Page meta tags
+DashboardHeader	Top navigation
+Footer	Page footer
+6. Page Structure
+MyCourses Page
+├── SEOHead (meta tags)
+├── DashboardHeader (navigation)
+├── Breadcrumb Section
+│   └── Home > My Courses
+├── Hero Section
+│   ├── Title: "My Courses"
+│   └── Subtitle
+├── Category Filter Section
+│   └── Tabs
+│       ├── "All Programs" (default)
+│       └── [Enrolled Categories...]
+├── Content Section
+│   ├── Courses Count Text
+│   ├── Loading State (Skeletons)
+│   ├── Empty State (if no courses)
+│   └── Course Grid (4 columns on XL)
+│       └── CourseCard (for each course)
+│           ├── Thumbnail Image
+│           ├── Enrolled Badge
+│           ├── Category Badge
+│           ├── Course Name
+│           ├── Short Description
+│           ├── Duration & Enrolled Date
+│           ├── Progress Bar
+│           └── Continue/Start Learning Button
+└── Footer
+7. Data Flow
+┌─────────────────────────────────────────────────────────────┐
+│                    MyCourses.tsx                            │
+└─────────────────────────────────────────────────────────────┘
+                            │
+          ┌─────────────────┴─────────────────┐
+          ▼                                   ▼
+┌─────────────────────┐           ┌─────────────────────────┐
+│ useEnrolledCourses  │           │ useQuery (categories)   │
+│ WithCategories()    │           │ → /rest/v1/categories   │
+└─────────────────────┘           └─────────────────────────┘
+          │
+          ▼
+┌─────────────────────────────────────────────────────────────┐
+│              Parallel API Calls                              │
+├─────────────────────────────────────────────────────────────┤
+│ 1. enrollments + courses (with join)                         │
+│ 2. course_categories + categories (with join)                │
+│ 3. chapters (for course IDs)                                 │
+│ 4. parent categories (for parent IDs)                        │
+│ 5. student_progress (for chapter IDs)                        │
+└─────────────────────────────────────────────────────────────┘
+          │
+          ▼
+┌─────────────────────────────────────────────────────────────┐
+│            Progress Calculation                              │
+├─────────────────────────────────────────────────────────────┤
+│ progress = (completed chapters / total chapters) × 100       │
+└─────────────────────────────────────────────────────────────┘
+          │
+          ▼
+┌─────────────────────────────────────────────────────────────┐
+│                EnrolledCourse[]                              │
+├─────────────────────────────────────────────────────────────┤
+│ { id, name, slug, thumbnail_url, enrolled_at, progress,     │
+│   categoryId, categoryName, parentCategoryId, parentName }   │
+└─────────────────────────────────────────────────────────────┘
+8. Progress Calculation Logic
+
+// From useEnrolledCoursesWithCategories.ts
+
+// 1. Get all chapters for the course
+const courseChapterIds = chaptersByCourse[course.id] || [];
+
+// 2. Calculate progress
+let progress = 0;
+if (courseChapterIds.length > 0) {
+  // Count completed chapters from student_progress
+  const completed = courseChapterIds.filter(id => 
+    completedChapters.has(id)
+  ).length;
+  
+  // Calculate percentage
+  progress = Math.round((completed / courseChapterIds.length) * 100);
+}
+9. Category Filtering Implementation
+
+// State for selected category
+const [selectedCategory, setSelectedCategory] = useState<string>('all');
+
+// Get unique parent categories from enrolled courses
+const enrolledCategories = useMemo(() => {
+  if (!enrolledCourses) return [];
+  const categoryIds = new Set(
+    enrolledCourses.map(c => c.parentCategoryId).filter(Boolean)
+  );
+  return categories?.filter(cat => categoryIds.has(cat.id)) || [];
+}, [enrolledCourses, categories]);
+
+// Filter courses by selected category
+const filteredCourses = useMemo(() => {
+  if (!enrolledCourses) return [];
+  if (selectedCategory === 'all') return enrolledCourses;
+  return enrolledCourses.filter(c => c.parentCategoryId === selectedCategory);
+}, [enrolledCourses, selectedCategory]);
+10. Navigation
+When user clicks a course card:
+
+
+const handleCourseClick = (course: any) => {
+  navigate(`/learning/${course.id}`);
+};
+11. Key Features
+Feature	Implementation
+Category Filtering	Tabs filter by parent category
+Progress Tracking	Calculated from student_progress table
+Lazy Loading Images	loading="lazy" on images
+Responsive Grid	1-4 columns based on screen size
+Empty State	Shows "Browse Programs" CTA
+Loading State	Skeleton cards while loading
+Caching	5-minute stale time for enrolled courses
+Date Formatting	Using date-fns for enrolled date
+12. EnrolledCourse Interface
+
+export interface EnrolledCourse {
+  id: string;                      // Course UUID
+  name: string;                    // Course name
+  slug: string;                    // URL slug
+  thumbnail_url: string | null;    // Image URL
+  short_description: string | null; // Brief description
+  duration_months: number | null;  // Course duration
+  price_inr: number | null;        // Price in INR
+  enrolled_at: string;             // Enrollment timestamp
+  progress: number;                // 0-100 percentage
+  categoryId: string | null;       // Direct category
+  categoryName: string | null;     // Category name
+  parentCategoryId: string | null; // Parent category
+  parentCategoryName: string | null; // Parent name
+}

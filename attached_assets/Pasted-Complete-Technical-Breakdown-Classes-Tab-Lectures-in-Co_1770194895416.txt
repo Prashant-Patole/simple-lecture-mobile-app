@@ -1,0 +1,229 @@
+Complete Technical Breakdown: Classes Tab (Lectures) in Course Learning
+This document explains the "Classes" tab inside the learning page where students view and watch lecture videos for a selected topic or chapter.
+
+1. Navigation Hierarchy
+
+Course → Subject → Chapter → Topic → Classes Tab (Lectures)
+URL Pattern
+/learning/{courseId}?subject={subjectId}&tab=videos
+
+State Flow
+User selects a Course (from My Courses)
+System loads enrolled Subjects for that course
+User expands a Chapter from the sidebar accordion
+User clicks a Topic
+Classes Tab is the default tab showing all available lectures
+2. Database Schema
+Table: subject_topics (Primary video source)
+Column	Type	Description
+id	uuid	Primary key
+chapter_id	uuid	FK to subject_chapters
+topic_number	integer	Display order
+title	text	Topic name
+video_id	text	YouTube/Vimeo video ID
+video_platform	text	'youtube' or 'vimeo'
+ai_generated_video_url	text	Legacy AI video URL
+ai_presentation_json	jsonb	Legacy AI presentation data
+estimated_duration_minutes	integer	Duration for display
+Table: topic_videos (Additional multi-language videos)
+Column	Type	Description
+id	uuid	Primary key
+topic_id	uuid	FK to subject_topics
+video_name	text	Display name
+language	text	'english', 'hindi', 'tamil', etc.
+video_platform	text	'youtube' or 'vimeo'
+video_id	text	Platform video ID
+description	text	Optional description
+display_order	integer	Sort order
+is_active	boolean	Show/hide toggle
+Table: video_generation_jobs (Published AI Lectures)
+Column	Type	Description
+id	varchar	Primary key
+document_id	uuid	FK to ai_assistant_documents
+document_name	text	Lecture title
+external_job_id	text	External API job ID
+presentation_json	jsonb	Full presentation data for native player
+video_url	text	Rendered video URL
+is_published	boolean	Show to students if true
+status	text	'completed', 'processing', etc.
+Table: ai_assistant_documents (Links jobs to topics/chapters)
+Column	Type	Description
+id	uuid	Primary key
+subject_id	uuid	FK to popular_subjects
+chapter_id	uuid	Optional FK to subject_chapters
+topic_id	uuid	Optional FK to subject_topics
+Table: ai_video_watch_logs (Progress tracking)
+Column	Type	Description
+id	uuid	Primary key
+student_id	uuid	FK to auth.users
+video_title	text	Unique identifier for the video
+subject_id	uuid	Optional FK
+chapter_id	uuid	Optional FK
+topic_id	uuid	Optional FK
+watched_seconds	integer	Cumulative watch time
+completion_percentage	integer	0-100 (100 = watched)
+duration_seconds	integer	Total video duration
+3. Video Sources (Priority Order)
+The Classes tab aggregates lectures from 4 sources:
+
+Source 1: Published AI Lectures (Highest Priority)
+
+SELECT 
+  vgj.id, vgj.document_name, vgj.external_job_id,
+  vgj.presentation_json, vgj.video_url
+FROM video_generation_jobs vgj
+INNER JOIN ai_assistant_documents aad ON vgj.document_id = aad.id
+WHERE vgj.is_published = true
+  AND vgj.status = 'completed'
+  AND (aad.topic_id = :topicId OR aad.chapter_id = :chapterId)
+ORDER BY vgj.created_at DESC;
+Source 2: Legacy AI Lecture (Fallback)
+Only shown if no published jobs exist:
+
+subject_topics.ai_presentation_json (native player)
+subject_topics.ai_generated_video_url (simple video)
+Source 3: Direct Topic Video
+
+SELECT video_id, video_platform
+FROM subject_topics
+WHERE id = :topicId
+  AND video_id IS NOT NULL
+  AND video_platform IS NOT NULL;
+Source 4: Additional Topic Videos
+
+SELECT *
+FROM topic_videos
+WHERE topic_id = :topicId
+  AND is_active = true
+ORDER BY language, display_order;
+4. API Endpoints (Mobile Implementation)
+4.1 Fetch Topics for a Chapter
+
+GET /rest/v1/subject_topics
+  ?chapter_id=eq.{chapterId}
+  &order=topic_number
+  &select=id,title,topic_number,estimated_duration_minutes,video_id,video_platform,ai_generated_video_url,ai_presentation_json
+4.2 Fetch Published AI Lectures
+
+GET /rest/v1/video_generation_jobs
+  ?is_published=eq.true
+  &status=eq.completed
+  &select=id,document_name,external_job_id,presentation_json,video_url,ai_assistant_documents!inner(topic_id,chapter_id)
+  &ai_assistant_documents.topic_id=eq.{topicId}
+4.3 Fetch Additional Videos
+
+GET /rest/v1/topic_videos
+  ?topic_id=eq.{topicId}
+  &is_active=eq.true
+  &order=language,display_order
+5. Watch Tracking Logic (CRITICAL FOR DASHBOARD)
+5.1 Mark Video as Watched (On Click)
+When user taps any video card:
+
+
+// Check if record exists
+const existing = await supabase
+  .from('ai_video_watch_logs')
+  .select('id')
+  .eq('student_id', userId)
+  .eq('video_title', videoTitle)
+  .maybeSingle();
+
+if (!existing) {
+  // Insert new record
+  await supabase
+    .from('ai_video_watch_logs')
+    .insert({
+      student_id: userId,
+      video_title: videoTitle,
+      subject_id: subjectId,
+      chapter_id: chapterId,
+      topic_id: topicId,
+      completion_percentage: 100,  // Marked complete on click
+      watched_seconds: 0,
+      duration_seconds: 0
+    });
+}
+5.2 Track Watch Time (On Player Close)
+For AI Lectures, track actual viewing time:
+
+
+// When opening player
+const startTime = Date.now();
+
+// When closing player
+const secondsWatched = Math.floor((Date.now() - startTime) / 1000);
+
+await supabase
+  .from('ai_video_watch_logs')
+  .update({
+    watched_seconds: existingSeconds + secondsWatched,
+    updated_at: new Date().toISOString()
+  })
+  .eq('student_id', userId)
+  .eq('video_title', videoTitle);
+6. Supported Languages
+
+const INDIAN_LANGUAGES = [
+  { value: 'english', label: 'English' },
+  { value: 'hindi', label: 'Hindi (हिन्दी)' },
+  { value: 'kannada', label: 'Kannada (ಕನ್ನಡ)' },
+  { value: 'tamil', label: 'Tamil (தமிழ்)' },
+  { value: 'telugu', label: 'Telugu (తెలుగు)' },
+  { value: 'malayalam', label: 'Malayalam (മലയാളം)' },
+  { value: 'marathi', label: 'Marathi (मराठी)' },
+  { value: 'bengali', label: 'Bengali (বাংলা)' },
+  { value: 'gujarati', label: 'Gujarati (ગુજરાતી)' },
+  { value: 'punjabi', label: 'Punjabi (ਪੰਜਾਬੀ)' },
+  { value: 'odia', label: 'Odia (ଓଡ଼ିଆ)' },
+  { value: 'assamese', label: 'Assamese (অসমীয়া)' },
+  { value: 'urdu', label: 'Urdu (اردو)' },
+];
+7. Video Embed URLs
+
+// YouTube
+`https://www.youtube.com/embed/${videoId}?autoplay=1`
+
+// Vimeo  
+`https://player.vimeo.com/video/${videoId}?autoplay=1`
+
+// YouTube Thumbnail
+`https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
+8. UI Structure
+
+┌─────────────────────────────────────────────────────────┐
+│  Language Filter Tabs                                    │
+│  [All (5)] [English (2)] [Hindi (2)] [Tamil (1)]        │
+├─────────────────────────────────────────────────────────┤
+│                                                          │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐      │
+│  │ AI Lecture  │  │ AI Lecture  │  │ YouTube     │      │
+│  │ ✨ Purple   │  │ ✨ Purple   │  │ 🔴 Standard │      │
+│  │ gradient    │  │ gradient    │  │ thumbnail   │      │
+│  │             │  │             │  │             │      │
+│  │ [▶️ Play]   │  │ [▶️ Play]   │  │ [▶️ Play]   │      │
+│  │             │  │             │  │             │      │
+│  │ Lecture 1   │  │ Lecture 2   │  │ Video Name  │      │
+│  │ AI-Powered  │  │ AI-Powered  │  │ [EN badge]  │      │
+│  └─────────────┘  └─────────────┘  └─────────────┘      │
+│                                                          │
+└─────────────────────────────────────────────────────────┘
+9. Key Files Reference
+File	Purpose
+src/pages/Learning.tsx	Main page with sidebar navigation
+src/components/learning/RecordedVideos.tsx	Classes tab content (video grid)
+src/hooks/usePublishedAILectures.ts	Fetch published AI lectures
+src/hooks/useTopicVideos.ts	Fetch additional topic videos
+src/hooks/useMarkVideoWatched.ts	Track video watch status
+src/hooks/useLearningCourse.ts	Fetch course, subjects, chapters, topics
+10. Dashboard Metrics Impact
+When videos are watched from the Classes tab:
+
+Metric	Source	Calculation
+Videos Watched	ai_video_watch_logs	COUNT(DISTINCT video_title) where completion_percentage >= 80
+AI Lecture Time	ai_video_watch_logs	SUM(watched_seconds) / 60 minutes
+Completion Rate	Calculated	watched / total * 100
+
+
+
+

@@ -1,0 +1,239 @@
+📖 V2.5 Section Definition Bible
+This document is the Source of Truth for the V2.5 Partition Architecture. It defines the exact purpose, structure, and behavior of every section type.
+
+🏗️ Structure Overview
+The pipeline generates a lesson in 7 Distinct Section Types.
+
+Intro (Global)
+Summary (Global)
+Content (Partition)
+Example (Partition)
+Quiz (Global & Partition - Mixed)
+Memory (Global)
+Recap (Global)
+📋 Detailed Definitions
+1. INTRO
+Generator: Global Worker
+Purpose: Welcomes student, introduces topic, establishes "Teacher Persona".
+Visuals: AVATAR ONLY (Clean Start).
+Structure:
+text_layer: HIDE
+visual_layer: HIDE
+avatar_layer: SHOW (Center/Right)
+Narration Strategy: Warm, welcoming tone.
+Timing: 40-60 Words. (~25-30 seconds).
+2. SUMMARY
+Generator: Global Worker
+Purpose: Lists key learning objectives ("What we will learn today").
+Visuals: Bullet Points (Text).
+Structure:
+visual_type: bullet_list
+text_layer: SHOW
+Narration Strategy: Concise list items.
+Timing: 10-20 Words per bullet point. (~5-10 seconds per item).
+3. CONTENT (The Core)
+Generator: Partition Worker
+Purpose: Main teaching of the concepts.
+Pattern: "Teach → Then Show" (Strict Rule).
+Structure:
+Segment 1 (Teach): Avatar explains concept. Visuals = Text/Diagrams. (texts: SHOW, visual: HIDE).
+Segment 2 (Show): Video/Manim demonstrates it. (text: HIDE, visual: SHOW (Full)).
+Visuals:
+Biology/History: WAN Video (Cinematic, 80+ words prompt).
+Math/Physics: Manim Animation (Beat-based, per-segment .mp4 files).
+Narration Strategy: Natural explanation using Indian cultural analogies.
+Timing: 40-75 Words per segment. 15-30 Seconds duration/segment.
+    - **V2.6 Rule**: Each segment generates a unique `topic_{id}_beat_{idx}.mp4` for perfect sync.
+4. EXAMPLE
+Generator: Partition Worker
+Purpose: Deep-dive walkthrough of a specific problem or scenario.
+Source: Can be from the Source Document OR LLM-generated to explain complex topics.
+Structure: Similar to Content but focused on Steps.
+Visuals: Uses Manim (Math) or Video (Science) for step-by-step resolution.
+Timing: Same as Content (15-30s per step).
+5. QUIZ
+Generator: Global (Bookend) OR Partition (if inline).
+Purpose: Active Recall & Check for Understanding.
+Grouping: Can contain multiple Q&A pairs grouped into a single section.
+Choreography (3-Step Dance for EACH question):
+Introduce: Read Question. (Visual: Question Text + Options). -> 15-20s.
+Pause: Silence. (Visual: Thinking Time). -> 3-5s (Strict).
+Reveal: Explain Answer. (Visual: Correct Option Highlight + "Correct!"). -> 15-20s.
+Visuals: Multiple Choice Layout (Question Text + A/B/C/D Options).
+6. MEMORY (Flashcards)
+Generator: Global Worker
+Purpose: Mnemonic-based retention of tricky terms.
+Count: Exactly 5 Items.
+Structure:
+Front: The Term/Question.
+Back: The Mnemonic/Answer.
+Behavior: Front shows -> Pause -> Back Flips/Reveals.
+Timing: ~10s per side.
+7. RECAP (Cinematic)
+Generator: Global Worker
+Purpose: Emotional & Visual closure. The "Movie Trailer" of the lesson.
+Count: Exactly 5 Segments.
+Visuals: FULL SCREEN VIDEO (Text Hidden).
+Content: A cohesive story (e.g., Student in Kerala) applying the lesson's concepts.
+Prompts: High-fidelity AI Video prompts (80+ words).
+Timing: 40-60 Words per segment. 15 Seconds duration/segment (Synced to Video).
+🛠️ Comparison Table
+Feature	Intro	Content	Quiz	Memory	Recap
+Worker	Global	Partition	Both	Global	Global
+Avatar	Show	Show	Show	Show	Show
+Visual Layer	Hide	Mixed	Hide	Hide	Show (Full)
+🔧 Technical Architecture (V2.5 Stable)
+1. Parallel Execution Engine
+Old Method: asyncio (Unstable in Flask).
+New Method: ThreadPoolExecutor (Stable).
+Behavior: Spawns independent threads for each chunk. No Shared Event Loop. 100% thread-safe.
+2. Manim Generation Architecture (V2.6)
+Director (Gemini 2.5): Outputs manim_spec (Text Description).
+Executor (Claude Sonnet 4.5): Reads manim_spec, outputs Python Code.
+
+**Hard Sync V2.6 (Execution Mode)**:
+- **Director Duration**: Single Source of Truth.
+- **LLM Logic**: Focus 100% on visuals. DO NOT ask LLM to estimate budget/timing.
+- **Injection**: System programmatically injects `self.wait()` and `FadeOut()` after code generation.
+- **Validation**: Timing validation is **skipped** for Hard Sync jobs; only structural integrity is checked.
+
+**Display Constraints (V2.6)**:
+- **Safe Zone**: All mobjects must fit within X: [-6, 6] and Y: [-3.5, 3.5].
+- **Anti-Overlap**: Use `.arrange()` or `.next_to()` with `buff=0.5`. No manual coordinate overlap.
+- **Text Safety**: No `.rotate()` on Text objects.
+- **Transitions**: Mandatory `FadeOut(*self.mobjects)` at every segment end (Injected if missing).
+- **Pacing**: Max `self.wait(5.0)`. Long segments must distribute animations (Indicate/Circumscribe).
+### 2.1 Player Architecture (V2.5.5)
+- **Markdown**: `marked.js` + `DOMPurify` (robust text).
+- **Tables**: Custom `.md-table` CSS.
+- **Beat Timing**: `segment_id` mapping for precision.
+
+
+Requirement: director_partition_prompt.txt JSON Schema MUST include "manim_spec": "string". | Fail-Fast | Yes | Yes | Yes | Yes | Yes |
+
+### 3. Pipeline Execution Flow (Partition Mode)
+
+**1. Source Processing (Phase 0)**
+   - **Input**: Raw Markdown.
+   - **Action**: `Smart Chunker` detects block types & splits into logical "Topics".
+   - **Output**: List of Chunks + Topic Map.
+
+**2. Parallel Directors (Phase 1)**
+   - **Global Director**: Receives **Full Document**. Generates Intro, Summary, Quiz, Recap.
+   - **Partition Directors**: Spawned for *each* chunk. Receives **Target Chunk** + **Full Document Context** (No Character Optimization/Slicing).
+   - **Behavior**: All run simultaneously (Threaded).
+
+**3. Stitching (Phase 4)**
+   - **Action**: Merges Global + Content JSONs into `presentation.json`.
+
+**4. Rendering (Phase 5 - Split Execution)**
+   - **Manim (Blocking)**: Pipeline WAITS for all Manim content. Essential for complexity verification.
+   - **WAN (Async)**: Pipeline spawns a **Background Thread**.
+     - **Strategy**: Batches of 5 videos.
+     - **Updates**: Real-time writing to `presentation.json` and `analytics.json`.
+     - **Completion**: Job marks "Complete" *before* WAN videos finish.
+
+⚡ Downstream Impact Analysis
+115. ### 5. Strict Pointers & Indexing Strategy (Anti-Hallucination)
+116. 
+117. - **Problem**: LLMs "rewrite" or "hallucinate" technical content when summarizing.
+118. - **Solution**: The Director DOES NOT generate content text. It only generates **Pointers**.
+119. - **Mechanism**:
+120.   1. **Director Output**: `markdown_pointer: { "start_phrase": "...", "end_phrase": "..." }`.
+121.   2. **System Action**: Locates these verbatim phrases in the source `.md`.
+122.   3. **Content Resolution**: Extracts real text between markers.
+123. - **Rule**: If a sentence is not in the source, it cannot be in the lesson. This ensures **100% Fidelity**.
+124. 
+125. ⚡ Downstream Impact Analysis
+126. (Verified 2026-01-06)
+
+This architecture is robustly decoupled. Changing Prompt Word Counts/Timings affects Execution, not Stability.
+
+Manim Generator (manim_code_generator.py):
+
+Logic: Reads manim_spec field.
+Impact: SAFE. As long as the prompt outputs a detailed string in this field, Manim will execute.
+Layout Safety Rules (Hardened):
+Spatial: Uses FadeOut to clear screen between concepts.
+Position: Uses .next_to (relative) rather than fixed coords.
+Overlap: Explicitly forbidden by prompt logic.
+WAN Video (renderer_executor.py):
+
+Logic: Reads video_prompts list.
+Impact: SAFE. Higher word counts (80+) are explicitly requested to improve video generation fidelity. The pipeline handles any length.
+TTS (Audio):
+
+Logic: Processes narration.text.
+Impact: DIRECT correlation. Changing prompt word counts will directly change the duration of the final audio files.
+> **V2.5 Rule**: TTS Generation is **DISABLED**. The system uses `word_count` estimation for duration to ensure speed.
+🎧 Audio & TTS Architecture
+Module: core/tts_duration.py
+
+The system uses a Cascading Fallback strategy to ensure audio is always generated:
+
+Tier 1 (Production): Edge TTS (edge_tts). High-quality, free, neural voices. (Default: en-IN-PrabhatNeural).
+Tier 2 (Premium Fallback): Narakeet (narakeet). Paid API for specific regional accents if Edge fails.
+Tier 3 (Local Fallback): pyttsx3 (pyttsx3). Offline, robotic voice. Used only during network outages/dry runs.
+Tier 4 (Baseline Strategy): Word Count Calculation. The system always calculates this first (130-150 wpm) to ensure a valid duration exists. It is then overwritten by actual audio duration if generation succeeds, or serves as the fallback if it fails.
+👤 AI Avatar Generation
+Module: core/agents/avatar_generator.py
+
+Remote Engine: The system connects to a dedicated Indian Avatar Server (Remote GPU).
+Preprocessing: Text is sanitized via latex_to_speech to ensure math formulas are read naturally (e.g., "
+x
+2
+x 
+2
+ " -> "x squared").
+Async Pipeline:
+Submit: Text sent to /generate endpoint.
+Poll: System checks /status/{task_id}.
+Download: Resulting video (.mp4) is downloaded and stitched into the Player.
+
+# Usage: python verify_job_content.py <JOB_ID>
+python verify_job_content.py f963fc1c
+
+---
+
+## 🔍 Validation Strategy (V2.5)
+
+### Official Validators (Single Source of Truth)
+
+| Validator | File | Purpose |
+|-----------|------|---------|
+| **LLM Retry Validator** | `core/validators/v25_validator.py` | Validates LLM output during generation. Used in retry loops. |
+| **UI Sanity Check** | `player/sanity_check.html` | Browser-based validation for job review. Shows asset status + Bible compliance. |
+
+### V25Validator Rules (Enforced)
+
+| Section | Rule | Validation |
+|---------|------|------------|
+| Intro | `renderer: none`, layers hidden | ✅ Hard fail |
+| Summary | `visual_type: bullet_list` | ✅ Hard fail |
+| Memory | Exactly 5 flashcards, 6 narration segments | ✅ Hard fail |
+| Recap | Exactly 5 segments, `renderer: video`, 80+ word prompts | ✅ Hard fail |
+| Quiz | 3-step choreography (introduce/pause/reveal) per question | ✅ Hard fail |
+| Content/Example | Per-segment `display_directives` + matching `segment_specs` | ✅ Hard fail |
+| V2.6 Beat Sync | `segment_specs` → `topic_X_beat_Y.mp4` exists + linked in JSON | ✅ Hard fail |
+
+### Sanity Check (UI) Rules
+
+| Check | Bible Rule |
+|-------|------------|
+| Quiz 3-Step Dance | `segments = questions × 3` |
+| Memory Bible Compliance | 5 cards + 6 segments |
+| Recap Cinematic 5 | 5 segments + video renderer |
+| Summary Deep Sync | bullets ≤ segments |
+| WAN 15s Limit | No segment > 40 words without beat_videos |
+
+### Deprecated Validators (Not Used)
+
+The following files exist but are **NOT** part of the official V2.5 validation:
+
+- `core/dry_run_validator.py` (Legacy, superseded by v25_validator)
+- `core/validators/tier1_structural.py` (Legacy tier system)
+- `core/validators/tier2_semantic.py` (Legacy tier system)
+- `core/validators/tier3_quality.py` (Legacy tier system)
+- `core/validators/job_certifier.py` (Informational report only, not validation)
+
+> **Note**: These files may still run but their output is informational only. The v25_validator.py is the authoritative source for LLM retry decisions.

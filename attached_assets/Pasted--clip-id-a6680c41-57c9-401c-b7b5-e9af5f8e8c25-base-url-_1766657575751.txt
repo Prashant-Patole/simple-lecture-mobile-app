@@ -1,0 +1,63 @@
+{
+    "clip_id": "a6680c41-57c9-401c-b7b5-e9af5f8e8c25",
+    "base_url": "../../../remux/avf/",
+    "video": [
+        {
+            "id": "33da0e2c-7d8d-4325-81ab-4a15ac697af3",
+            "avg_id": "a6680c41",
+            "base_url": "33da0e2c-7d8d-4325-81ab-4a15ac697af3/",
+            "format": "mp42",
+            "mime_type": "video/mp4",
+            "codecs": "avc1.64001E",
+            "bitrate": 300000,
+            "avg_bitrate": 230000,
+            "duration": 3688.52,
+            "framerate": 25,
+            "width": 640,
+            "height": 360,
+            "max_segment_duration": 6,
+            "init_segment": "AAAAHGZ0eXBpc281AAACAGlzbzVpc282bXA0MQAAAyxtb292AAAAbG12aGQAAAAAAAAAAAAAAAAAAAPoAAAAAAABAAABAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAACL3RyYWsAAABcdGtoZAAAAAMAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAEAAAAACgAAAAWgAAAAAACRlZHRzAAAAHGVsc3QAAAAAAAAAAQAAAAAAAAQAAAEAAAAAAadtZGlhAAAAIG1kaGQAAAAAAAAAAAAAAAAAADIAAAAAAFXEAAAAAAAtaGRscgAAAAAAAAAAdmlkZQAAAAAAAAAAAAAAAFZpZGVvSGFuZGxlcgAAAAFSbWluZgAAABR2bWhkAAAAAQAAAAAAAAAAAAAAJGRpbmYAAAAcZHJlZgAAAAAAAAABAAAADHVybCAAAAABAAABEnN0YmwAAADGc3RzZAAAAAAAAAABAAAAtmF2YzEAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAACgAFoAEgAAABIAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY//8AAAA5YXZjQwFkAB7/4QAdZ2QAHqzZQKAv+WagwMDIAAADAAgAAAMBkHixbLABAAVo6+yyLP34+AAAAAATY29scm5jbHgABgAGAAYAAAAAFGJ0cnQAAAAAAANwVAADcFQAAAAQc3R0cwAAAAAAAAAAAAAAEHN0c2MAAAAAAAAAAAAAABRzdHN6AAAAAAAAAAAAAAAAAAAAEHN0Y28AAAAAAAAAAAAAAChtdmV4AAAAIHRyZXgAAAAAAAAAAQAAAAEAAAAAAAAAAAAAAAAAAABhdWR0YQAAAFltZXRhAAAAAAAAACFoZGxyAAAAAAAAAABtZGlyYXBwbAAAAAAAAAAAAAAAACxpbHN0AAAAJKl0b28AAAAcZGF0YQAAAAEAAAAATGF2ZjYyLjQuMTAx",
+            "init_segment_url": "",
+            "segments": [
+                {
+                    "start": 0,
+                    "end": 6.08,
+                    "url": "segment.m4s?pathsig=8c953e4f~7mgrgUyRcU8J2l1i1GiZlhtkOPCTLNC6Gswhnz4ymhI\u0026r=dXMtd2VzdDE%3D\u0026sid=1\u0026st=video",
+                    "size": 176274
+                },
+                {
+                    "start": 6.08,
+                    "end": 12.16,
+                    "url": "segment.m4s?pathsig=8c953e4f~7mgrgUyRcU8J2l1i1GiZlhtkOPCTLNC6Gswhnz4ymhI\u0026r=dXMtd2VzdDE%3D\u0026sid=2\u0026st=video",
+                    "size": 170730
+                },
+                {
+                    "start": 12.16,
+                    "end": 18.24,
+                    "url": "segment.m4s?pathsig=8c953e4f~7mgrgUyRcU8J2l1i1GiZlhtkOPCTLNC6Gswhnz4ymhI\u0026r=dXMtd2VzdDE%3D\u0026sid=3\u0026st=video",
+                    "size": 180811
+                },
+                {
+                    "start": 18.24,
+                    "end": 24.32,
+                    "url": "segment.m4s?pathsig=8c953e4f~7mgrgUyRcU8J2l1i1GiZlhtkOPCTLNC6Gswhnz4ymhI\u0026r=dXMtd2VzdDE%3D\u0026sid=4\u0026st=video",
+                    "size": 182094
+                },
+                {
+                    "start": 24.32,
+                    "end": 30.4,
+                    "url": "segment.m4s?pathsig=8c953e4f~7mgrgUyRcU8J2l1i1GiZlhtkOPCTLNC6Gswhnz4ymhI\u0026r=dXMtd2VzdDE%3D\u0026sid=5\u0026st=video",
+                    "size": 189715
+                },
+                {
+                    "start": 30.4,
+                    "end": 36.48,
+                    "url": "segment.m4s?pathsig=8c953e4f~7mgrgUyRcU8J2l1i1GiZlhtkOPCTLNC6Gswhnz4ymhI\u0026r=dXMtd2VzdDE%3D\u0026sid=6\u0026st=video",
+                    "size": 211262
+                },
+                {
+                    "start": 36.48,
+                    "end": 42.56,
+                    "url": "segment.m4s?pathsig=8c953e4f~7mgrgUyRcU8J2l1i1GiZlhtkOPCTLNC6Gswhnz4ymhI\u0026r=dXMtd2VzdDE%3D\u0026sid=7\u0026st=video",
+                    "size": 201046
+                },

@@ -1,0 +1,647 @@
+Complete Documentation: /support Page
+1. Overview
+The Support page is an AI-first support system that provides:
+
+Articles: Help articles with expandable content and feedback
+FAQs: Searchable, categorized frequently asked questions
+AI Chat: AI-powered support assistant for real-time help
+Ticket System: Track and manage support tickets
+2. Database Schema
+Table: support_tickets
+Column	Type	Description
+id	uuid	Primary key
+user_id	uuid	Reference to user
+category	text	Ticket category (technical, payment, etc.)
+subject	text	Short description
+status	text	Current status (open, ai_responded, escalated_to_admin, etc.)
+ai_confidence	numeric	AI confidence score for escalation logic
+escalated_at	timestamp	When ticket was escalated
+assigned_admin_id	uuid	Admin assigned to ticket
+created_at	timestamp	Creation time
+updated_at	timestamp	Last update time
+closed_at	timestamp	When ticket was closed
+Table: support_messages
+Column	Type	Description
+id	uuid	Primary key
+ticket_id	uuid	FK to support_tickets
+sender_type	text	'user', 'ai', or 'admin'
+content	text	Message content
+created_at	timestamp	Message time
+Table: support_faqs
+Column	Type	Description
+id	uuid	Primary key
+category	text	FAQ category
+question	text	The question
+answer	text	The answer (supports markdown)
+display_order	integer	Sort order
+is_active	boolean	Whether FAQ is visible
+helpful_count	integer	Number of helpful votes
+created_at	timestamp	Creation time
+updated_at	timestamp	Last update time
+Table: support_articles
+Column	Type	Description
+id	uuid	Primary key
+slug	text	URL-friendly identifier
+title	text	Article title
+description	text	Short description
+content	text	Full article content (markdown)
+icon_name	text	Lucide icon name
+display_order	integer	Sort order
+is_active	boolean	Whether visible to users
+helpful_count	integer	Thumbs up count
+not_helpful_count	integer	Thumbs down count
+created_at	timestamp	Creation time
+updated_at	timestamp	Last update time
+Table: support_article_feedback
+Column	Type	Description
+id	uuid	Primary key
+article_id	uuid	FK to support_articles
+user_id	uuid	User who gave feedback
+is_helpful	boolean	true = helpful, false = not helpful
+created_at	timestamp	Feedback time
+3. API Endpoints
+3.1 FAQs API
+Fetch FAQs by Category:
+
+GET /rest/v1/support_faqs?is_active=eq.true&order=display_order.asc
+GET /rest/v1/support_faqs?is_active=eq.true&category=eq.{category}&order=display_order.asc
+Search FAQs:
+
+GET /rest/v1/support_faqs?is_active=eq.true&or=(question.ilike.%{searchTerm}%,answer.ilike.%{searchTerm}%)
+Response Example:
+
+
+[
+  {
+    "id": "uuid",
+    "category": "account",
+    "question": "How do I reset my password?",
+    "answer": "You can reset your password by...",
+    "display_order": 1,
+    "helpful_count": 25,
+    "is_active": true
+  }
+]
+3.2 Articles API
+Fetch Active Articles:
+
+GET /rest/v1/support_articles?is_active=eq.true&order=display_order.asc
+Fetch All Articles (Admin):
+
+GET /rest/v1/support_articles?order=display_order.asc
+Response Example:
+
+
+[
+  {
+    "id": "uuid",
+    "slug": "getting-started",
+    "title": "Getting Started Guide",
+    "description": "Learn how to use SimpleLecture",
+    "content": "## Welcome...",
+    "icon_name": "BookOpen",
+    "display_order": 1,
+    "is_active": true,
+    "helpful_count": 50,
+    "not_helpful_count": 2
+  }
+]
+3.3 Article Feedback API
+Fetch User's Feedback:
+
+GET /rest/v1/support_article_feedback?user_id=eq.{userId}
+Submit Feedback:
+
+POST /rest/v1/support_article_feedback
+{
+  "article_id": "uuid",
+  "user_id": "uuid",
+  "is_helpful": true
+}
+Update Feedback:
+
+PATCH /rest/v1/support_article_feedback?id=eq.{feedbackId}
+{
+  "is_helpful": false
+}
+Delete Feedback:
+
+DELETE /rest/v1/support_article_feedback?id=eq.{feedbackId}
+3.4 Support Tickets API
+Create Ticket:
+
+POST /rest/v1/support_tickets
+{
+  "user_id": "uuid",
+  "category": "technical",
+  "subject": "Cannot access course",
+  "status": "open"
+}
+Fetch User's Tickets:
+
+GET /rest/v1/support_tickets?user_id=eq.{userId}&order=created_at.desc&limit=10
+Update Ticket Status (Resolve):
+
+PATCH /rest/v1/support_tickets?id=eq.{ticketId}
+{
+  "status": "closed_resolved",
+  "closed_at": "2024-01-15T10:30:00Z"
+}
+Escalate Ticket:
+
+PATCH /rest/v1/support_tickets?id=eq.{ticketId}
+{
+  "status": "escalated_to_admin",
+  "escalated_at": "2024-01-15T10:30:00Z"
+}
+3.5 Support Messages API
+Save Message:
+
+POST /rest/v1/support_messages
+{
+  "ticket_id": "uuid",
+  "sender_type": "user",
+  "content": "I cannot access my course"
+}
+Fetch Ticket Messages:
+
+GET /rest/v1/support_messages?ticket_id=eq.{ticketId}&order=created_at.asc
+3.6 AI Support Assistant (Edge Function)
+Endpoint:
+
+POST /functions/v1/ai-support-assistant
+Request Payload:
+
+
+{
+  "messages": [
+    { "role": "user", "content": "I can't login to my account" }
+  ],
+  "ticketId": "uuid",
+  "userId": "uuid"
+}
+Response: Streaming SSE (Server-Sent Events)
+
+data: {"choices":[{"delta":{"content":"I understand..."}}]}
+data: {"choices":[{"delta":{"content":" you're having"}}]}
+data: [DONE]
+AI System Prompt Rules:
+
+Helps with: login, payment, course access, app usage, certificates, technical issues
+Does NOT help with: academic questions, exam answers, assignment solutions
+Redirects academic questions to Forum
+Asks for confirmation at end of response
+Escalates when unsure or user dissatisfied
+4. React Hooks
+useSupportFAQs(category?: string)
+Fetches FAQs from database, optionally filtered by category.
+
+useSearchFAQs(searchTerm: string)
+Searches FAQs by question or answer content (minimum 2 characters).
+
+useSupportArticles()
+Fetches all active support articles.
+
+useAdminSupportArticles()
+Fetches all articles (including inactive) for admin.
+
+useUserArticleFeedback(userId: string)
+Fetches user's feedback on articles.
+
+useSubmitArticleFeedback()
+Mutation hook for submitting/updating/removing article feedback with count updates.
+
+useSupportAssistant()
+Main hook for AI chat functionality:
+
+createTicket(category, subject, message) - Creates new ticket
+sendMessage(message, ticketId?) - Sends message to AI (streaming)
+resolveTicket(ticketId) - Marks ticket as resolved
+escalateTicket(ticketId) - Escalates to admin
+clearMessages() - Resets conversation
+5. UI Components
+Component	Description
+SupportFAQSearch	Search input with icon
+SupportCategoryTabs	Tab filters for FAQ categories
+SupportFAQs	Accordion display of FAQ items
+SupportChat	AI chat interface with messages
+SupportFeedbackButtons	Resolve/Escalate buttons
+SupportTicketForm	Form to create new ticket
+SupportTicketList	List of user's tickets with status
+6. Page Structure
+Support Page
+├── Header
+├── Hero Section
+│   ├── Back Button
+│   ├── Title & Description
+│   └── Search Input (SupportFAQSearch)
+├── Main Content (Tabs)
+│   ├── Articles Tab
+│   │   └── Collapsible Article Cards
+│   │       ├── Icon + Title
+│   │       ├── Description
+│   │       ├── Expandable Content
+│   │       └── Feedback Buttons (ThumbsUp/ThumbsDown)
+│   ├── FAQs Tab
+│   │   ├── Category Tabs (SupportCategoryTabs)
+│   │   ├── FAQ Accordion (SupportFAQs)
+│   │   ├── See More/Less Button
+│   │   └── AI Chat Section
+│   │       ├── SupportTicketForm (if not chatting)
+│   │       └── SupportChat (if chatting)
+│   └── My Support Tickets Tab
+│       └── SupportTicketList
+└── Footer
+7. Ticket Status Flow
+OPEN
+  ↓ (AI responds)
+AI_RESPONDED
+  ↓ (User feedback)
+  ├── USER_CONFIRMED_RESOLVED → CLOSED_RESOLVED
+  └── NOT_RESOLVED → ESCALATED_TO_ADMIN
+                          ↓ (Admin responds)
+                    ADMIN_RESPONDED
+                          ↓
+                    CLOSED_RESOLVED
+Status Badges:
+
+Status	Label	Color
+open	Open	Default (blue)
+ai_responded	AI Responded	Secondary (gray)
+escalated_to_admin	Escalated	Destructive (red)
+admin_responded	Admin Replied	Outline
+closed_resolved	Resolved	Outline (green)
+closed_redirected	Redirected	Secondary
+closed_no_response	Closed	Secondary
+8. FAQ Categories
+
+const FAQ_CATEGORIES = [
+  { value: 'all', label: 'All Topics' },
+  { value: 'account', label: 'Account' },
+  { value: 'payment', label: 'Payment' },
+  { value: 'technical', label: 'Technical' },
+  { value: 'courses', label: 'Courses' },
+  { value: 'certificates', label: 'Certificates' },
+  { value: 'general', label: 'General' },
+];
+9. Ticket Categories
+
+const TICKET_CATEGORIES = [
+  { value: 'technical', label: 'Technical Issue' },
+  { value: 'payment', label: 'Payment / Billing' },
+  { value: 'account', label: 'Account / Login' },
+  { value: 'course_access', label: 'Course Access' },
+  { value: 'certificate', label: 'Certificate' },
+  { value: 'feature_request', label: 'Feature Request' },
+  { value: 'other', label: 'Other' },
+];
+10. Article Icon Mapping
+
+const ICON_MAP: Record<string, LucideIcon> = {
+  BookOpen,      // Getting started guides
+  GraduationCap, // Course-related
+  Settings,      // Account settings
+  CreditCard,    // Payment related
+  Shield,        // Security/privacy
+  Wrench,        // Technical issues
+  HelpCircle,    // General help
+  FileText,      // Documentation
+};
+11. Key Features
+AI-First Support: Users chat with AI before escalating to admin
+Streaming Responses: AI responses stream in real-time
+Article Feedback: Users can vote on article helpfulness
+Search: Real-time FAQ search across questions and answers
+Category Filtering: Filter FAQs by topic
+Ticket Tracking: View history of support conversations
+Authentication Required: Chat and tickets require login
+Escalation Flow: Easy escalation to human support
+Markdown Support: FAQs and articles support markdown formatting
+Collapsible Articles: Expandable cards with full content
+Now I have all the information needed to provide a comprehensive explanation of the /support page. Let me compile everything.
+
+Complete Documentation: /support Page
+1. Overview
+The Support page is an AI-first support system that provides:
+
+Articles: Help articles with expandable content and feedback
+FAQs: Searchable, categorized frequently asked questions
+AI Chat: AI-powered support assistant for real-time help
+Ticket System: Track and manage support tickets
+2. Database Schema
+Table: support_tickets
+Column	Type	Description
+id	uuid	Primary key
+user_id	uuid	Reference to user
+category	text	Ticket category (technical, payment, etc.)
+subject	text	Short description
+status	text	Current status (open, ai_responded, escalated_to_admin, etc.)
+ai_confidence	numeric	AI confidence score for escalation logic
+escalated_at	timestamp	When ticket was escalated
+assigned_admin_id	uuid	Admin assigned to ticket
+created_at	timestamp	Creation time
+updated_at	timestamp	Last update time
+closed_at	timestamp	When ticket was closed
+Table: support_messages
+Column	Type	Description
+id	uuid	Primary key
+ticket_id	uuid	FK to support_tickets
+sender_type	text	'user', 'ai', or 'admin'
+content	text	Message content
+created_at	timestamp	Message time
+Table: support_faqs
+Column	Type	Description
+id	uuid	Primary key
+category	text	FAQ category
+question	text	The question
+answer	text	The answer (supports markdown)
+display_order	integer	Sort order
+is_active	boolean	Whether FAQ is visible
+helpful_count	integer	Number of helpful votes
+created_at	timestamp	Creation time
+updated_at	timestamp	Last update time
+Table: support_articles
+Column	Type	Description
+id	uuid	Primary key
+slug	text	URL-friendly identifier
+title	text	Article title
+description	text	Short description
+content	text	Full article content (markdown)
+icon_name	text	Lucide icon name
+display_order	integer	Sort order
+is_active	boolean	Whether visible to users
+helpful_count	integer	Thumbs up count
+not_helpful_count	integer	Thumbs down count
+created_at	timestamp	Creation time
+updated_at	timestamp	Last update time
+Table: support_article_feedback
+Column	Type	Description
+id	uuid	Primary key
+article_id	uuid	FK to support_articles
+user_id	uuid	User who gave feedback
+is_helpful	boolean	true = helpful, false = not helpful
+created_at	timestamp	Feedback time
+3. API Endpoints
+3.1 FAQs API
+Fetch FAQs by Category:
+
+GET /rest/v1/support_faqs?is_active=eq.true&order=display_order.asc
+GET /rest/v1/support_faqs?is_active=eq.true&category=eq.{category}&order=display_order.asc
+Search FAQs:
+
+GET /rest/v1/support_faqs?is_active=eq.true&or=(question.ilike.%{searchTerm}%,answer.ilike.%{searchTerm}%)
+Response Example:
+
+
+[
+  {
+    "id": "uuid",
+    "category": "account",
+    "question": "How do I reset my password?",
+    "answer": "You can reset your password by...",
+    "display_order": 1,
+    "helpful_count": 25,
+    "is_active": true
+  }
+]
+3.2 Articles API
+Fetch Active Articles:
+
+GET /rest/v1/support_articles?is_active=eq.true&order=display_order.asc
+Fetch All Articles (Admin):
+
+GET /rest/v1/support_articles?order=display_order.asc
+Response Example:
+
+
+[
+  {
+    "id": "uuid",
+    "slug": "getting-started",
+    "title": "Getting Started Guide",
+    "description": "Learn how to use SimpleLecture",
+    "content": "## Welcome...",
+    "icon_name": "BookOpen",
+    "display_order": 1,
+    "is_active": true,
+    "helpful_count": 50,
+    "not_helpful_count": 2
+  }
+]
+3.3 Article Feedback API
+Fetch User's Feedback:
+
+GET /rest/v1/support_article_feedback?user_id=eq.{userId}
+Submit Feedback:
+
+POST /rest/v1/support_article_feedback
+{
+  "article_id": "uuid",
+  "user_id": "uuid",
+  "is_helpful": true
+}
+Update Feedback:
+
+PATCH /rest/v1/support_article_feedback?id=eq.{feedbackId}
+{
+  "is_helpful": false
+}
+Delete Feedback:
+
+DELETE /rest/v1/support_article_feedback?id=eq.{feedbackId}
+3.4 Support Tickets API
+Create Ticket:
+
+POST /rest/v1/support_tickets
+{
+  "user_id": "uuid",
+  "category": "technical",
+  "subject": "Cannot access course",
+  "status": "open"
+}
+Fetch User's Tickets:
+
+GET /rest/v1/support_tickets?user_id=eq.{userId}&order=created_at.desc&limit=10
+Update Ticket Status (Resolve):
+
+PATCH /rest/v1/support_tickets?id=eq.{ticketId}
+{
+  "status": "closed_resolved",
+  "closed_at": "2024-01-15T10:30:00Z"
+}
+Escalate Ticket:
+
+PATCH /rest/v1/support_tickets?id=eq.{ticketId}
+{
+  "status": "escalated_to_admin",
+  "escalated_at": "2024-01-15T10:30:00Z"
+}
+3.5 Support Messages API
+Save Message:
+
+POST /rest/v1/support_messages
+{
+  "ticket_id": "uuid",
+  "sender_type": "user",
+  "content": "I cannot access my course"
+}
+Fetch Ticket Messages:
+
+GET /rest/v1/support_messages?ticket_id=eq.{ticketId}&order=created_at.asc
+3.6 AI Support Assistant (Edge Function)
+Endpoint:
+
+POST /functions/v1/ai-support-assistant
+Request Payload:
+
+
+{
+  "messages": [
+    { "role": "user", "content": "I can't login to my account" }
+  ],
+  "ticketId": "uuid",
+  "userId": "uuid"
+}
+Response: Streaming SSE (Server-Sent Events)
+
+data: {"choices":[{"delta":{"content":"I understand..."}}]}
+data: {"choices":[{"delta":{"content":" you're having"}}]}
+data: [DONE]
+AI System Prompt Rules:
+
+Helps with: login, payment, course access, app usage, certificates, technical issues
+Does NOT help with: academic questions, exam answers, assignment solutions
+Redirects academic questions to Forum
+Asks for confirmation at end of response
+Escalates when unsure or user dissatisfied
+4. React Hooks
+useSupportFAQs(category?: string)
+Fetches FAQs from database, optionally filtered by category.
+
+useSearchFAQs(searchTerm: string)
+Searches FAQs by question or answer content (minimum 2 characters).
+
+useSupportArticles()
+Fetches all active support articles.
+
+useAdminSupportArticles()
+Fetches all articles (including inactive) for admin.
+
+useUserArticleFeedback(userId: string)
+Fetches user's feedback on articles.
+
+useSubmitArticleFeedback()
+Mutation hook for submitting/updating/removing article feedback with count updates.
+
+useSupportAssistant()
+Main hook for AI chat functionality:
+
+createTicket(category, subject, message) - Creates new ticket
+sendMessage(message, ticketId?) - Sends message to AI (streaming)
+resolveTicket(ticketId) - Marks ticket as resolved
+escalateTicket(ticketId) - Escalates to admin
+clearMessages() - Resets conversation
+5. UI Components
+Component	Description
+SupportFAQSearch	Search input with icon
+SupportCategoryTabs	Tab filters for FAQ categories
+SupportFAQs	Accordion display of FAQ items
+SupportChat	AI chat interface with messages
+SupportFeedbackButtons	Resolve/Escalate buttons
+SupportTicketForm	Form to create new ticket
+SupportTicketList	List of user's tickets with status
+6. Page Structure
+Support Page
+├── Header
+├── Hero Section
+│   ├── Back Button
+│   ├── Title & Description
+│   └── Search Input (SupportFAQSearch)
+├── Main Content (Tabs)
+│   ├── Articles Tab
+│   │   └── Collapsible Article Cards
+│   │       ├── Icon + Title
+│   │       ├── Description
+│   │       ├── Expandable Content
+│   │       └── Feedback Buttons (ThumbsUp/ThumbsDown)
+│   ├── FAQs Tab
+│   │   ├── Category Tabs (SupportCategoryTabs)
+│   │   ├── FAQ Accordion (SupportFAQs)
+│   │   ├── See More/Less Button
+│   │   └── AI Chat Section
+│   │       ├── SupportTicketForm (if not chatting)
+│   │       └── SupportChat (if chatting)
+│   └── My Support Tickets Tab
+│       └── SupportTicketList
+└── Footer
+7. Ticket Status Flow
+OPEN
+  ↓ (AI responds)
+AI_RESPONDED
+  ↓ (User feedback)
+  ├── USER_CONFIRMED_RESOLVED → CLOSED_RESOLVED
+  └── NOT_RESOLVED → ESCALATED_TO_ADMIN
+                          ↓ (Admin responds)
+                    ADMIN_RESPONDED
+                          ↓
+                    CLOSED_RESOLVED
+Status Badges:
+
+Status	Label	Color
+open	Open	Default (blue)
+ai_responded	AI Responded	Secondary (gray)
+escalated_to_admin	Escalated	Destructive (red)
+admin_responded	Admin Replied	Outline
+closed_resolved	Resolved	Outline (green)
+closed_redirected	Redirected	Secondary
+closed_no_response	Closed	Secondary
+8. FAQ Categories
+
+const FAQ_CATEGORIES = [
+  { value: 'all', label: 'All Topics' },
+  { value: 'account', label: 'Account' },
+  { value: 'payment', label: 'Payment' },
+  { value: 'technical', label: 'Technical' },
+  { value: 'courses', label: 'Courses' },
+  { value: 'certificates', label: 'Certificates' },
+  { value: 'general', label: 'General' },
+];
+9. Ticket Categories
+
+const TICKET_CATEGORIES = [
+  { value: 'technical', label: 'Technical Issue' },
+  { value: 'payment', label: 'Payment / Billing' },
+  { value: 'account', label: 'Account / Login' },
+  { value: 'course_access', label: 'Course Access' },
+  { value: 'certificate', label: 'Certificate' },
+  { value: 'feature_request', label: 'Feature Request' },
+  { value: 'other', label: 'Other' },
+];
+10. Article Icon Mapping
+
+const ICON_MAP: Record<string, LucideIcon> = {
+  BookOpen,      // Getting started guides
+  GraduationCap, // Course-related
+  Settings,      // Account settings
+  CreditCard,    // Payment related
+  Shield,        // Security/privacy
+  Wrench,        // Technical issues
+  HelpCircle,    // General help
+  FileText,      // Documentation
+};
+11. Key Features
+AI-First Support: Users chat with AI before escalating to admin
+Streaming Responses: AI responses stream in real-time
+Article Feedback: Users can vote on article helpfulness
+Search: Real-time FAQ search across questions and answers
+Category Filtering: Filter FAQs by topic
+Ticket Tracking: View history of support conversations
+Authentication Required: Chat and tickets require login
+Escalation Flow: Easy escalation to human support
+Markdown Support: FAQs and articles support markdown formatting
+Collapsible Articles: Expandable cards with full content
+
+
+
+
+

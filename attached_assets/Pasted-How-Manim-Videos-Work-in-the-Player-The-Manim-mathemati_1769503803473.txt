@@ -1,0 +1,101 @@
+How Manim Videos Work in the Player
+The Manim (mathematical animation) videos are handled through a TEACH → SHOW pattern where the player dynamically switches between content slides and full-screen video animations based on segment timing directives.
+
+1. Data Structure in presentation.json
+Each narration segment can have Manim videos attached:
+
+
+{
+  "segment_id": "seg_5",
+  "text": "Watch how the derivative changes...",
+  "duration_seconds": 12,
+  "display_directives": {
+    "visual_layer": "show"   // ← Triggers video overlay
+  },
+  "beat_videos": ["derivative_animation.mp4"]  // ← Manim video file
+}
+2. Building the Video Playlist
+When the player mounts, it builds a beat video playlist mapping each segment to its video and timing:
+
+
+// EducationalVideoPlayer.tsx
+const beatVideo = segment.beat_videos?.[0] || null;
+const visualLayer = segment.display_directives?.visual_layer;
+const isShowPhase = visualLayer === 'show';
+
+return {
+  segmentIndex: index,
+  startTime,
+  endTime,
+  videoPath: beatVideo,
+  isShowPhase,  // true = show Manim, false = show slides
+};
+3. URL Resolution via Proxy
+The video filename is converted to a full proxied URL:
+
+
+// mediaResolver.ts
+const params = new URLSearchParams({
+  action: 'media',
+  job_id: jobId,           // e.g., "abc123"
+  file_path: 'videos/derivative_animation.mp4'
+});
+return `${supabaseUrl}/functions/v1/video-generation-proxy?${params}`;
+
+// Final URL:
+// https://xxx.supabase.co/functions/v1/video-generation-proxy?action=media&job_id=abc123&file_path=videos/derivative_animation.mp4
+4. TEACH → SHOW Switching Logic
+The player watches currentTime and switches layers:
+
+
+// When segment has visual_layer: "show"
+if (currentEntry?.isShowPhase && currentEntry?.videoPath) {
+  const videoUrl = getMediaUrl(jobId, currentEntry.videoPath);
+  setContentVideoSrc(videoUrl);  // Show video layer
+} else {
+  setContentVideoSrc(null);      // Hide video layer, show slides
+}
+5. Layer Architecture
+┌─────────────────────────────────────────────────────────┐
+│  Z-Index: 50   │  Controls Bar (always on top)         │
+├─────────────────────────────────────────────────────────┤
+│  Z-Index: 20   │  VIDEO LAYER (Manim/WAN animations)   │  ← visible when isShowPhase=true
+│                │  Full black background, covers all    │
+├─────────────────────────────────────────────────────────┤
+│  Z-Index: 10   │  Avatar Layer (chroma-keyed teacher)  │  ← hidden during SHOW phase
+├─────────────────────────────────────────────────────────┤
+│  Z-Index: 5    │  Content Layer (slides, bullets)      │  ← hidden during SHOW phase
+├─────────────────────────────────────────────────────────┤
+│  Z-Index: 0    │  Background (nebula video)            │
+└─────────────────────────────────────────────────────────┘
+6. CSS Visibility Control
+
+/* Default: hidden */
+.video-layer {
+  display: none;
+  background: #000000;  /* Solid black for immersive experience */
+}
+
+/* When Manim video is active */
+.video-layer.visible {
+  display: flex;
+}
+7. Audio Continuity
+Critical behavior: During SHOW phase:
+
+✅ Avatar video keeps playing (audio continues)
+✅ Avatar is visually hidden via CSS (.avatar-hidden)
+✅ Manim video plays muted (visual only)
+This ensures narration stays synced while students watch the animation.
+
+Summary Flow
+1. Player loads presentation.json
+2. Builds beatVideoPlaylist with timing + video paths
+3. During playback, checks currentTime against playlist
+4. When segment.visual_layer === "show":
+   - Fetch Manim video via proxy
+   - Show .video-layer (z-index 20)
+   - Hide avatar visually (audio continues)
+5. When visual_layer === "teach" or undefined:
+   - Hide .video-layer
+   - Show content slides + avatar

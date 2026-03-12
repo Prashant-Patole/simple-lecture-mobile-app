@@ -1,0 +1,170 @@
+Chapter Level vs Topic Level MCQs - Complete Explanation
+Conceptual Difference
+Aspect	Topic Level	Chapter Level
+Scope	Specific to ONE topic within a chapter	Covers the ENTIRE chapter (all topics)
+Database Field	topic_id = specific UUID	topic_id = NULL, chapter_id = UUID
+Use Case	Practice specific concepts	Chapter revision / comprehensive tests
+Example	"Electric Charges and Fields" topic only	"Electrostatics" chapter (all topics)
+Database Schema Representation
+Subject: Physics
+└── Chapter: Electrostatics (chapter_id: d1427cd7-...)
+    ├── Topic: Electric Charges and Fields (topic_id: 616b36c6-...)
+    │   └── Questions with topic_id = 616b36c6-...  ← TOPIC LEVEL
+    │
+    ├── Topic: Coulomb's Law (topic_id: 860cf14e-...)
+    │   └── Questions with topic_id = 860cf14e-...  ← TOPIC LEVEL
+    │
+    └── Chapter-Level Questions (topic_id = NULL, chapter_id = d1427cd7-...)
+        └── Questions that test entire chapter  ← CHAPTER LEVEL
+Current Database Stats
+Level	Question Count
+Chapter Level	171 questions
+Topic Level	100 questions
+How the Component Decides Which to Fetch
+In Learning.tsx:
+
+
+// When a TOPIC is selected (user clicks on a topic)
+<MCQTest topicId={selectedTopic.id} />
+// Fetches only questions WHERE topic_id = selectedTopic.id
+
+// When a CHAPTER is selected (user clicks on chapter name, not a topic)
+<MCQTest chapterId={selectedChapter.id} chapterOnly />
+// Fetches only questions WHERE chapter_id = selectedChapter.id AND topic_id IS NULL
+API Queries for Mobile Integration
+1. Get Topic-Level MCQs
+
+// Endpoint: Direct Supabase Query
+const getTopicMCQs = async (topicId) => {
+  const { data, error } = await supabase
+    .from("questions")
+    .select("*")
+    .or("question_format.eq.single_choice,question_format.eq.multiple_choice,question_format.is.null")
+    .not("options", "is", null)
+    .eq("topic_id", topicId)  // ← Filter by specific topic
+    .order("created_at");
+  
+  return data;
+};
+2. Get Chapter-Level MCQs Only (Excluding Topic Questions)
+
+// This gets ONLY chapter-level questions (topic_id IS NULL)
+const getChapterOnlyMCQs = async (chapterId) => {
+  const { data, error } = await supabase
+    .from("questions")
+    .select("*")
+    .or("question_format.eq.single_choice,question_format.eq.multiple_choice,question_format.is.null")
+    .not("options", "is", null)
+    .eq("chapter_id", chapterId)  // ← Filter by chapter
+    .is("topic_id", null)         // ← ONLY where topic_id is NULL
+    .order("created_at");
+  
+  return data;
+};
+3. Get ALL MCQs in a Chapter (Chapter + All Topics)
+
+// This gets ALL questions in the chapter (including topic-level)
+const getAllChapterMCQs = async (chapterId) => {
+  const { data, error } = await supabase
+    .from("questions")
+    .select("*")
+    .or("question_format.eq.single_choice,question_format.eq.multiple_choice,question_format.is.null")
+    .not("options", "is", null)
+    .eq("chapter_id", chapterId)  // ← All questions with this chapter_id
+    // NO topic_id filter = gets both topic-level AND chapter-level
+    .order("created_at");
+  
+  return data;
+};
+The chapterOnly Flag Explained
+
+// In useMCQQuestions hook (src/hooks/useMCQQuestions.ts)
+
+export const useMCQQuestions = (topicId?, chapterId?, chapterOnly?) => {
+  // ...
+  
+  if (topicId) {
+    // Case 1: Specific topic selected
+    query = query.eq("topic_id", topicId);
+  } 
+  else if (chapterId && chapterOnly) {
+    // Case 2: Chapter selected, but ONLY chapter-level questions
+    query = query.eq("chapter_id", chapterId).is("topic_id", null);
+  } 
+  else if (chapterId) {
+    // Case 3: Chapter selected, get ALL questions in chapter
+    query = query.eq("chapter_id", chapterId);
+  }
+  
+  // ...
+};
+Visual Flow in the UI
+┌─────────────────────────────────────────────────────────────┐
+│ Course: JEE Main + Advanced Bundle                          │
+├─────────────────────────────────────────────────────────────┤
+│ Subject: Physics                                            │
+├─────────────────────────────────────────────────────────────┤
+│ Sidebar                    │ Main Content Area              │
+│                            │                                 │
+│ ▼ Chapter 1: Electrostatics│ ┌───────────────────────────┐  │
+│   ├── Topic 1: Electric... │ │  MCQs Tab (Topic Level)   │  │
+│   │     ← SELECTED         │ │  Shows: 15 questions      │  │
+│   ├── Topic 2: Coulomb's   │ │  (topic_id = 616b36c6...) │  │
+│   └── Topic 3: Electric F. │ └───────────────────────────┘  │
+│                            │                                 │
+│ Chapter 2: Current Elec.   │                                 │
+└────────────────────────────┴─────────────────────────────────┘
+
+OR when CHAPTER is clicked (not a topic):
+
+┌─────────────────────────────────────────────────────────────┐
+│ Sidebar                    │ Main Content Area              │
+│                            │                                 │
+│ ▼ Chapter 1: Electrostatics│ ┌───────────────────────────┐  │
+│     ← CHAPTER SELECTED     │ │  MCQs Tab (Chapter Level) │  │
+│   ├── Topic 1: Electric... │ │  Badge: "Chapter Level"   │  │
+│   ├── Topic 2: Coulomb's   │ │  Shows: 30 questions      │  │
+│   └── Topic 3: Electric F. │ │  (topic_id = NULL)        │  │
+│                            │ └───────────────────────────┘  │
+└────────────────────────────┴─────────────────────────────────┘
+Question Count API (for Setup Screen)
+
+// Get counts by difficulty for a topic
+const getTopicQuestionCounts = async (topicId) => {
+  const { data } = await supabase
+    .from("questions")
+    .select("difficulty")
+    .or("question_format.eq.single_choice,question_format.eq.multiple_choice,question_format.is.null")
+    .not("options", "is", null)
+    .eq("topic_id", topicId);
+
+  const counts = { all: 0, Low: 0, Medium: 0, Intermediate: 0, Advanced: 0 };
+  data?.forEach((q) => {
+    counts.all++;
+    if (q.difficulty) counts[q.difficulty]++;
+  });
+  return counts;
+};
+
+// Get counts by difficulty for chapter-only
+const getChapterOnlyQuestionCounts = async (chapterId) => {
+  const { data } = await supabase
+    .from("questions")
+    .select("difficulty")
+    .or("question_format.eq.single_choice,question_format.eq.multiple_choice,question_format.is.null")
+    .not("options", "is", null)
+    .eq("chapter_id", chapterId)
+    .is("topic_id", null);  // ← Only chapter-level
+
+  const counts = { all: 0, Low: 0, Medium: 0, Intermediate: 0, Advanced: 0 };
+  data?.forEach((q) => {
+    counts.all++;
+    if (q.difficulty) counts[q.difficulty]++;
+  });
+  return counts;
+};
+Summary Table for Mobile API Integration
+Scenario	API Query Filters
+Topic MCQs	topic_id = {topicId}
+Chapter-Only MCQs	chapter_id = {chapterId} AND topic_id IS NULL
+All Chapter MCQs	chapter_id = {chapterId} (no topic filter)

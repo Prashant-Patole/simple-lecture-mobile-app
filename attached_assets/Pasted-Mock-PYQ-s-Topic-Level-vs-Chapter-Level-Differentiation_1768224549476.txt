@@ -1,0 +1,325 @@
+Mock & PYQ's: Topic Level vs Chapter Level Differentiation
+Database Schema for Level Differentiation
+Table: subject_previous_year_papers
+
+Column	Type	Purpose
+id	UUID	Primary key
+subject_id	UUID	Foreign key to subject
+chapter_id	UUID	Always set - which chapter this paper belongs to
+topic_id	UUID	Nullable - if set = Topic-level, if NULL = Chapter-level
+paper_category	TEXT	previous_year, proficiency, or exam
+year	INTEGER	Year of the paper
+exam_name	TEXT	Name like "JEE Main", "NEET", etc.
+paper_type	TEXT	"main", "advanced", etc.
+document_type	TEXT	mcq, practice, or proficiency
+Differentiation Logic
+The key differentiator is the topic_id column:
+
+┌─────────────────────────────────────────────────────┐
+│              PAPER ASSIGNMENT LOGIC                  │
+├─────────────────────────────────────────────────────┤
+│  topic_id = NULL     →  CHAPTER-LEVEL PAPER         │
+│  topic_id = UUID     →  TOPIC-LEVEL PAPER           │
+└─────────────────────────────────────────────────────┘
+Current Data Example:
+
+// Chapter-Level Papers (topic_id = null)
+{ "exam_name": "Proficiency Test", "chapter_id": "d1427cd7...", "topic_id": null }
+{ "exam_name": "practice set 1",   "chapter_id": "d1427cd7...", "topic_id": null }
+{ "exam_name": "jee2",             "chapter_id": "d1427cd7...", "topic_id": null }
+
+// Topic-Level Papers (topic_id has value)
+{ "exam_name": "exam 1", "chapter_id": "d1427cd7...", "topic_id": "616b36c6..." }
+{ "exam_name": "neet",   "chapter_id": "d1427cd7...", "topic_id": "616b36c6..." }
+{ "exam_name": "jee",    "chapter_id": "d1427cd7...", "topic_id": "860cf14e..." }
+Frontend Distribution Logic
+File: src/hooks/usePreviousYearPaperQuestions.ts
+
+
+export const usePreviousYearPapersForSubject = (
+  subjectId: string | null, 
+  topicId?: string | null,
+  chapterId?: string | null,
+  chapterOnly?: boolean  // KEY FLAG
+) => {
+  return useQuery({
+    queryFn: async () => {
+      let query = supabase
+        .from("subject_previous_year_papers")
+        .select("*")
+        .eq("subject_id", subjectId);
+
+      // LOGIC 1: Chapter-Only Mode
+      if (chapterOnly && chapterId) {
+        query = query
+          .eq("chapter_id", chapterId)
+          .is("topic_id", null);  // Only papers without topic_id
+      } 
+      // LOGIC 2: Topic Mode
+      else if (topicId) {
+        query = query.eq("topic_id", topicId);  // Only this topic's papers
+      } 
+      // LOGIC 3: All Chapter Papers
+      else if (chapterId) {
+        query = query.eq("chapter_id", chapterId);  // All papers in chapter
+      }
+
+      return query.order("year", { ascending: false });
+    },
+  });
+};
+Learning Page Usage
+File: src/pages/Learning.tsx
+
+When User Selects a TOPIC:
+
+<PreviousYearPapers 
+  subjectId={selectedSubjectId} 
+  topicId={selectedTopic?.id}  // ← Topic ID passed
+  onViewResults={() => setActiveTab("my-results")}
+/>
+API Query Generated:
+
+
+SELECT * FROM subject_previous_year_papers 
+WHERE subject_id = '{subject_id}' 
+  AND topic_id = '{topicId}'
+ORDER BY year DESC
+When User Selects a CHAPTER (Chapter-Level View):
+
+<PreviousYearPapers 
+  subjectId={selectedSubjectId} 
+  chapterId={selectedChapter.id}  // ← Chapter ID passed
+  chapterOnly  // ← FLAG: only chapter-level papers
+  onViewResults={() => setActiveTab("my-results")}
+/>
+API Query Generated:
+
+
+SELECT * FROM subject_previous_year_papers 
+WHERE subject_id = '{subject_id}' 
+  AND chapter_id = '{chapterId}' 
+  AND topic_id IS NULL  -- Only chapter-level (no topic)
+ORDER BY year DESC
+API Endpoints Summary
+1. Fetch Papers for Subject (All)
+GET /rest/v1/subject_previous_year_papers?subject_id=eq.{subject_id}&order=year.desc
+2. Fetch Papers for Topic (Topic-Level)
+GET /rest/v1/subject_previous_year_papers?subject_id=eq.{subject_id}&topic_id=eq.{topic_id}&order=year.desc
+3. Fetch Papers for Chapter (Chapter-Level Only)
+GET /rest/v1/subject_previous_year_papers?subject_id=eq.{subject_id}&chapter_id=eq.{chapter_id}&topic_id=is.null&order=year.desc
+4. Fetch All Papers in a Chapter (Both Levels)
+GET /rest/v1/subject_previous_year_papers?subject_id=eq.{subject_id}&chapter_id=eq.{chapter_id}&order=year.desc
+5. Create Paper (Admin)
+POST /rest/v1/subject_previous_year_papers
+
+// Chapter-Level Paper
+{
+  "subject_id": "uuid",
+  "chapter_id": "uuid",
+  "topic_id": null,        // ← NULL means chapter-level
+  "paper_category": "proficiency",
+  "year": 2025,
+  "exam_name": "Chapter Test",
+  "total_questions": 30
+}
+
+// Topic-Level Paper  
+{
+  "subject_id": "uuid",
+  "chapter_id": "uuid",
+  "topic_id": "uuid",      // ← Set means topic-level
+  "paper_category": "previous_year",
+  "year": 2024,
+  "exam_name": "JEE Main",
+  "total_questions": 25
+}
+Visual Flow Diagram
+Now I have all the information needed to provide a comprehensive explanation. Let me document the Topic Level vs Chapter Level differentiation logic:
+
+Mock & PYQ's: Topic Level vs Chapter Level Differentiation
+Database Schema for Level Differentiation
+Table: subject_previous_year_papers
+
+Column	Type	Purpose
+id	UUID	Primary key
+subject_id	UUID	Foreign key to subject
+chapter_id	UUID	Always set - which chapter this paper belongs to
+topic_id	UUID	Nullable - if set = Topic-level, if NULL = Chapter-level
+paper_category	TEXT	previous_year, proficiency, or exam
+year	INTEGER	Year of the paper
+exam_name	TEXT	Name like "JEE Main", "NEET", etc.
+paper_type	TEXT	"main", "advanced", etc.
+document_type	TEXT	mcq, practice, or proficiency
+Differentiation Logic
+The key differentiator is the topic_id column:
+
+┌─────────────────────────────────────────────────────┐
+│              PAPER ASSIGNMENT LOGIC                  │
+├─────────────────────────────────────────────────────┤
+│  topic_id = NULL     →  CHAPTER-LEVEL PAPER         │
+│  topic_id = UUID     →  TOPIC-LEVEL PAPER           │
+└─────────────────────────────────────────────────────┘
+Current Data Example:
+
+// Chapter-Level Papers (topic_id = null)
+{ "exam_name": "Proficiency Test", "chapter_id": "d1427cd7...", "topic_id": null }
+{ "exam_name": "practice set 1",   "chapter_id": "d1427cd7...", "topic_id": null }
+{ "exam_name": "jee2",             "chapter_id": "d1427cd7...", "topic_id": null }
+
+// Topic-Level Papers (topic_id has value)
+{ "exam_name": "exam 1", "chapter_id": "d1427cd7...", "topic_id": "616b36c6..." }
+{ "exam_name": "neet",   "chapter_id": "d1427cd7...", "topic_id": "616b36c6..." }
+{ "exam_name": "jee",    "chapter_id": "d1427cd7...", "topic_id": "860cf14e..." }
+Frontend Distribution Logic
+File: src/hooks/usePreviousYearPaperQuestions.ts
+
+
+export const usePreviousYearPapersForSubject = (
+  subjectId: string | null, 
+  topicId?: string | null,
+  chapterId?: string | null,
+  chapterOnly?: boolean  // KEY FLAG
+) => {
+  return useQuery({
+    queryFn: async () => {
+      let query = supabase
+        .from("subject_previous_year_papers")
+        .select("*")
+        .eq("subject_id", subjectId);
+
+      // LOGIC 1: Chapter-Only Mode
+      if (chapterOnly && chapterId) {
+        query = query
+          .eq("chapter_id", chapterId)
+          .is("topic_id", null);  // Only papers without topic_id
+      } 
+      // LOGIC 2: Topic Mode
+      else if (topicId) {
+        query = query.eq("topic_id", topicId);  // Only this topic's papers
+      } 
+      // LOGIC 3: All Chapter Papers
+      else if (chapterId) {
+        query = query.eq("chapter_id", chapterId);  // All papers in chapter
+      }
+
+      return query.order("year", { ascending: false });
+    },
+  });
+};
+Learning Page Usage
+File: src/pages/Learning.tsx
+
+When User Selects a TOPIC:
+
+<PreviousYearPapers 
+  subjectId={selectedSubjectId} 
+  topicId={selectedTopic?.id}  // ← Topic ID passed
+  onViewResults={() => setActiveTab("my-results")}
+/>
+API Query Generated:
+
+
+SELECT * FROM subject_previous_year_papers 
+WHERE subject_id = '{subject_id}' 
+  AND topic_id = '{topicId}'
+ORDER BY year DESC
+When User Selects a CHAPTER (Chapter-Level View):
+
+<PreviousYearPapers 
+  subjectId={selectedSubjectId} 
+  chapterId={selectedChapter.id}  // ← Chapter ID passed
+  chapterOnly  // ← FLAG: only chapter-level papers
+  onViewResults={() => setActiveTab("my-results")}
+/>
+API Query Generated:
+
+
+SELECT * FROM subject_previous_year_papers 
+WHERE subject_id = '{subject_id}' 
+  AND chapter_id = '{chapterId}' 
+  AND topic_id IS NULL  -- Only chapter-level (no topic)
+ORDER BY year DESC
+API Endpoints Summary
+1. Fetch Papers for Subject (All)
+GET /rest/v1/subject_previous_year_papers?subject_id=eq.{subject_id}&order=year.desc
+2. Fetch Papers for Topic (Topic-Level)
+GET /rest/v1/subject_previous_year_papers?subject_id=eq.{subject_id}&topic_id=eq.{topic_id}&order=year.desc
+3. Fetch Papers for Chapter (Chapter-Level Only)
+GET /rest/v1/subject_previous_year_papers?subject_id=eq.{subject_id}&chapter_id=eq.{chapter_id}&topic_id=is.null&order=year.desc
+4. Fetch All Papers in a Chapter (Both Levels)
+GET /rest/v1/subject_previous_year_papers?subject_id=eq.{subject_id}&chapter_id=eq.{chapter_id}&order=year.desc
+5. Create Paper (Admin)
+POST /rest/v1/subject_previous_year_papers
+
+// Chapter-Level Paper
+{
+  "subject_id": "uuid",
+  "chapter_id": "uuid",
+  "topic_id": null,        // ← NULL means chapter-level
+  "paper_category": "proficiency",
+  "year": 2025,
+  "exam_name": "Chapter Test",
+  "total_questions": 30
+}
+
+// Topic-Level Paper  
+{
+  "subject_id": "uuid",
+  "chapter_id": "uuid",
+  "topic_id": "uuid",      // ← Set means topic-level
+  "paper_category": "previous_year",
+  "year": 2024,
+  "exam_name": "JEE Main",
+  "total_questions": 25
+}
+Visual Flow Diagram
+
+Diagram
+Paper Categories Distribution
+Each paper also has a paper_category for further grouping:
+
+Category	Description	UI Tab
+previous_year	Past exam papers (JEE, NEET, etc.)	"Previous Year" tab
+proficiency	Skill assessment tests	"Proficiency Tests" tab
+exam	Mock exams / practice tests	"Exam Papers" tab
+Filtering in Frontend:
+
+
+// Filter by category within the papers list
+const filteredPapers = useMemo(() => {
+  return papers.filter(p => 
+    (p.paper_category || "previous_year") === activeCategory
+  );
+}, [papers, activeCategory]);
+Complete Query Examples
+For Mobile/API Integration:
+
+
+// 1. Get all topic-level papers for a topic
+const { data: topicPapers } = await supabase
+  .from('subject_previous_year_papers')
+  .select('*')
+  .eq('topic_id', 'topic-uuid')
+  .order('year', { ascending: false });
+
+// 2. Get chapter-level papers only
+const { data: chapterPapers } = await supabase
+  .from('subject_previous_year_papers')
+  .select('*')
+  .eq('chapter_id', 'chapter-uuid')
+  .is('topic_id', null)
+  .order('year', { ascending: false });
+
+// 3. Get proficiency tests for a chapter
+const { data: proficiencyTests } = await supabase
+  .from('subject_previous_year_papers')
+  .select('*')
+  .eq('chapter_id', 'chapter-uuid')
+  .eq('paper_category', 'proficiency')
+  .is('topic_id', null)
+  .order('year', { ascending: false });
+This architecture allows papers to be properly scoped to either:
+
+Topic Level: Specific topics within a chapter (for focused practice)
+Chapter Level: The entire chapter (for comprehensive tests/proficiency)

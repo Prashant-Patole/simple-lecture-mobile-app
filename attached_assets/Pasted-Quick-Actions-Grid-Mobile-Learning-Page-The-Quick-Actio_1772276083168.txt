@@ -1,0 +1,32 @@
+Quick Actions Grid -- Mobile Learning Page
+The Quick Actions are a 2-column grid of buttons shown below the video player (or below the content area) on the mobile learning page. They replace the desktop horizontal tab bar.
+
+Button List (Regular Users -- 7 buttons)
+#	Label	Icon (Lucide)	Description	Tab Value	What It Does
+1	Ask AI	Sparkles	"Have a doubt? Get help"	ai-assistant	Opens the AI Teaching Assistant chat. Students can ask doubts about the current topic/chapter and get AI-generated explanations.
+2	Questions	HelpCircle	"Browse Q&A"	all-questions	Shows MCQ and subjective questions for the selected topic/chapter. Students can attempt them and see answers.
+3	Assignments	ClipboardList	"View your tasks"	assignments	Lists assignments given by the instructor for this subject. Students can view, submit, and track deadlines.
+4	DPP	Target	"Daily Practice Problems"	dpp	Timed quiz-style practice problems. Only visible when a topic is selected (selectedTopic must exist).
+5	Doubts	MessageCircleQuestion	"Ask lecture doubts"	doubts	Contextual doubt-clearing chat tied to the specific lecture/topic. Different from general AI -- this is lecture-specific.
+6	PYQ's	FileText	"Previous year questions"	pyqs	Previous Year Questions for the subject. Works at subject level (no chapter/topic needed).
+7	Results	BarChart3	"View your scores"	my-results	Aggregated scores from all attempts -- DPP, assignments, questions.
+Checker Role (Restricted -- 1 button only)
+Users with the checker role only see:
+
+#	Label	Icon	Tab Value
+1	Questions	HelpCircle	questions
+How They Work
+Tapping a button calls handleTabChange(value) which sets activeTab to the button's value string.
+The renderTabsContent() function reads activeTab and renders the corresponding component (e.g., AITeachingAssistant, PYQsStudentTab, AssignmentsTab, etc.).
+Active state styling: The currently active button gets border-primary bg-primary/10 with the icon background turning solid primary color.
+Inactive styling: border-border bg-card with muted icon.
+Layout Specs
+Grid: grid-cols-2 gap-3
+Each button: rounded-xl border p-3.5, flex column layout
+Icon container: h-9 w-9 rounded-lg with centered icon (h-4.5 w-4.5)
+Text: Label is text-sm font-semibold, description is text-xs text-muted-foreground
+Data Dependencies
+All buttons need selectedSubjectId to be set
+DPP additionally requires selectedTopic to be non-null
+PYQ's works with just the subject ID (no chapter/topic needed)
+Questions, Assignments, Doubts use the selected topic/chapter context

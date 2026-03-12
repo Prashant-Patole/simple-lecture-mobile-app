@@ -1,0 +1,534 @@
+Assignment Tab — Complete Technical Documentation for Mobile
+This is a research/documentation response (not an implementation task), so no plan is needed.
+
+Overview
+The Assignment tab follows a 4-state flow: assignments (list) → detail (landing card) → testing (solve) → results (score + review). It also supports Self-Practice where students generate assignments on-the-fly from the question bank.
+
+1. DATABASE TABLES
+Table: assignments
+
+Column	Type	Notes
+id	uuid	Primary key
+subject_id	uuid	FK to popular_subjects
+chapter_id	uuid	FK to subject_chapters
+topic_id	uuid	FK to subject_topics
+title	text	Required
+description	text	Nullable
+instructions	text	Nullable
+questions	jsonb	Array of question objects (see below)
+total_marks	int	Sum of all question marks
+passing_marks	int	Threshold percentage
+duration_minutes	int	Nullable (no timer if null)
+due_date	timestamptz	Nullable
+valid_until	timestamptz	Nullable
+is_active	boolean	Default true
+source_type	text	"self_practice" or null (admin-created)
+created_at	timestamptz	Auto
+Questions JSONB format (each item in the array):
+
+
+{
+  "id": "q_0",
+  "question": "What is Newton's second law?",
+  "type": "mcq",           // mcq | true_false | short_answer | long_answer | fill_blank | diagram | case_study
+  "options": ["F=ma", "E=mc²", "V=IR", "P=VI"],   // only for MCQ (flat string array)
+  "correct_answer": "F=ma",    // the correct option text (or answer text for subjective)
+  "marks": 2,
+  "explanation": "Newton's second law states...",
+  "image_url": null
+}
+Table: assignment_submissions
+
+Column	Type	Notes
+id	uuid	PK
+assignment_id	uuid	FK to assignments
+student_id	uuid	FK to user (auth.users id)
+answers	jsonb	Map of question_id → answer object
+score	int	Total marks earned
+percentage	int	Rounded percentage
+feedback	text	"Good job!" or "Keep practicing!"
+submitted_at	timestamptz	When submitted
+graded_at	timestamptz	Same as submitted_at (instant grading)
+time_taken_seconds	int	How long student took
+Answers JSONB format (stored in assignment_submissions.answers):
+
+
+{
+  "q_0": {
+    "question_id": "q_0",
+    "text_answer": "F=ma",
+    "image_url": null,
+    "marks_awarded": 2,
+    "is_correct": true,
+    "feedback": "Correct!"
+  },
+  "q_1": {
+    "question_id": "q_1",
+    "text_answer": "The force equals mass times acceleration",
+    "image_url": null,
+    "marks_awarded": 3,
+    "is_correct": true,
+    "feedback": "Good explanation covering the key concept."
+  }
+}
+2. DATA FETCHING
+Step 1: Fetch Assignment List
+Direct Supabase query (no edge function):
+
+SELECT id, title, description, due_date, valid_until, total_marks, 
+       passing_marks, duration_minutes, chapter_id, topic_id
+FROM assignments
+WHERE subject_id = '{subjectId}'
+  AND is_active = true
+ORDER BY created_at DESC
+Then fetch submissions for those assignments:
+
+SELECT assignment_id, score, percentage, submitted_at, graded_at
+FROM assignment_submissions
+WHERE student_id = '{userId}'
+  AND assignment_id IN ('{id1}', '{id2}', ...)
+Merge logic to determine status:
+
+No submission → pending
+Has submitted_at but no graded_at → submitted
+Has graded_at → graded
+Important: Filter by chapter_id if provided. The web app shows all assignments belonging to the parent chapter (not just the selected topic).
+
+Step 2: Fetch Assignment Questions (when user taps an assignment)
+SELECT * FROM assignments WHERE id = '{assignmentId}'
+Parse questions JSONB array. Normalize each question:
+
+id: q.id || `q_${index}`
+question: q.question || q.text || ''
+type: q.type || 'short_answer'
+options: q.options || []
+correct_answer: q.correct_answer || q.answer || ''
+marks: q.marks || 1
+explanation: q.explanation || ''
+image_url: q.image_url || null
+Step 3: Fetch Existing Submission (for results view)
+SELECT * FROM assignment_submissions
+WHERE assignment_id = '{assignmentId}'
+  AND student_id = '{userId}'
+LIMIT 1
+3. QUESTION TYPE DETECTION (CRITICAL)
+The system uses validation to distinguish MCQs from subjective questions:
+
+
+function hasValidMCQOptions(options: any): boolean {
+  if (!options || typeof options !== 'object') return false;
+  const entries = Object.entries(options);
+  if (entries.length < 2) return false;
+  // At least one option must have meaningful text (not just "A", "None", etc.)
+  return entries.some(([key, val]) => {
+    const text = (typeof val === 'string' ? val : val?.text || '').trim().toLowerCase();
+    return text && text !== 'none' && text !== key.toLowerCase() && text.length > 1;
+  });
+}
+Question type mapping:
+
+mcq, single_choice, multiple_choice → MCQ (radio buttons)
+true_false → True/False (radio: True, False)
+long_answer, essay, descriptive, subjective → Long answer (textarea, 6 rows)
+fill_blank → Single-line input
+diagram → Image upload only
+Everything else → Short answer (textarea, 3 rows)
+4. ANSWERING & SUBMISSION
+MCQ Answer Format
+Store the option text (not index/key):
+
+
+{ "q_0": { "text": "F=ma" } }
+Subjective Answer
+
+{ "q_1": { "text": "The student's written answer..." } }
+Image Answer Upload
+Storage bucket: student-answers (public) Path: assignments/{assignmentId}/{questionId}/{timestamp}.{ext}
+
+POST to Supabase Storage: student-answers/assignments/{assignmentId}/{questionId}/{Date.now()}.png
+Returns a public URL that's stored in the answer.
+
+Image Text Extraction (Optional)
+Edge Function: extract-answer-from-image
+
+POST /functions/v1/extract-answer-from-image
+Body: { "image_url": "https://...", "question_context": "What is Newton's law?" }
+Response: { "extracted_text": "Force equals...", "confidence": "high" }
+5. GRADING
+MCQ Grading (Local — No API Call)
+
+// Compare student answer to correct_answer
+const isCorrect = normalize(studentAnswer) === normalize(correctAnswer);
+
+// Fallback: if correct_answer is a letter key (A/B/C/D), resolve to option text
+if (/^[A-Z]$/.test(correctAnswer.toUpperCase())) {
+  const idx = correctAnswer.charCodeAt(0) - 65;
+  isCorrect = normalize(studentAnswer) === normalize(options[idx]);
+}
+
+marks_awarded = isCorrect ? q.marks : 0;
+Subjective Grading (AI Edge Function)
+Edge Function: ai-grade-assignment
+
+POST /functions/v1/ai-grade-assignment
+Authorization: Bearer {anon_key}
+Body:
+{
+  "questions": [
+    {
+      "question_id": "q_1",
+      "question": "Explain Newton's second law",
+      "type": "short_answer",
+      "correct_answer": "Force equals mass times acceleration",
+      "student_answer": "F=ma means force is product of mass and acceleration",
+      "marks": 5
+    }
+  ]
+}
+
+Response:
+{
+  "grades": [
+    {
+      "question_id": "q_1",
+      "marks_awarded": 4,
+      "feedback": "Good explanation but could mention the vector nature.",
+      "is_correct": true
+    }
+  ],
+  "total_marks_awarded": 4,
+  "total_max_marks": 5,
+  "percentage": 80
+}
+The AI uses Google Gemini or OpenAI (configured in ai_settings table). It awards full, partial, or zero marks. If AI grading fails, answers are marked "Pending manual review" with 0 marks.
+
+Correctness rule: Any answer getting >= 1 mark is flagged as is_correct: true (green).
+
+6. SAVING SUBMISSION
+Upsert to assignment_submissions:
+
+// Check existing
+SELECT id FROM assignment_submissions 
+WHERE assignment_id = '{id}' AND student_id = '{userId}'
+
+// If exists → UPDATE, else → INSERT
+{
+  assignment_id: assignmentId,
+  student_id: userId,
+  answers: { "q_0": {...}, "q_1": {...} },  // JSON map
+  score: 7,           // total marks earned
+  percentage: 70,     // rounded
+  feedback: "Good job!",   // >= 60% ? "Good job!" : "Keep practicing!"
+  submitted_at: "2026-02-26T...",
+  graded_at: "2026-02-26T...",
+  time_taken_seconds: 342
+}
+7. SELF-PRACTICE ASSIGNMENT CREATION
+When user taps "New Practice":
+
+Fetch up to 20 questions from questions table filtered by topic_id or chapter_id
+Shuffle and pick 10
+Map to assignment question format (validate MCQ options)
+Insert into assignments table:
+
+{
+  "title": "Practice Assignment - Feb 26, 2026",
+  "subject_id": "...",
+  "chapter_id": "...",
+  "topic_id": "...",
+  "questions": [...],
+  "total_marks": 10,
+  "passing_marks": 4,
+  "is_active": true,
+  "source_type": "self_practice"
+}
+8. UI STATES SUMMARY
+State	What's Shown
+assignments	List of assignment cards with status badge (Pending/Submitted/Graded), score if completed, "New Practice" button
+detail	Landing card: title, question count, total marks, duration, passing %, instructions, "Solve Assignment" button, past attempts
+testing	Question palette (numbered buttons), current question with answer input, timer (if duration set), flag button, prev/next navigation, submit button
+results	Score card (percentage, marks, correct/incorrect/unanswered counts), question-by-question review with feedback, "Try Again" button
+9. TIMER
+If duration_minutes is set, countdown starts when test begins
+Auto-submits when timer reaches 0
+Display format: MM:SS
+Badge turns red when < 60 seconds
+10. COMPLETE API REFERENCE
+Action	Method	Endpoint/Table
+List assignments	Supabase query	assignments WHERE subject_id + is_active
+List submissions	Supabase query	assignment_submissions WHERE student_id + assignment_ids
+Get assignment detail	Supabase query	assignments WHERE id
+Get submission	Supabase query	assignment_submissions WHERE assignment_id + student_id
+Upload answer image	Supabase Storage	Bucket: student-answers, Path: assignments/{id}/{qid}/{ts}.ext
+Extract text from image	Edge Function	extract-answer-from-image
+Grade subjective answers	Edge Function	ai-grade-assignment
+Save submission	Supabase upsert	assignment_submissions
+Create practice assignment	Supabase insert	assignments (source_type: self_practice)
+Now I have everything needed. Here's the complete documentation:
+
+Assignment Tab — Complete Technical Documentation for Mobile
+This is a research/documentation response (not an implementation task), so no plan is needed.
+
+Overview
+The Assignment tab follows a 4-state flow: assignments (list) → detail (landing card) → testing (solve) → results (score + review). It also supports Self-Practice where students generate assignments on-the-fly from the question bank.
+
+1. DATABASE TABLES
+Table: assignments
+
+Column	Type	Notes
+id	uuid	Primary key
+subject_id	uuid	FK to popular_subjects
+chapter_id	uuid	FK to subject_chapters
+topic_id	uuid	FK to subject_topics
+title	text	Required
+description	text	Nullable
+instructions	text	Nullable
+questions	jsonb	Array of question objects (see below)
+total_marks	int	Sum of all question marks
+passing_marks	int	Threshold percentage
+duration_minutes	int	Nullable (no timer if null)
+due_date	timestamptz	Nullable
+valid_until	timestamptz	Nullable
+is_active	boolean	Default true
+source_type	text	"self_practice" or null (admin-created)
+created_at	timestamptz	Auto
+Questions JSONB format (each item in the array):
+
+
+{
+  "id": "q_0",
+  "question": "What is Newton's second law?",
+  "type": "mcq",           // mcq | true_false | short_answer | long_answer | fill_blank | diagram | case_study
+  "options": ["F=ma", "E=mc²", "V=IR", "P=VI"],   // only for MCQ (flat string array)
+  "correct_answer": "F=ma",    // the correct option text (or answer text for subjective)
+  "marks": 2,
+  "explanation": "Newton's second law states...",
+  "image_url": null
+}
+Table: assignment_submissions
+
+Column	Type	Notes
+id	uuid	PK
+assignment_id	uuid	FK to assignments
+student_id	uuid	FK to user (auth.users id)
+answers	jsonb	Map of question_id → answer object
+score	int	Total marks earned
+percentage	int	Rounded percentage
+feedback	text	"Good job!" or "Keep practicing!"
+submitted_at	timestamptz	When submitted
+graded_at	timestamptz	Same as submitted_at (instant grading)
+time_taken_seconds	int	How long student took
+Answers JSONB format (stored in assignment_submissions.answers):
+
+
+{
+  "q_0": {
+    "question_id": "q_0",
+    "text_answer": "F=ma",
+    "image_url": null,
+    "marks_awarded": 2,
+    "is_correct": true,
+    "feedback": "Correct!"
+  },
+  "q_1": {
+    "question_id": "q_1",
+    "text_answer": "The force equals mass times acceleration",
+    "image_url": null,
+    "marks_awarded": 3,
+    "is_correct": true,
+    "feedback": "Good explanation covering the key concept."
+  }
+}
+2. DATA FETCHING
+Step 1: Fetch Assignment List
+Direct Supabase query (no edge function):
+
+SELECT id, title, description, due_date, valid_until, total_marks, 
+       passing_marks, duration_minutes, chapter_id, topic_id
+FROM assignments
+WHERE subject_id = '{subjectId}'
+  AND is_active = true
+ORDER BY created_at DESC
+Then fetch submissions for those assignments:
+
+SELECT assignment_id, score, percentage, submitted_at, graded_at
+FROM assignment_submissions
+WHERE student_id = '{userId}'
+  AND assignment_id IN ('{id1}', '{id2}', ...)
+Merge logic to determine status:
+
+No submission → pending
+Has submitted_at but no graded_at → submitted
+Has graded_at → graded
+Important: Filter by chapter_id if provided. The web app shows all assignments belonging to the parent chapter (not just the selected topic).
+
+Step 2: Fetch Assignment Questions (when user taps an assignment)
+SELECT * FROM assignments WHERE id = '{assignmentId}'
+Parse questions JSONB array. Normalize each question:
+
+id: q.id || `q_${index}`
+question: q.question || q.text || ''
+type: q.type || 'short_answer'
+options: q.options || []
+correct_answer: q.correct_answer || q.answer || ''
+marks: q.marks || 1
+explanation: q.explanation || ''
+image_url: q.image_url || null
+Step 3: Fetch Existing Submission (for results view)
+SELECT * FROM assignment_submissions
+WHERE assignment_id = '{assignmentId}'
+  AND student_id = '{userId}'
+LIMIT 1
+3. QUESTION TYPE DETECTION (CRITICAL)
+The system uses validation to distinguish MCQs from subjective questions:
+
+
+function hasValidMCQOptions(options: any): boolean {
+  if (!options || typeof options !== 'object') return false;
+  const entries = Object.entries(options);
+  if (entries.length < 2) return false;
+  // At least one option must have meaningful text (not just "A", "None", etc.)
+  return entries.some(([key, val]) => {
+    const text = (typeof val === 'string' ? val : val?.text || '').trim().toLowerCase();
+    return text && text !== 'none' && text !== key.toLowerCase() && text.length > 1;
+  });
+}
+Question type mapping:
+
+mcq, single_choice, multiple_choice → MCQ (radio buttons)
+true_false → True/False (radio: True, False)
+long_answer, essay, descriptive, subjective → Long answer (textarea, 6 rows)
+fill_blank → Single-line input
+diagram → Image upload only
+Everything else → Short answer (textarea, 3 rows)
+4. ANSWERING & SUBMISSION
+MCQ Answer Format
+Store the option text (not index/key):
+
+
+{ "q_0": { "text": "F=ma" } }
+Subjective Answer
+
+{ "q_1": { "text": "The student's written answer..." } }
+Image Answer Upload
+Storage bucket: student-answers (public) Path: assignments/{assignmentId}/{questionId}/{timestamp}.{ext}
+
+POST to Supabase Storage: student-answers/assignments/{assignmentId}/{questionId}/{Date.now()}.png
+Returns a public URL that's stored in the answer.
+
+Image Text Extraction (Optional)
+Edge Function: extract-answer-from-image
+
+POST /functions/v1/extract-answer-from-image
+Body: { "image_url": "https://...", "question_context": "What is Newton's law?" }
+Response: { "extracted_text": "Force equals...", "confidence": "high" }
+5. GRADING
+MCQ Grading (Local — No API Call)
+
+// Compare student answer to correct_answer
+const isCorrect = normalize(studentAnswer) === normalize(correctAnswer);
+
+// Fallback: if correct_answer is a letter key (A/B/C/D), resolve to option text
+if (/^[A-Z]$/.test(correctAnswer.toUpperCase())) {
+  const idx = correctAnswer.charCodeAt(0) - 65;
+  isCorrect = normalize(studentAnswer) === normalize(options[idx]);
+}
+
+marks_awarded = isCorrect ? q.marks : 0;
+Subjective Grading (AI Edge Function)
+Edge Function: ai-grade-assignment
+
+POST /functions/v1/ai-grade-assignment
+Authorization: Bearer {anon_key}
+Body:
+{
+  "questions": [
+    {
+      "question_id": "q_1",
+      "question": "Explain Newton's second law",
+      "type": "short_answer",
+      "correct_answer": "Force equals mass times acceleration",
+      "student_answer": "F=ma means force is product of mass and acceleration",
+      "marks": 5
+    }
+  ]
+}
+
+Response:
+{
+  "grades": [
+    {
+      "question_id": "q_1",
+      "marks_awarded": 4,
+      "feedback": "Good explanation but could mention the vector nature.",
+      "is_correct": true
+    }
+  ],
+  "total_marks_awarded": 4,
+  "total_max_marks": 5,
+  "percentage": 80
+}
+The AI uses Google Gemini or OpenAI (configured in ai_settings table). It awards full, partial, or zero marks. If AI grading fails, answers are marked "Pending manual review" with 0 marks.
+
+Correctness rule: Any answer getting >= 1 mark is flagged as is_correct: true (green).
+
+6. SAVING SUBMISSION
+Upsert to assignment_submissions:
+
+// Check existing
+SELECT id FROM assignment_submissions 
+WHERE assignment_id = '{id}' AND student_id = '{userId}'
+
+// If exists → UPDATE, else → INSERT
+{
+  assignment_id: assignmentId,
+  student_id: userId,
+  answers: { "q_0": {...}, "q_1": {...} },  // JSON map
+  score: 7,           // total marks earned
+  percentage: 70,     // rounded
+  feedback: "Good job!",   // >= 60% ? "Good job!" : "Keep practicing!"
+  submitted_at: "2026-02-26T...",
+  graded_at: "2026-02-26T...",
+  time_taken_seconds: 342
+}
+7. SELF-PRACTICE ASSIGNMENT CREATION
+When user taps "New Practice":
+
+Fetch up to 20 questions from questions table filtered by topic_id or chapter_id
+Shuffle and pick 10
+Map to assignment question format (validate MCQ options)
+Insert into assignments table:
+
+{
+  "title": "Practice Assignment - Feb 26, 2026",
+  "subject_id": "...",
+  "chapter_id": "...",
+  "topic_id": "...",
+  "questions": [...],
+  "total_marks": 10,
+  "passing_marks": 4,
+  "is_active": true,
+  "source_type": "self_practice"
+}
+8. UI STATES SUMMARY
+State	What's Shown
+assignments	List of assignment cards with status badge (Pending/Submitted/Graded), score if completed, "New Practice" button
+detail	Landing card: title, question count, total marks, duration, passing %, instructions, "Solve Assignment" button, past attempts
+testing	Question palette (numbered buttons), current question with answer input, timer (if duration set), flag button, prev/next navigation, submit button
+results	Score card (percentage, marks, correct/incorrect/unanswered counts), question-by-question review with feedback, "Try Again" button
+9. TIMER
+If duration_minutes is set, countdown starts when test begins
+Auto-submits when timer reaches 0
+Display format: MM:SS
+Badge turns red when < 60 seconds
+10. COMPLETE API REFERENCE
+Action	Method	Endpoint/Table
+List assignments	Supabase query	assignments WHERE subject_id + is_active
+List submissions	Supabase query	assignment_submissions WHERE student_id + assignment_ids
+Get assignment detail	Supabase query	assignments WHERE id
+Get submission	Supabase query	assignment_submissions WHERE assignment_id + student_id
+Upload answer image	Supabase Storage	Bucket: student-answers, Path: assignments/{id}/{qid}/{ts}.ext
+Extract text from image	Edge Function	extract-answer-from-image
+Grade subjective answers	Edge Function	ai-grade-assignment
+Save submission	Supabase upsert	assignment_submissions
+Create practice assignment	Supabase insert	assignments (source_type: self_practice)

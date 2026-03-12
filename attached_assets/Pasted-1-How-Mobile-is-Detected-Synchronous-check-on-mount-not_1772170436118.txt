@@ -1,0 +1,294 @@
+1. How Mobile is Detected
+
+// Synchronous check on mount (not reactive -- prevents remounts on rotation)
+const [isMobile] = useState(() => window.innerWidth < 768);
+The layout is locked at mount time. No re-renders happen when the device rotates -- this prevents the player from unmounting during orientation changes.
+
+2. Portrait Mode (Default Mobile View)
+Dialog Container (EducationalVideoPlayerDialog.tsx)
+On mobile, the Dialog overlay is completely bypassed. Instead, a fixed full-screen div is rendered:
+
+
++---------------------------------------------+
+| Fixed div (inset-0, z-50, bg-background)    |
+|                                              |
+|  +----------------------------------------+ |
+|  |  Player container (height: 45vh)        | |
+|  |  (EducationalVideoPlayer renders here)  | |
+|  +----------------------------------------+ |
+|                                              |
+|  +----------------------------------------+ |
+|  |  Scrollable metadata area (flex-1)      | |
+|  |  - Back button + title                  | |
+|  |  - Quick Actions grid (2 cols)          | |
+|  |  - Or: section count info               | |
+|  +----------------------------------------+ |
++---------------------------------------------+
+Player Stage Layout (Portrait)
+The player-stage uses aspect-ratio: 16/9 on mobile (not full height):
+
+
++------------------------------------------+
+|  Header (36px, compact)                   |
+|  Logo hidden, title 0.55rem               |
++------------------------------------------+
+|                                           |
+|  Content Layer    |   Avatar Layer        |
+|  (55% width)     |   (55% width,         |
+|                   |    95% height,        |
+|  - Section title  |    translateX(25%))   |
+|    (0.8em)        |                       |
+|  - Single active  |   Canvas with         |
+|    bullet/beat    |   chroma-keyed        |
+|                   |   avatar video        |
+|                   |                       |
++------------------------------------------+
+|  Controls (compact, ~24px, 2-row):        |
+|  Row 1: [time] ---timeline--- [time]      |
+|  Row 2: [prev][play][next][picker][fs]    |
++------------------------------------------+
+Key CSS rules for portrait mobile:
+
+Stage: aspect-ratio: 16/9, width 100%
+Header: 36px height, logo hidden
+Content layer: 55% width, no padding
+Avatar layer: 55% width, 95% height, translateX(25%)
+Controls: wrapped, auto height, tiny buttons (22px, play 28px)
+Volume/language picker: hidden
+Desktop timeline: hidden; mobile timeline row shown instead
+Section title: 0.8em, minimal styling
+Content: single-bullet-at-a-time pattern (classes content-single-mobile, summary-single-mobile)
+Single Bullet Pattern (Mobile)
+On mobile, content sections show one beat at a time with a counter ("2 of 8"):
+
+
++----------------------------------+
+| [Current bullet content]         |
+| styled with dark card, left      |
+| indigo border, 0.82rem font      |
++----------------------------------+
+         2 of 8
+Flashcards use a vertical scroll with fixed 140px height cards.
+
+3. Fullscreen Mode
+Triggered by a Maximize/Minimize button in the controls bar. Two sub-modes:
+
+Portrait Fullscreen
+When fullscreen is entered but device stays portrait:
+
+Stage: aspect-ratio: unset, height: 100% (fills screen)
+CSS fallback for devices without orientation lock API (Safari iOS):
+
+@media (orientation: portrait) {
+  :fullscreen .player-stage {
+    transform: rotate(90deg);
+    width: 100vh !important;
+    height: 100vw !important;
+    /* centered with negative margins */
+  }
+}
+This forces landscape view by rotating the stage 90 degrees.
+Landscape Fullscreen
+When orientation lock succeeds (screen.orientation.lock('landscape')):
+
+Content layer: 60% width
+Avatar layer: 65% width, translateX(5%)
+Controls: desktop-like (50px height, single row)
+Volume, language picker, desktop timeline: all shown
+Mobile timeline row: hidden
+Buttons: 32px (primary 36px)
+Font sizes restored: section title 1em, markdown 0.9rem
+Fullscreen Toggle Logic (JS)
+
+const toggleFullscreen = async () => {
+  if (!document.fullscreenElement) {
+    // Enter fullscreen
+    await fullscreenWrapperRef.current.requestFullscreen();
+    isFullscreenRef.current = true;
+    // Try landscape lock
+    try {
+      await screen.orientation.lock('landscape');
+    } catch {
+      // CSS fallback handles portrait rotation
+    }
+  } else {
+    // Exit fullscreen
+    screen.orientation.unlock();
+    isFullscreenRef.current = false;
+    document.exitFullscreen();
+  }
+};
+A fullscreenchange event listener syncs the React isFullscreen state with the browser's actual fullscreen status (handles back gestures, system UI, etc.).
+
+4. Key Components Summary
+Component	Role
+EducationalVideoPlayerDialog	Mobile: fixed overlay (no Dialog). Desktop: Dialog modal
+EducationalVideoPlayer	Core player with stage, avatar, content, controls
+PlayerControls	Mobile: 2-row (timeline + buttons). Desktop: single row
+Stage	Layout wrapper with mode classes
+ContentLayer	Left side content (55% on mobile)
+VideoLayer	Manim/beat videos (z-index 15)
+Avatar layer	Chroma-keyed avatar (z-index 20)
+player.css	All responsive rules, fullscreen rules, animations
+5. Pre-Intro Video
+Mobile: renders inside the Stage (position: absolute)
+Desktop: renders outside the Stage (position: fixed)
+Skip button with delayed fade-in animation
+Header hidden during pre-intro on mobile
+6. Media Loading
+First 3 sections are pre-cached as Blob URLs on mount
+Rolling prefetch of next 3 sections during playback
+Loading screen with progress bar shown until initial cache completes
+Chroma key processing via WebGL (GPU) with CPU fallback
+This should give you everything needed to replicate both portrait and fullscreen mobile views in your Replit project.
+
+Here's a complete breakdown of the Educational Video Player's mobile view -- both portrait (default) and fullscreen modes -- so you can replicate it in Replit:
+
+1. How Mobile is Detected
+
+// Synchronous check on mount (not reactive -- prevents remounts on rotation)
+const [isMobile] = useState(() => window.innerWidth < 768);
+The layout is locked at mount time. No re-renders happen when the device rotates -- this prevents the player from unmounting during orientation changes.
+
+2. Portrait Mode (Default Mobile View)
+Dialog Container (EducationalVideoPlayerDialog.tsx)
+On mobile, the Dialog overlay is completely bypassed. Instead, a fixed full-screen div is rendered:
+
+
++---------------------------------------------+
+| Fixed div (inset-0, z-50, bg-background)    |
+|                                              |
+|  +----------------------------------------+ |
+|  |  Player container (height: 45vh)        | |
+|  |  (EducationalVideoPlayer renders here)  | |
+|  +----------------------------------------+ |
+|                                              |
+|  +----------------------------------------+ |
+|  |  Scrollable metadata area (flex-1)      | |
+|  |  - Back button + title                  | |
+|  |  - Quick Actions grid (2 cols)          | |
+|  |  - Or: section count info               | |
+|  +----------------------------------------+ |
++---------------------------------------------+
+Player Stage Layout (Portrait)
+The player-stage uses aspect-ratio: 16/9 on mobile (not full height):
+
+
++------------------------------------------+
+|  Header (36px, compact)                   |
+|  Logo hidden, title 0.55rem               |
++------------------------------------------+
+|                                           |
+|  Content Layer    |   Avatar Layer        |
+|  (55% width)     |   (55% width,         |
+|                   |    95% height,        |
+|  - Section title  |    translateX(25%))   |
+|    (0.8em)        |                       |
+|  - Single active  |   Canvas with         |
+|    bullet/beat    |   chroma-keyed        |
+|                   |   avatar video        |
+|                   |                       |
++------------------------------------------+
+|  Controls (compact, ~24px, 2-row):        |
+|  Row 1: [time] ---timeline--- [time]      |
+|  Row 2: [prev][play][next][picker][fs]    |
++------------------------------------------+
+Key CSS rules for portrait mobile:
+
+Stage: aspect-ratio: 16/9, width 100%
+Header: 36px height, logo hidden
+Content layer: 55% width, no padding
+Avatar layer: 55% width, 95% height, translateX(25%)
+Controls: wrapped, auto height, tiny buttons (22px, play 28px)
+Volume/language picker: hidden
+Desktop timeline: hidden; mobile timeline row shown instead
+Section title: 0.8em, minimal styling
+Content: single-bullet-at-a-time pattern (classes content-single-mobile, summary-single-mobile)
+Single Bullet Pattern (Mobile)
+On mobile, content sections show one beat at a time with a counter ("2 of 8"):
+
+
++----------------------------------+
+| [Current bullet content]         |
+| styled with dark card, left      |
+| indigo border, 0.82rem font      |
++----------------------------------+
+         2 of 8
+Flashcards use a vertical scroll with fixed 140px height cards.
+
+3. Fullscreen Mode
+Triggered by a Maximize/Minimize button in the controls bar. Two sub-modes:
+
+Portrait Fullscreen
+When fullscreen is entered but device stays portrait:
+
+Stage: aspect-ratio: unset, height: 100% (fills screen)
+CSS fallback for devices without orientation lock API (Safari iOS):
+
+@media (orientation: portrait) {
+  :fullscreen .player-stage {
+    transform: rotate(90deg);
+    width: 100vh !important;
+    height: 100vw !important;
+    /* centered with negative margins */
+  }
+}
+This forces landscape view by rotating the stage 90 degrees.
+Landscape Fullscreen
+When orientation lock succeeds (screen.orientation.lock('landscape')):
+
+Content layer: 60% width
+Avatar layer: 65% width, translateX(5%)
+Controls: desktop-like (50px height, single row)
+Volume, language picker, desktop timeline: all shown
+Mobile timeline row: hidden
+Buttons: 32px (primary 36px)
+Font sizes restored: section title 1em, markdown 0.9rem
+Fullscreen Toggle Logic (JS)
+
+const toggleFullscreen = async () => {
+  if (!document.fullscreenElement) {
+    // Enter fullscreen
+    await fullscreenWrapperRef.current.requestFullscreen();
+    isFullscreenRef.current = true;
+    // Try landscape lock
+    try {
+      await screen.orientation.lock('landscape');
+    } catch {
+      // CSS fallback handles portrait rotation
+    }
+  } else {
+    // Exit fullscreen
+    screen.orientation.unlock();
+    isFullscreenRef.current = false;
+    document.exitFullscreen();
+  }
+};
+A fullscreenchange event listener syncs the React isFullscreen state with the browser's actual fullscreen status (handles back gestures, system UI, etc.).
+
+4. Key Components Summary
+Component	Role
+EducationalVideoPlayerDialog	Mobile: fixed overlay (no Dialog). Desktop: Dialog modal
+EducationalVideoPlayer	Core player with stage, avatar, content, controls
+PlayerControls	Mobile: 2-row (timeline + buttons). Desktop: single row
+Stage	Layout wrapper with mode classes
+ContentLayer	Left side content (55% on mobile)
+VideoLayer	Manim/beat videos (z-index 15)
+Avatar layer	Chroma-keyed avatar (z-index 20)
+player.css	All responsive rules, fullscreen rules, animations
+5. Pre-Intro Video
+Mobile: renders inside the Stage (position: absolute)
+Desktop: renders outside the Stage (position: fixed)
+Skip button with delayed fade-in animation
+Header hidden during pre-intro on mobile
+6. Media Loading
+First 3 sections are pre-cached as Blob URLs on mount
+Rolling prefetch of next 3 sections during playback
+Loading screen with progress bar shown until initial cache completes
+Chroma key processing via WebGL (GPU) with CPU fallback
+This should give you everything needed to replicate both portrait and fullscreen mobile views in your Replit project.
+
+
+
+
+

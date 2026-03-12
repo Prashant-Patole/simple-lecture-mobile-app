@@ -1,0 +1,408 @@
+📚 Assignment Tab - Complete Technical Breakdown
+1. Database Schema
+assignments Table
+Column	Type	Description
+id	uuid	Primary key
+subject_id	uuid	Subject reference
+chapter_id	uuid	Chapter reference
+topic_id	uuid	Topic reference (NULL = chapter-level)
+title	text	Assignment title
+description	text	Description
+instructions	text	Student instructions
+questions	jsonb	Array of questions (stored as JSON)
+total_marks	integer	Total marks
+passing_marks	integer	Minimum passing marks
+duration_minutes	integer	Time limit
+due_date	timestamp	Deadline
+valid_until	timestamptz	Expiry date
+is_active	boolean	Visibility
+source_type	text	"ai_generated" or "manual"
+ai_generation_config	jsonb	AI config if auto-generated
+assignment_submissions Table
+Column	Type	Description
+id	uuid	Primary key
+assignment_id	uuid	Assignment reference
+student_id	uuid	Student user ID
+answers	jsonb	Student answers with grading
+score	integer	Total marks obtained
+percentage	numeric	Score percentage
+feedback	text	Overall feedback
+submitted_at	timestamp	Submission time
+graded_at	timestamp	Grading time
+time_taken_seconds	integer	Time spent
+2. Question Structure (JSONB in questions column)
+
+interface AssignmentQuestion {
+  id: string;
+  question: string;
+  type: 'mcq' | 'true_false' | 'short_answer' | 'long_answer' | 'application';
+  options?: string[];          // For MCQ only
+  correct_answer?: string;
+  marks: number;
+  explanation?: string;
+  image_url?: string;
+}
+3. API Queries (Direct Supabase)
+Fetch Assignments for Student
+
+// Hook: useSubjectAssignmentsForStudent(subjectId, chapterId?, topicId?)
+const query = supabase
+  .from('assignments')
+  .select(`
+    id, title, description, due_date, total_marks,
+    passing_marks, duration_minutes, chapter_id, topic_id
+  `)
+  .eq('subject_id', subjectId)
+  .eq('is_active', true)
+  .order('created_at', { ascending: false });
+
+// Optional filters:
+if (chapterId) query = query.eq('chapter_id', chapterId);
+if (topicId) query = query.eq('topic_id', topicId);
+Fetch Assignment Questions
+
+// Hook: useAssignmentQuestions(assignmentId)
+const { data } = await supabase
+  .from('assignments')
+  .select('*')
+  .eq('id', assignmentId)
+  .single();
+
+// Parse questions from JSONB
+const questions = data.questions.map((q, idx) => ({
+  id: q.id || `q_${idx}`,
+  question: q.question || q.text || '',
+  type: q.type || 'short_answer',
+  options: q.options || [],
+  correct_answer: q.correct_answer || q.answer || '',
+  marks: q.marks || 1,
+  explanation: q.explanation || '',
+  image_url: q.image_url || null,
+}));
+Fetch Submission Status
+
+const { data: submissions } = await supabase
+  .from('assignment_submissions')
+  .select('assignment_id, score, percentage, submitted_at, graded_at')
+  .eq('student_id', userId)
+  .in('assignment_id', assignmentIds);
+Submit Assignment
+
+// Hook: useSubmitAssignment()
+await supabase
+  .from('assignment_submissions')
+  .insert({
+    assignment_id: assignmentId,
+    student_id: userId,
+    answers: gradedAnswers,       // JSONB
+    score: totalScore,
+    percentage: percentage,
+    feedback: "Good job!",
+    submitted_at: new Date().toISOString(),
+    graded_at: new Date().toISOString(),
+    time_taken_seconds: timeTaken,
+  });
+4. Supabase Edge Functions
+1. AI Grade Assignment (POST /functions/v1/ai-grade-assignment)
+Purpose: Grade subjective answers (short_answer, long_answer, application)
+
+Request Body:
+
+
+{
+  "questions": [
+    {
+      "question_id": "q_0",
+      "question": "Explain Newton's First Law",
+      "type": "short_answer",
+      "correct_answer": "Objects at rest stay at rest...",
+      "student_answer": "A body continues in motion...",
+      "marks": 5
+    }
+  ]
+}
+Response:
+
+
+{
+  "grades": [
+    {
+      "question_id": "q_0",
+      "marks_awarded": 4,
+      "feedback": "Good explanation but missed the rest condition.",
+      "is_correct": false
+    }
+  ],
+  "total_marks_awarded": 4,
+  "total_max_marks": 5,
+  "percentage": 80
+}
+AI Model Used: google/gemini-2.5-flash
+
+2. Extract Answer from Image (POST /functions/v1/extract-answer-from-image)
+Purpose: OCR handwritten answers from uploaded images
+
+Request Body:
+
+
+{
+  "image_url": "https://storage.supabase.co/.../answer.jpg",
+  "question_context": "Find the derivative of x^2"
+}
+Response:
+
+
+{
+  "extracted_text": "2x",
+  "confidence": "high"  // high | medium | low
+}
+Features:
+
+Converts image to base64
+Uses Gemini Vision API
+Preserves LaTeX notation
+Handles handwritten math
+3. AI Generate Assignment (POST /functions/v1/ai-generate-assignment)
+Purpose: Auto-generate assignments based on chapter/topic
+
+Request Body:
+
+
+{
+  "subjectId": "uuid",
+  "chapterId": "uuid",
+  "topicId": "uuid (optional)",
+  "config": {
+    "difficultyMix": { "easy": 30, "medium": 50, "hard": 20 },
+    "questionTypes": ["mcq", "short_answer", "long_answer"],
+    "totalMarks": 50,
+    "durationMinutes": 60
+  },
+  "instructions": "Focus on numerical problems"
+}
+Response:
+
+
+{
+  "success": true,
+  "title": "Motion - Velocity Assignment",
+  "questions": [...],
+  "totalQuestions": 15,
+  "totalMarks": 50
+}
+5. Topic Level vs Chapter Level
+Level	Filter Logic
+Topic Level	topic_id = selectedTopicId
+Chapter Level	chapter_id = selectedChapterId (no topic filter)
+The component receives props and filters accordingly:
+
+
+interface AssignmentViewerProps {
+  topicId?: string;    // If provided, fetch topic-level assignments
+  chapterId?: string;  // If provided (no topicId), fetch chapter-level
+  subjectId?: string;  // Required for fetching
+}
+6. Grading System
+MCQ/True-False (Local Grading)
+
+const mcqTypes = ["mcq", "true_false"];
+
+// Graded locally - exact match comparison
+const isCorrect = normalizeAnswer(studentAnswer) === normalizeAnswer(correctAnswer);
+const marksAwarded = isCorrect ? q.marks : 0;
+Subjective Questions (AI Grading)
+
+const subjectiveTypes = ["short_answer", "long_answer", "application"];
+
+// Sent to AI for grading
+const { data } = await supabase.functions.invoke("ai-grade-assignment", {
+  body: { questions: questionsToGrade }
+});
+Grading Rules:
+
+MCQ/True-False: Full marks or 0 (exact match)
+Short/Long Answer: Partial marks allowed (meaning-based)
+Empty answers: 0 marks
+Fallback: If AI fails, marked as "Pending manual review"
+7. Test Flow
+┌─────────────────────────────────────────────────────────────┐
+│                    ASSIGNMENTS LIST                          │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │ Assignment 1                    [Pending] [Start]    │   │
+│  │ Due: Jan 15  |  Total: 50 marks  |  60 min          │   │
+│  └─────────────────────────────────────────────────────┘   │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │ Assignment 2                    [Graded] [View]      │   │
+│  │ Score: 42/50 (84%)              ✓ Passed            │   │
+│  └─────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼ Start
+┌─────────────────────────────────────────────────────────────┐
+│                    TESTING SCREEN                            │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │  Timer: 45:23   │   Q 3/15   │   [Flag] [Previous]   │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                                                              │
+│  Question 3:                                     (5 marks)  │
+│  Explain Newton's Second Law with an example.               │
+│                                                              │
+│  ┌────────────────────────────────────────────────────┐    │
+│  │  [Text Answer Area]                                 │    │
+│  │                                                     │    │
+│  └────────────────────────────────────────────────────┘    │
+│                                                              │
+│  ┌─────────────┐  ┌──────────────────────────────────┐     │
+│  │ 📷 Upload   │  │ 🔍 Extract from Image             │     │
+│  └─────────────┘  └──────────────────────────────────┘     │
+│                                                              │
+│  Question Palette: [1✓] [2✓] [3] [4] ... [15]              │
+│                                                              │
+│              [Previous]        [Next]        [Submit]        │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼ Submit
+┌─────────────────────────────────────────────────────────────┐
+│                    RESULTS SCREEN                            │
+│  ┌────────────────────────────────────────────────────┐    │
+│  │     YOUR SCORE: 42/50 (84%)     🏆                  │    │
+│  │     ██████████████████░░░░                          │    │
+│  │     Congratulations! You passed!                    │    │
+│  └────────────────────────────────────────────────────┘    │
+│                                                              │
+│  DETAILED RESULTS:                                          │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │ Q1: What is velocity?                    ✓ 2/2      │   │
+│  │ Your Answer: Rate of change of displacement         │   │
+│  │ Feedback: Correct!                                   │   │
+│  └─────────────────────────────────────────────────────┘   │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │ Q2: Explain Newton's Second Law         ✗ 3/5       │   │
+│  │ Your Answer: F=ma, force equals mass...              │   │
+│  │ Feedback: Partial credit. Missing acceleration def.  │   │
+│  └─────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────┘
+8. UI Components Used (shadcn/ui)
+Component	Purpose
+Card, CardHeader, CardContent	Assignment cards, question display
+Button	Navigation, submission, actions
+Badge	Status (Pending/Submitted/Graded)
+Textarea	Long answer input
+Input	Short answer input
+RadioGroup, RadioGroupItem	MCQ options
+Progress	Score bar, time progress
+Label	Form labels
+Loader2	Loading spinner
+Icons (lucide-react):
+
+FileText - Assignment icon
+CheckCircle - Correct answer
+XCircle - Incorrect answer
+Clock - Timer
+Flag - Flagged questions
+Trophy - Results
+Upload - Image upload
+ChevronLeft/Right - Navigation
+9. Current Database Stats
+Metric	Value
+Active Assignments	1
+Questions in Assignment	17
+Total Marks	50
+Passing Marks	40
+Duration	120 minutes
+Source Type	AI Generated
+Submissions	1 (Score: 12/50 = 24%)
+10. Mobile API Integration
+
+class AssignmentService {
+  // Fetch assignments for a subject/chapter/topic
+  async fetchAssignments({ subjectId, chapterId, topicId }) {
+    let query = supabase
+      .from('assignments')
+      .select('id, title, description, due_date, total_marks, passing_marks, duration_minutes, chapter_id, topic_id')
+      .eq('subject_id', subjectId)
+      .eq('is_active', true)
+      .order('created_at', { ascending: false });
+    
+    if (chapterId) query = query.eq('chapter_id', chapterId);
+    if (topicId) query = query.eq('topic_id', topicId);
+    
+    return await query;
+  }
+
+  // Fetch assignment details with questions
+  async fetchAssignmentDetails(assignmentId) {
+    const { data } = await supabase
+      .from('assignments')
+      .select('*')
+      .eq('id', assignmentId)
+      .single();
+    
+    return {
+      ...data,
+      questions: data.questions.map((q, idx) => ({
+        id: q.id || `q_${idx}`,
+        question: q.question,
+        type: q.type,
+        options: q.options || [],
+        marks: q.marks,
+        image_url: q.image_url,
+      }))
+    };
+  }
+
+  // Submit assignment
+  async submitAssignment({ assignmentId, answers, score, percentage, timeTaken }) {
+    const user = await supabase.auth.getUser();
+    
+    return await supabase
+      .from('assignment_submissions')
+      .upsert({
+        assignment_id: assignmentId,
+        student_id: user.data.user.id,
+        answers: answers,
+        score: score,
+        percentage: percentage,
+        submitted_at: new Date().toISOString(),
+        graded_at: new Date().toISOString(),
+        time_taken_seconds: timeTaken,
+      }, { onConflict: 'assignment_id,student_id' });
+  }
+
+  // Grade subjective answers with AI
+  async gradeWithAI(questions) {
+    const { data, error } = await supabase.functions.invoke('ai-grade-assignment', {
+      body: { questions }
+    });
+    return data;
+  }
+
+  // Extract answer from image
+  async extractFromImage(imageUrl, questionContext) {
+    const { data, error } = await supabase.functions.invoke('extract-answer-from-image', {
+      body: { image_url: imageUrl, question_context: questionContext }
+    });
+    return data;
+  }
+}
+11. Image Upload Flow
+Student uploads image
+         │
+         ▼
+┌─────────────────────────────────┐
+│  useUploadAssignmentAnswerImage │
+│  Upload to: student-answers/    │
+│  Path: assignments/{id}/{qId}/  │
+└─────────────────────────────────┘
+         │
+         ▼ Returns public URL
+┌─────────────────────────────────┐
+│  "Extract from Image" button    │
+│  calls: extract-answer-from-image│
+└─────────────────────────────────┘
+         │
+         ▼ Returns extracted text
+┌─────────────────────────────────┐
+│  Text is auto-filled in answer  │
+│  Student can edit before submit │
+└─────────────────────────────────┘

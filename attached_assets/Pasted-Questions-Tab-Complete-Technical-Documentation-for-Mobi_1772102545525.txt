@@ -1,0 +1,148 @@
+Questions Tab — Complete Technical Documentation for Mobile Implementation
+Overview
+The Questions tab lets students practice all questions (MCQ + subjective) for a given topic or chapter. Students answer questions, submit, get instant grading (MCQs) or AI grading (subjective), and results are saved to the database.
+
+1. FETCHING QUESTIONS
+Supabase Query (direct table query, no edge function):
+
+GET from "questions" table
+  - SELECT *
+  - ORDER BY created_at ASC
+Filters (pass one):
+
+Scenario	Filter
+Topic-level questions	.eq("topic_id", topicId)
+Chapter-only questions (no topics)	.eq("chapter_id", chapterId)
+Props received:
+
+topicId — UUID of the selected topic (primary)
+chapterId — UUID of the selected chapter (fallback)
+chapterOnly — boolean, if true only get chapter-level questions
+subjectId — UUID of the subject (used when saving results)
+2. QUESTION DATA SHAPE (from questions table)
+
+{
+  "id": "uuid",
+  "question_text": "What is 2+2? (may contain LaTeX/MMD)",
+  "question_type": "mcq | short_answer | long_answer | integer | true_false",
+  "question_format": "single_choice | multiple_choice | integer | subjective | null",
+  "options": {
+    "A": { "text": "Option A text" },
+    "B": { "text": "Option B text" },
+    "C": { "text": "Option C text" },
+    "D": { "text": "Option D text" }
+  },
+  "correct_answer": "A",
+  "explanation": "Because 2+2=4 (may contain LaTeX)",
+  "marks": 1,
+  "difficulty": "Low | Medium | Intermediate | Advanced",
+  "question_image_url": "https://... or null",
+  "is_important": false
+}
+Critical: Detecting MCQ vs Subjective
+
+Do NOT rely on question_format or question_type alone. Use this logic:
+
+isMCQ = format in ["mcq","single_choice","multiple_choice"] 
+        OR type in ["mcq","single_choice","multiple_choice"]
+        OR (options is not null AND options has keys)
+If options exists and has entries → treat as MCQ regardless of labels.
+
+Extracting option text: Options can be { "A": { "text": "..." } } or { "A": "string" }. Always normalize:
+
+getOptionText(value) → if object with .text, return .text; else return String(value)
+3. USER INTERACTION
+MCQ Questions: User selects one option key (A, B, C, D). Store as selectedAnswers[questionId] = "A".
+
+Subjective Questions: User types free text. Store as selectedAnswers[questionId] = "typed text".
+
+Navigation: Either one-at-a-time (prev/next) or view-all mode.
+
+4. SUBMISSION FLOW
+When user taps Submit:
+
+Step 1: Auth Check
+const session = await supabase.auth.getSession()
+// Verify session.access_token exists
+const user = await supabase.auth.getUser()
+Step 2: Grade Each Question
+For MCQs — instant local grading:
+
+
+correctKey = question.correct_answer.trim().toLowerCase()  // e.g. "a"
+studentKey = selectedAnswers[questionId].trim().toLowerCase()  // e.g. "a"
+isCorrect = (studentKey === correctKey)
+marksAwarded = isCorrect ? question.marks : 0
+For Subjective — call edge function:
+
+POST /functions/v1/ai-check-answer
+
+Body:
+{
+  "question_id": "uuid",
+  "question_text": "the full question text",
+  "question_type": "subjective | integer | short_answer",
+  "correct_answer": "the correct answer from DB",
+  "student_answer": "what the student typed",
+  "max_marks": 2
+}
+
+Response:
+{
+  "is_correct": true/false,
+  "marks_awarded": 1.5,
+  "feedback": "Good answer but missing key concept X"
+}
+The edge function uses AI (Lovable AI gateway) for semantic comparison. Falls back to string similarity if AI fails.
+
+Step 3: Create Practice Test Record
+INSERT into "tests" table:
+{
+  "title": "Practice - 1/26/2026",
+  "test_type": "practice",
+  "subject_id": subjectId or null,
+  "chapter_id": chapterId or null,
+  "topic_id": topicId or null,
+  "total_marks": totalMarks (sum of all question marks),
+  "duration_minutes": 0,
+  "is_active": false,
+  "created_by": user.id
+}
+→ Returns test_id (nullable fallback if RLS blocks)
+Step 4: Save Result
+INSERT into "test_results" table:
+{
+  "test_id": testId (or null as fallback),
+  "student_id": user.id,
+  "subject_id": subjectId or null,
+  "test_type": "practice",
+  "score": scoredMarks (sum of marks awarded),
+  "total_questions": questions.length,
+  "percentage": Math.round((scoredMarks / totalMarks) * 100),
+  "time_taken_seconds": null,
+  "answers": { "questionId1": "A", "questionId2": "typed text", ... },
+  "grading_status": "graded" or "pending" (if any AI grading failed)
+}
+5. POST-SUBMISSION DISPLAY
+After submit, show:
+
+Score Card: scoredMarks/totalMarks marks • correctCount/totalQuestions correct • percentage%
+Per-question feedback: green border = correct, red = incorrect
+MCQ: highlight correct option in green, wrong selection in red
+Subjective: show AI feedback text
+Explanation: show question.explanation for all questions
+Marks: show marksAwarded/questionMarks per question
+If any subjective grading failed: show "pending AI review" count
+6. COMPLETE API SUMMARY
+Action	Method	Endpoint/Table
+Fetch questions	SELECT	questions table (filter by topic_id or chapter_id)
+Grade subjective	POST	Edge function: /functions/v1/ai-check-answer
+Create test record	INSERT	tests table
+Save result	INSERT	test_results table
+Auth check	GET	supabase.auth.getSession() + getUser()
+7. DIFFICULTY BADGE COLORS
+Difficulty	Color
+Low	Green
+Medium	Blue
+Intermediate	Yellow
+Advanced	Red

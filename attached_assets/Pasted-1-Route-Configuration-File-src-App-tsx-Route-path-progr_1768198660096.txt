@@ -1,0 +1,184 @@
+1. Route Configuration
+File: src/App.tsx
+
+
+<Route path="/programs/:slug" element={<ProgramDetail />} />
+The :slug parameter is extracted from the URL (e.g., jee-main-advanced-bundle).
+
+2. Page Component Structure
+File: src/pages/ProgramDetail.tsx
+
+3. API Queries Used
+Query 1: Fetch Course with Related Data
+
+const { data: course, isLoading } = useQuery({
+  queryKey: ["program-detail", slug],
+  queryFn: async () => {
+    const { data, error } = await supabase
+      .from("courses")
+      .select(`
+        *,
+        course_categories (
+          categories (
+            id,
+            name,
+            slug
+          )
+        ),
+        course_subjects (
+          display_order,
+          popular_subjects (
+            id,
+            name,
+            slug,
+            description,
+            thumbnail_url
+          )
+        ),
+        course_faqs (
+          id,
+          question,
+          answer,
+          display_order
+        )
+      `)
+      .eq("slug", slug)        // Filter by URL slug
+      .eq("is_active", true)   // Only active courses
+      .single();               // Return single object
+
+    if (error) throw error;
+    return data;
+  },
+  enabled: !!slug,
+});
+What this fetches:
+
+Data	Source Table	Join
+Course details	courses	Direct
+Categories	categories	Through course_categories
+Subjects	popular_subjects	Through course_subjects
+FAQs	course_faqs	Direct (course_id)
+Query 2: Check User Enrollment
+
+const { data: enrollment } = useQuery({
+  queryKey: ["enrollment-check", course?.id],
+  queryFn: async () => {
+    // Get current logged-in user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user || !course?.id) return null;
+
+    // Check if user is enrolled in this course
+    const { data } = await supabase
+      .from("enrollments")
+      .select("id, course_id")
+      .eq("student_id", user.id)
+      .eq("course_id", course.id)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    return data;
+  },
+  enabled: !!course?.id,
+});
+
+const isEnrolled = !!enrollment;
+4. Page Sections & UI Components
+Section 1: Hero Section
+┌──────────────────────────────────────────────────────────────────────┐
+│  Gradient Background (from-primary via-primary/90 to-primary/70)     │
+│  ┌─────────────────────────────────┐  ┌───────────────────────────┐  │
+│  │  Categories (Badges)            │  │  Course Thumbnail Image   │  │
+│  │  Course Name (H1)               │  │  + Sparkles Icon Overlay  │  │
+│  │  Short Description              │  │                           │  │
+│  │  Subjects (Badges)              │  │                           │  │
+│  │  Stats (Rating, Students, Dur)  │  │                           │  │
+│  │  Price + Enroll/Continue CTA    │  │                           │  │
+│  └─────────────────────────────────┘  └───────────────────────────┘  │
+└──────────────────────────────────────────────────────────────────────┘
+Components Used:
+
+Badge - For categories and subjects
+Button - For CTA (Enroll Now / Continue Learning)
+Icons: Star, Users, Clock, ShoppingCart, CheckCircle, Sparkles
+Section 2: Main Content (Left Column - 2/3 width)
+Card	Title	Data Source	Components
+About Program	course.detailed_description	courses table	Card, CardHeader, CardContent, BookOpen icon
+What You'll Learn	course.what_you_learn (JSON array)	courses table	Grid of CheckCircle2 + text items
+Subjects You'll Master	course.course_subjects → popular_subjects	Junction table	Clickable Card grid with subject thumbnails, links to /subject/{slug}
+Course Features	Static array features	Hardcoded	6 feature cards with icons
+FAQs	course.course_faqs	course_faqs table	Accordion component
+Section 3: Sidebar (Right Column - 1/3 width, Sticky)
+Card	Content
+This Course Includes	course.course_includes (JSON array) - Checklist items
+Course Highlights	Subject count, Duration, Students, Rating
+CTA Card	Price, Discount badge, Enroll/Continue button
+Section 4: Final CTA
+Full-width gradient banner with call-to-action button.
+
+5. Database Schema Used
+courses table
+
+id, name, slug, description, short_description, detailed_description,
+price_inr, original_price_inr, duration_months, thumbnail_url,
+rating, review_count, student_count, is_active,
+what_you_learn (JSONB), course_includes (JSONB)
+course_categories (Junction Table)
+
+id, course_id, category_id, created_at
+course_subjects (Junction Table)
+
+id, course_id, subject_id, display_order, created_at
+course_faqs table
+
+id, course_id, question, answer, display_order
+enrollments table
+
+id, student_id, course_id, is_active, created_at
+6. Sample Data for "JEE Main + Advanced Bundle"
+Field	Value
+Course ID	d106db94-58ce-41a7-8d73-d0baa3ad9f43
+Name	JEE Main + Advanced Bundle
+Slug	jee-main-advanced-bundle
+Price	₹2,000
+Original Price	₹24,999
+Duration	18 months
+Rating	4.9
+Students	6,780
+Linked Categories:
+
+Category Name	Slug
+PUC + NEET	puc-neet
+NEET UG	neet-ug
+Linked Subjects:
+
+Order	Subject Name	Slug
+1	Physics (NEET/JEE)	physics-neet-jee
+2	Chemistry (Organic/Inorganic)	chemistry-organic-inorganic
+7. Conditional Rendering Logic
+
+// Show Continue Learning if enrolled, else Enroll Now
+{isEnrolled ? (
+  <Button onClick={() => navigate(`/learning/${course.id}`)}>
+    Continue Learning
+  </Button>
+) : (
+  <Button asChild>
+    <Link to={`/enroll/${course.slug}`}>Enroll Now</Link>
+  </Button>
+)}
+
+// Show rating only if rating >= 4.5 AND reviews > 1000
+{course.rating > 0 && course.review_count > 1000 && course.rating >= 4.5 && (
+  // Rating display
+)}
+
+// Show student count only if > 20,000
+{course.student_count > 20000 && (
+  // Student count display
+)}
+8. API Endpoint (Edge Function Alternative)
+You can also fetch course details via the API endpoint:
+
+GET /functions/v1/api/api/v1/courses/{course_id}
+
+This returns the same data with nested categories, subjects, instructors, and FAQs.

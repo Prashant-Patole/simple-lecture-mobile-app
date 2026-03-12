@@ -1,0 +1,532 @@
+Complete Documentation: /student-dashboard Page
+Overview
+The /student-dashboard page is a comprehensive student learning dashboard that displays academic information, progress tracking, and engagement metrics. It uses a tabbed interface with 8 different tabs.
+
+Page Structure
+File: src/pages/StudentDashboard.tsx
+
+Authentication Flow
+Uses supabase.auth.onAuthStateChange() to listen for auth state changes
+Redirects to /auth if user signs out or has no session
+Shows loading spinner while checking authentication
+Layout Structure
+├── DashboardHeader (navigation header)
+├── Back to Dashboard Button (links to /dashboard)
+├── Profile Card (student info)
+├── Tabs Container
+│   ├── Overview Tab
+│   ├── My Progress Tab
+│   ├── My Tests Tab
+│   ├── My Attendance Tab
+│   ├── My Timetable Tab
+│   ├── My Courses Tab
+│   ├── AI & Learning Tab
+│   └── My Engagement Tab
+└── Footer
+Main Data Hook
+File: src/hooks/useCurrentStudent.ts
+
+API Calls (all in parallel via Promise.all)
+Table	Query	Purpose
+profiles	select('*').eq('id', user.id)	Student profile info
+enrollments	With joins to courses, course_subjects, popular_subjects, batches	Enrolled courses
+student_progress	select('*').eq('student_id', user.id)	Chapter completion status
+class_attendance	With join to scheduled_classes	Live class attendance
+doubt_logs	Last 50 doubts	AI doubt clearing history
+dpt_submissions	All DPT test submissions	Daily Practice Test data
+assignment_submissions	All assignment submissions	Assignment data
+ai_video_watch_logs	With join to popular_subjects	AI video watch history
+podcast_listen_logs	With join to popular_subjects	Podcast listening history
+daily_activity_logs	Last 30 days	Activity trend data
+paper_test_results	All paper test results	Mock/PYQ test scores
+instructor_timetables	With joins to popular_subjects, subject_chapters, teacher_profiles	Weekly schedule
+Test Score Calculation (Mock + PYQ Average)
+
+// Calculate Mock Test average from dpt_submissions
+const mockTestPercentages = (dptSubmissions || [])
+  .filter((s) => s.total_questions > 0)
+  .map((s) => (s.score / s.total_questions) * 100);
+const mockTestAvg = mockTestPercentages.reduce((a, b) => a + b, 0) / mockTestPercentages.length;
+
+// Calculate PYQ average from paper_test_results
+const pyqResults = paperTestResults.filter((p) => 
+  p.paper_category === 'previous_year' && p.percentage != null
+);
+const pyqAvg = pyqResults.reduce((sum, p) => sum + p.percentage, 0) / pyqResults.length;
+
+// Combined average
+avgTestScore = (mockTestAvg + pyqAvg) / 2;  // If both exist
+Tab 1: Overview
+Component: src/components/student/tabs/MyOverviewTab.tsx
+
+Elements
+Element	Data Source	Description
+Test Score Card	student.activity_score	Shows test score % with Progress bar
+Overall Progress Card	student.total_progress	Course progress %
+Solved DPPs Card	useDPT().totalTests	Count of completed DPPs
+Attendance Card	student.live_classes.attendance_percentage	Attendance %
+My Courses Section	student.courses[]	List of enrolled courses with progress bars
+Areas to Focus On	student.areas_of_improvement[]	Improvement badges
+Recent Activity	student.live_classes.recent_classes[]	Last 3 class attendance records
+Additional Hook Used
+useDPT() from src/hooks/useDPT.ts - fetches dpp_topic_submissions
+Tab 2: My Progress
+Component: src/components/student/tabs/MyProgressTab.tsx
+
+Elements
+Element	Data Source	Description
+ProgressFilters	student.courses, subjects	Course/Subject filter dropdowns
+Progress Summary Cards (8)	useProgressTrends().totals	Overall, Chapters, Videos, MCQs, Exams, Proficiency, Assignments, Attendance
+Progress Trend Chart	progressData.trendData[]	LineChart showing 30-day progress
+Chapter-wise Progress	progressData.chapterDetails[]	Collapsible list with per-chapter breakdown
+Overall Component Breakdown	progressData.breakdown	Progress bars for Videos, MCQs, Exams, Proficiency, Assignments
+Subject-wise Progress	Computed from chapterDetails	Progress by subject
+Data Hook
+File: src/hooks/useProgressTrends.ts
+
+API Calls
+Table	Purpose
+course_subjects	Get subjects for course
+subject_chapters	All chapters with video info
+subject_topics	Topics per chapter
+topic_videos	Additional multi-language videos
+questions	MCQ count per chapter/topic
+assignments	Assignment count
+subject_previous_year_papers	Exam & proficiency test papers
+ai_video_watch_logs	Student's video completions
+assignment_submissions	Completed assignments
+paper_test_results	Exam/proficiency completions
+class_attendance	Attendance stats
+Tab 3: My Tests
+Component: src/components/student/tabs/MyTestsTab.tsx
+
+Elements
+Element	Data Source	Description
+Total Tests Card	totalTests	Count of all tests
+Average Score Card	averageScore	Overall average %
+Total Questions Card	dppStats + paperStats	Correct/Total questions
+Performance by Type (BarChart)	performanceData[]	DPP vs Papers comparison
+Test Distribution (PieChart)	pieData[]	DPP/Paper split
+Recent Tests List	allTests.slice(0, 10)	Last 10 tests with scores
+Data Hook
+File: src/hooks/useMyTests.ts
+
+API Calls
+Table	Fields	Purpose
+dpp_topic_submissions	id, score, total_questions, test_date, time_taken_seconds, dpp_type	DPP tests
+paper_test_results	id, score, total_questions, percentage, paper_category, created_at, time_taken_seconds	Paper tests
+Tab 4: My Attendance
+Component: src/components/admin/students/AttendanceCalendar.tsx
+
+Elements
+Element	Description
+Legend	Present (green), Absent (red), Upcoming (blue)
+Calendar Grid	7-column grid showing month's days
+Day Cells	Color-coded by attendance status
+Tooltips	Show date, status, and subject on hover
+Data Source
+student.live_classes.recent_classes[] mapped to AttendanceData format
+Uses date-fns for calendar calculations
+Tab 5: My Timetable
+Component: src/components/admin/students/tabs/TimetableTab.tsx
+
+Elements
+Element	Data Source	Description
+Subject Filter	student.timetable subjects	Dropdown to filter by subject
+View Toggle	State	Calendar vs List view
+Calendar View	timetableByDay	7-day week grid with class cards
+List View	timetableByDay	Day-grouped list of classes
+Timetable Entry Fields
+day (0-6 for Sun-Sat)
+subject (from popular_subjects.name)
+topic (from subject_chapters.title)
+start_time, end_time
+instructor (from teacher_profiles.full_name)
+type (live_class, recorded, self_study)
+Data Source
+instructor_timetables table joined with popular_subjects, subject_chapters, teacher_profiles
+Tab 6: My Courses
+Component: src/components/student/tabs/MyCoursesTab.tsx
+
+Elements
+Element	Description
+Course Cards	One card per enrolled course
+Subject Sections	Subjects within each course
+Chapter Accordions	Expandable chapters with topics
+Progress Indicators	Checkmark and % for each chapter
+API Calls (within component)
+
+// Fetch course structure
+supabase.from('course_subjects').select(`
+  course_id,
+  popular_subjects (
+    id, name,
+    subject_chapters (
+      id, title, sequence_order,
+      subject_topics (id, title)
+    )
+  )
+`).in('course_id', courseIds)
+
+// Fetch student progress
+supabase.from('student_progress')
+  .select('chapter_id, is_completed')
+  .eq('student_id', user.id)
+Tab 7: AI & Learning
+Component: src/components/student/tabs/MyAILearningTab.tsx
+
+Elements
+Element	Data Source	Description
+Classes Attended Card	classesData.totalAttended	Attended/Total with progress bar
+Class Time Card	classesData.totalTimeMinutes	Total time in classes
+Attendance Rate Card	classesData.attendanceRate	Rate % with progress bar
+Attendance Status PieChart	Present vs Absent counts	Donut chart
+Recent Classes List	classesData.recentClasses[]	Last 5 classes with status
+Data Hook
+File: src/hooks/useMyClassesData.ts
+
+API Call
+
+supabase.from('class_attendance').select(`
+  id, status, duration_seconds, marked_at,
+  scheduled_classes!inner (
+    subject, scheduled_at, duration_minutes,
+    courses (name)
+  )
+`).eq('student_id', studentId)
+Tab 8: My Engagement
+Component: src/components/admin/students/tabs/EngagementTab.tsx
+
+Elements
+Element	Data Source	Description
+Overall Test Score Gauge	activity_score	RadialBarChart showing score
+Activity Score Trend	activity_trends[]	30-day LineChart
+Live Class Participation	live_classes	Attended/Missed/Attendance %
+Missed Classes Alert	live_classes.missed	Warning if classes missed
+Weekly Activity	Computed from activity_trends	BarChart of weekly activity
+AI Video Engagement	ai_video_usage	Videos watched, watch time, completion rate
+Video Completion Distribution	ai_video_usage	PieChart (Completed vs In Progress)
+Sub-component
+TestScoreGauge: src/components/admin/students/TestScoreGauge.tsx
+
+RadialBarChart showing score 0-100
+Color-coded: Green (80+), Yellow (60+), Red (<60)
+Labels: Excellent, Good, Needs Improvement
+UI Components Used
+Component	Source	Usage
+Card, CardHeader, CardContent, CardTitle	@/components/ui/card	All sections
+Tabs, TabsList, TabsTrigger, TabsContent	@/components/ui/tabs	Main navigation
+Progress	@/components/ui/progress	Progress bars
+Badge	@/components/ui/badge	Status labels
+Button	@/components/ui/button	Actions
+Avatar	@/components/ui/avatar	Profile picture
+Select	@/components/ui/select	Filter dropdowns
+Accordion	@/components/ui/accordion	Expandable sections
+Tooltip	@/components/ui/tooltip	Hover info
+Skeleton	@/components/ui/skeleton	Loading states
+Collapsible	@/components/ui/collapsible	Expandable chapters
+Chart Libraries (Recharts)
+Chart Type	Usage
+LineChart	Progress trends, Activity score trends
+BarChart	Performance by type, Weekly activity
+PieChart	Test distribution, Attendance status, Video completion
+RadialBarChart	Test Score Gauge
+Database Tables Summary
+Table	Tab(s) Used
+profiles	All (profile card)
+enrollments	All (courses)
+courses	Overview, Progress, Courses
+course_subjects	Progress, Courses
+popular_subjects	Progress, Timetable, Courses
+subject_chapters	Progress, Courses, Timetable
+subject_topics	Progress, Courses
+topic_videos	Progress
+student_progress	Overview, Progress, Courses
+class_attendance	Overview, Attendance, AI & Learning
+scheduled_classes	Attendance, AI & Learning
+instructor_timetables	Timetable
+teacher_profiles	Timetable
+doubt_logs	(stored but not displayed currently)
+dpp_topic_submissions	Overview, Tests
+dpt_submissions	(Test score calculation)
+paper_test_results	Tests, (Test score calculation)
+assignment_submissions	Progress
+assignments	Progress
+questions	Progress
+subject_previous_year_papers	Progress
+ai_video_watch_logs	Progress, Engagement
+podcast_listen_logs	(stored but not displayed after cleanup)
+daily_activity_logs	Engagement
+batches	Timetable
+Now I have a comprehensive understanding of the Student Dashboard. Let me provide you with a detailed explanation:
+
+Complete Documentation: /student-dashboard Page
+Overview
+The /student-dashboard page is a comprehensive student learning dashboard that displays academic information, progress tracking, and engagement metrics. It uses a tabbed interface with 8 different tabs.
+
+Page Structure
+File: src/pages/StudentDashboard.tsx
+
+Authentication Flow
+Uses supabase.auth.onAuthStateChange() to listen for auth state changes
+Redirects to /auth if user signs out or has no session
+Shows loading spinner while checking authentication
+Layout Structure
+├── DashboardHeader (navigation header)
+├── Back to Dashboard Button (links to /dashboard)
+├── Profile Card (student info)
+├── Tabs Container
+│   ├── Overview Tab
+│   ├── My Progress Tab
+│   ├── My Tests Tab
+│   ├── My Attendance Tab
+│   ├── My Timetable Tab
+│   ├── My Courses Tab
+│   ├── AI & Learning Tab
+│   └── My Engagement Tab
+└── Footer
+Main Data Hook
+File: src/hooks/useCurrentStudent.ts
+
+API Calls (all in parallel via Promise.all)
+Table	Query	Purpose
+profiles	select('*').eq('id', user.id)	Student profile info
+enrollments	With joins to courses, course_subjects, popular_subjects, batches	Enrolled courses
+student_progress	select('*').eq('student_id', user.id)	Chapter completion status
+class_attendance	With join to scheduled_classes	Live class attendance
+doubt_logs	Last 50 doubts	AI doubt clearing history
+dpt_submissions	All DPT test submissions	Daily Practice Test data
+assignment_submissions	All assignment submissions	Assignment data
+ai_video_watch_logs	With join to popular_subjects	AI video watch history
+podcast_listen_logs	With join to popular_subjects	Podcast listening history
+daily_activity_logs	Last 30 days	Activity trend data
+paper_test_results	All paper test results	Mock/PYQ test scores
+instructor_timetables	With joins to popular_subjects, subject_chapters, teacher_profiles	Weekly schedule
+Test Score Calculation (Mock + PYQ Average)
+
+// Calculate Mock Test average from dpt_submissions
+const mockTestPercentages = (dptSubmissions || [])
+  .filter((s) => s.total_questions > 0)
+  .map((s) => (s.score / s.total_questions) * 100);
+const mockTestAvg = mockTestPercentages.reduce((a, b) => a + b, 0) / mockTestPercentages.length;
+
+// Calculate PYQ average from paper_test_results
+const pyqResults = paperTestResults.filter((p) => 
+  p.paper_category === 'previous_year' && p.percentage != null
+);
+const pyqAvg = pyqResults.reduce((sum, p) => sum + p.percentage, 0) / pyqResults.length;
+
+// Combined average
+avgTestScore = (mockTestAvg + pyqAvg) / 2;  // If both exist
+Tab 1: Overview
+Component: src/components/student/tabs/MyOverviewTab.tsx
+
+Elements
+Element	Data Source	Description
+Test Score Card	student.activity_score	Shows test score % with Progress bar
+Overall Progress Card	student.total_progress	Course progress %
+Solved DPPs Card	useDPT().totalTests	Count of completed DPPs
+Attendance Card	student.live_classes.attendance_percentage	Attendance %
+My Courses Section	student.courses[]	List of enrolled courses with progress bars
+Areas to Focus On	student.areas_of_improvement[]	Improvement badges
+Recent Activity	student.live_classes.recent_classes[]	Last 3 class attendance records
+Additional Hook Used
+useDPT() from src/hooks/useDPT.ts - fetches dpp_topic_submissions
+Tab 2: My Progress
+Component: src/components/student/tabs/MyProgressTab.tsx
+
+Elements
+Element	Data Source	Description
+ProgressFilters	student.courses, subjects	Course/Subject filter dropdowns
+Progress Summary Cards (8)	useProgressTrends().totals	Overall, Chapters, Videos, MCQs, Exams, Proficiency, Assignments, Attendance
+Progress Trend Chart	progressData.trendData[]	LineChart showing 30-day progress
+Chapter-wise Progress	progressData.chapterDetails[]	Collapsible list with per-chapter breakdown
+Overall Component Breakdown	progressData.breakdown	Progress bars for Videos, MCQs, Exams, Proficiency, Assignments
+Subject-wise Progress	Computed from chapterDetails	Progress by subject
+Data Hook
+File: src/hooks/useProgressTrends.ts
+
+API Calls
+Table	Purpose
+course_subjects	Get subjects for course
+subject_chapters	All chapters with video info
+subject_topics	Topics per chapter
+topic_videos	Additional multi-language videos
+questions	MCQ count per chapter/topic
+assignments	Assignment count
+subject_previous_year_papers	Exam & proficiency test papers
+ai_video_watch_logs	Student's video completions
+assignment_submissions	Completed assignments
+paper_test_results	Exam/proficiency completions
+class_attendance	Attendance stats
+Tab 3: My Tests
+Component: src/components/student/tabs/MyTestsTab.tsx
+
+Elements
+Element	Data Source	Description
+Total Tests Card	totalTests	Count of all tests
+Average Score Card	averageScore	Overall average %
+Total Questions Card	dppStats + paperStats	Correct/Total questions
+Performance by Type (BarChart)	performanceData[]	DPP vs Papers comparison
+Test Distribution (PieChart)	pieData[]	DPP/Paper split
+Recent Tests List	allTests.slice(0, 10)	Last 10 tests with scores
+Data Hook
+File: src/hooks/useMyTests.ts
+
+API Calls
+Table	Fields	Purpose
+dpp_topic_submissions	id, score, total_questions, test_date, time_taken_seconds, dpp_type	DPP tests
+paper_test_results	id, score, total_questions, percentage, paper_category, created_at, time_taken_seconds	Paper tests
+Tab 4: My Attendance
+Component: src/components/admin/students/AttendanceCalendar.tsx
+
+Elements
+Element	Description
+Legend	Present (green), Absent (red), Upcoming (blue)
+Calendar Grid	7-column grid showing month's days
+Day Cells	Color-coded by attendance status
+Tooltips	Show date, status, and subject on hover
+Data Source
+student.live_classes.recent_classes[] mapped to AttendanceData format
+Uses date-fns for calendar calculations
+Tab 5: My Timetable
+Component: src/components/admin/students/tabs/TimetableTab.tsx
+
+Elements
+Element	Data Source	Description
+Subject Filter	student.timetable subjects	Dropdown to filter by subject
+View Toggle	State	Calendar vs List view
+Calendar View	timetableByDay	7-day week grid with class cards
+List View	timetableByDay	Day-grouped list of classes
+Timetable Entry Fields
+day (0-6 for Sun-Sat)
+subject (from popular_subjects.name)
+topic (from subject_chapters.title)
+start_time, end_time
+instructor (from teacher_profiles.full_name)
+type (live_class, recorded, self_study)
+Data Source
+instructor_timetables table joined with popular_subjects, subject_chapters, teacher_profiles
+Tab 6: My Courses
+Component: src/components/student/tabs/MyCoursesTab.tsx
+
+Elements
+Element	Description
+Course Cards	One card per enrolled course
+Subject Sections	Subjects within each course
+Chapter Accordions	Expandable chapters with topics
+Progress Indicators	Checkmark and % for each chapter
+API Calls (within component)
+
+// Fetch course structure
+supabase.from('course_subjects').select(`
+  course_id,
+  popular_subjects (
+    id, name,
+    subject_chapters (
+      id, title, sequence_order,
+      subject_topics (id, title)
+    )
+  )
+`).in('course_id', courseIds)
+
+// Fetch student progress
+supabase.from('student_progress')
+  .select('chapter_id, is_completed')
+  .eq('student_id', user.id)
+Tab 7: AI & Learning
+Component: src/components/student/tabs/MyAILearningTab.tsx
+
+Elements
+Element	Data Source	Description
+Classes Attended Card	classesData.totalAttended	Attended/Total with progress bar
+Class Time Card	classesData.totalTimeMinutes	Total time in classes
+Attendance Rate Card	classesData.attendanceRate	Rate % with progress bar
+Attendance Status PieChart	Present vs Absent counts	Donut chart
+Recent Classes List	classesData.recentClasses[]	Last 5 classes with status
+Data Hook
+File: src/hooks/useMyClassesData.ts
+
+API Call
+
+supabase.from('class_attendance').select(`
+  id, status, duration_seconds, marked_at,
+  scheduled_classes!inner (
+    subject, scheduled_at, duration_minutes,
+    courses (name)
+  )
+`).eq('student_id', studentId)
+Tab 8: My Engagement
+Component: src/components/admin/students/tabs/EngagementTab.tsx
+
+Elements
+Element	Data Source	Description
+Overall Test Score Gauge	activity_score	RadialBarChart showing score
+Activity Score Trend	activity_trends[]	30-day LineChart
+Live Class Participation	live_classes	Attended/Missed/Attendance %
+Missed Classes Alert	live_classes.missed	Warning if classes missed
+Weekly Activity	Computed from activity_trends	BarChart of weekly activity
+AI Video Engagement	ai_video_usage	Videos watched, watch time, completion rate
+Video Completion Distribution	ai_video_usage	PieChart (Completed vs In Progress)
+Sub-component
+TestScoreGauge: src/components/admin/students/TestScoreGauge.tsx
+
+RadialBarChart showing score 0-100
+Color-coded: Green (80+), Yellow (60+), Red (<60)
+Labels: Excellent, Good, Needs Improvement
+UI Components Used
+Component	Source	Usage
+Card, CardHeader, CardContent, CardTitle	@/components/ui/card	All sections
+Tabs, TabsList, TabsTrigger, TabsContent	@/components/ui/tabs	Main navigation
+Progress	@/components/ui/progress	Progress bars
+Badge	@/components/ui/badge	Status labels
+Button	@/components/ui/button	Actions
+Avatar	@/components/ui/avatar	Profile picture
+Select	@/components/ui/select	Filter dropdowns
+Accordion	@/components/ui/accordion	Expandable sections
+Tooltip	@/components/ui/tooltip	Hover info
+Skeleton	@/components/ui/skeleton	Loading states
+Collapsible	@/components/ui/collapsible	Expandable chapters
+Chart Libraries (Recharts)
+Chart Type	Usage
+LineChart	Progress trends, Activity score trends
+BarChart	Performance by type, Weekly activity
+PieChart	Test distribution, Attendance status, Video completion
+RadialBarChart	Test Score Gauge
+Database Tables Summary
+Table	Tab(s) Used
+profiles	All (profile card)
+enrollments	All (courses)
+courses	Overview, Progress, Courses
+course_subjects	Progress, Courses
+popular_subjects	Progress, Timetable, Courses
+subject_chapters	Progress, Courses, Timetable
+subject_topics	Progress, Courses
+topic_videos	Progress
+student_progress	Overview, Progress, Courses
+class_attendance	Overview, Attendance, AI & Learning
+scheduled_classes	Attendance, AI & Learning
+instructor_timetables	Timetable
+teacher_profiles	Timetable
+doubt_logs	(stored but not displayed currently)
+dpp_topic_submissions	Overview, Tests
+dpt_submissions	(Test score calculation)
+paper_test_results	Tests, (Test score calculation)
+assignment_submissions	Progress
+assignments	Progress
+questions	Progress
+subject_previous_year_papers	Progress
+ai_video_watch_logs	Progress, Engagement
+podcast_listen_logs	(stored but not displayed after cleanup)
+daily_activity_logs	Engagement
+batches	Timetable
+
+Diagram
+This is a complete breakdown of the /student-dashboard page with all tabs, components, APIs, and data flows!
+
+This is a complete breakdown of the /student-dashboard page with all tabs, components, APIs, and data flows!
+
+
+
+
+

@@ -1,0 +1,1606 @@
+/* Educational Video Player - Complete Styles */
+/* Based on player_v2.css reference implementation (V2.6) */
+
+/* ========================================
+   VIDEO BACKGROUND LAYER
+   ======================================== */
+.player-video-background {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.player-video-background video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ========================================
+   SCOPED VARIABLES - THEME WRAPPER
+   ======================================== */
+.player-theme {
+  --player-bg: #0f0f1a;
+  --player-content-bg: rgba(30, 41, 59, 0.9);
+  --player-accent: #3b82f6;
+  --player-accent-soft: rgba(59, 130, 246, 0.2);
+  --player-indigo: #6366f1;
+  --player-cyan: #00ffff;
+  --player-purple: #8b5cf6;
+  --player-text: #e5e7eb;
+  --player-text-muted: #94a3b8;
+  --player-border: rgba(255, 255, 255, 0.1);
+  --player-shadow: rgba(0, 0, 0, 0.3);
+  --player-success: #22c55e;
+  --player-warning: #f59e0b;
+  --player-error: #ef4444;
+}
+
+/* Inherit variables for player-stage (layout only) */
+.player-stage {
+  /* Variables already defined on .player-theme wrapper */
+}
+
+/* ========================================
+   HEADER BAR (V2.6 matching - glass effect)
+   ======================================== */
+.player-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 50px;
+  background: linear-gradient(180deg, rgba(20, 20, 40, 0.95) 0%, rgba(15, 15, 26, 0.98) 100%);
+  border-bottom: 1px solid rgba(99, 102, 241, 0.4);
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.5), inset 0 -1px 0 rgba(0, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  padding: 0 20px;
+  flex-shrink: 0;
+  z-index: 50;
+}
+
+.player-header-logo {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--player-indigo, #6366f1);
+  letter-spacing: 0.5px;
+  text-shadow: 0 0 10px rgba(99, 102, 241, 0.5);
+}
+
+.player-header-title {
+  font-size: 1rem;
+  color: var(--player-text, #e5e7eb);
+  opacity: 0.9;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+  max-width: 50%;
+}
+
+.player-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Header-specific button styling for visibility */
+.player-header .control-button {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: var(--player-text, #e5e7eb);
+}
+
+.player-header .control-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Close button with danger hover */
+.player-header .control-button.close-button:hover {
+  background: rgba(239, 68, 68, 0.3);
+  border-color: rgba(239, 68, 68, 0.5);
+  color: #fca5a5;
+}
+
+/* ========================================
+   STAGE - THREE LAYER ARCHITECTURE
+   ======================================== */
+.player-stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: var(--player-bg);
+  overflow: hidden;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+/* Mode switching for layout */
+.player-stage.mode-intro .content-layer {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.player-stage.mode-intro .avatar-layer {
+  left: 50%;
+  transform: translateX(-50%);
+  width: 85%;
+  height: 95%;
+  bottom: 0;
+  right: auto;
+}
+
+.player-stage.mode-content .avatar-layer,
+.player-stage.mode-summary .avatar-layer,
+.player-stage.mode-quiz .avatar-layer,
+.player-stage.mode-memory .avatar-layer {
+  right: 0;
+  bottom: 0;
+  width: 50vw;
+  height: 50vh;
+  transform: translateX(30%);
+}
+
+.player-stage.mode-recap .content-layer {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.player-stage.mode-recap .video-layer {
+  display: flex !important;
+}
+
+/* ========================================
+   CONTENT LAYER (Layer 1)
+   ======================================== */
+.content-layer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 70%;
+  height: calc(100% - 80px);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  overflow: hidden;
+  transition: opacity 0.5s ease;
+}
+
+/* Section Title - V2.6 Style with left border */
+.section-title {
+  font-size: 1.6em;
+  font-weight: 600;
+  color: var(--player-text);
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  border-left: 4px solid var(--player-indigo);
+  background: linear-gradient(90deg, rgba(20, 25, 55, 0.95), rgba(15, 20, 45, 0.85));
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+  border-radius: 0 8px 8px 0;
+  min-height: 50px;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.content-box {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.content-box::-webkit-scrollbar {
+  width: 6px;
+}
+
+.content-box::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+}
+
+.content-box::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.content-box::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* ========================================
+   AVATAR LAYER (Layer 2)
+   ======================================== */
+.avatar-layer {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 50vw;
+  height: 50vh;
+  z-index: 20;
+  pointer-events: none;
+  transition: all 0.5s ease, opacity 0.3s ease;
+  transform: translateX(30%);
+}
+
+/* Hide avatar during SHOW phase (Manim animations) */
+.avatar-layer.avatar-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.avatar-canvas-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.avatar-canvas {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* Hidden source video for chroma key processing */
+.avatar-video-source {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+  width: 1px;
+  height: 1px;
+}
+
+.avatar-video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+/* ========================================
+   VIDEO LAYER (Layer 3)
+   ======================================== */
+.video-layer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: calc(100% - 60px);  /* Touch controls (60px height) */
+  z-index: 15;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: #000000;  /* Solid black for immersive Manim video experience */
+}
+
+.video-layer.visible {
+  display: flex;
+}
+
+.video-layer.fullscreen {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  z-index: 25 !important;
+  padding: 0 !important;
+  background: #000;
+}
+
+.content-video {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+/* ========================================
+   BEAT BLOCK STYLING (V2.6 matching)
+   ======================================== */
+.beat-block {
+  width: 100%;
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  background: linear-gradient(135deg, rgba(10, 15, 30, 0.95), rgba(15, 20, 40, 0.92));
+  border-left: 4px solid var(--player-indigo);
+  border-radius: 0 12px 12px 0;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: opacity 0.4s ease, transform 0.4s ease, background 0.3s ease;
+}
+
+.beat-block.reveal-hidden {
+  opacity: 0;
+  transform: translateY(15px);
+  pointer-events: none;
+}
+
+.beat-block.reveal-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Active Beat Highlighting - CYAN glow (V2.6) */
+.beat-active {
+  opacity: 1 !important;
+  filter: drop-shadow(0 0 12px rgba(0, 255, 255, 0.5));
+  transform: scale(1.015);
+  border-left-color: var(--player-cyan) !important;
+  z-index: 5;
+  position: relative;
+}
+
+.beat-block.beat-active {
+  background: rgb(40, 40, 95) !important;
+}
+
+/* Removed - now handled in the summary-item section with scale+glow */
+
+/* ========================================
+   PROGRESSIVE REVEAL ANIMATIONS
+   ======================================== */
+.reveal-item {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.reveal-item.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.reveal-item.active {
+  background: var(--player-accent-soft);
+  border-left: 3px solid var(--player-accent);
+  padding-left: 12px;
+  margin-left: -12px;
+}
+
+/* Legacy beat-item styling */
+.beat-item {
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  background: var(--player-content-bg);
+  border: 1px solid var(--player-border);
+  transition: all 0.3s ease;
+}
+
+.beat-item.beat-active {
+  background: var(--player-accent-soft);
+  border-color: var(--player-accent);
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+}
+
+.beat-item.beat-hidden {
+  opacity: 0;
+  transform: scale(0.95);
+  pointer-events: none;
+}
+
+/* ========================================
+   SUMMARY ITEM STYLING - Premium Glass Card Design
+   ======================================== */
+.summary-item {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 16px;
+  padding: 16px 20px;
+  
+  /* Themed gradient matching player nebula - purple/teal/indigo */
+  background: linear-gradient(
+    135deg,
+    rgba(30, 27, 75, 0.88) 0%,      /* Deep purple-blue */
+    rgba(15, 52, 67, 0.85) 50%,     /* Teal-cyan midpoint */
+    rgba(26, 27, 59, 0.90) 100%     /* Deep indigo */
+  );
+  
+  /* Full rounded shape - impressive card look */
+  border-radius: 16px;
+  
+  /* Subtle colored border for definition */
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  
+  /* Position for pseudo-element accent bar */
+  position: relative;
+  overflow: hidden;
+  
+  /* Glass effect */
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 
+    0 4px 20px rgba(0, 0, 0, 0.4),
+    0 0 15px rgba(99, 102, 241, 0.08),
+    inset 0 1px 0 rgba(0, 255, 255, 0.08),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+  
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Left accent bar as pseudo-element with gradient */
+.summary-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 4px;
+  background: linear-gradient(180deg, var(--player-indigo) 0%, var(--player-cyan) 100%);
+  border-radius: 0 4px 4px 0;
+  opacity: 0.6;
+  transition: all 0.4s ease;
+}
+
+.summary-item.reveal-hidden {
+  opacity: 0;
+  transform: translateX(-20px);
+}
+
+.summary-item.reveal-visible {
+  opacity: 1;
+  transform: translateX(0);
+  border-color: rgba(99, 102, 241, 0.4);
+  box-shadow: 
+    0 4px 24px rgba(0, 0, 0, 0.4),
+    0 0 20px rgba(99, 102, 241, 0.15);
+}
+
+.summary-item.reveal-visible::before {
+  opacity: 1;
+  box-shadow: 0 0 12px rgba(99, 102, 241, 0.5);
+}
+
+/* Active state - brighter themed gradient + cyan border */
+.summary-item.beat-active {
+  background: linear-gradient(
+    135deg,
+    rgba(38, 35, 85, 0.92) 0%,
+    rgba(20, 62, 77, 0.88) 50%,
+    rgba(32, 33, 69, 0.92) 100%
+  );
+  border-color: rgba(0, 255, 255, 0.4);
+  transform: scale(1.02);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.5),
+    0 0 20px rgba(99, 102, 241, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+.summary-item.beat-active::before {
+  box-shadow: 0 0 16px rgba(99, 102, 241, 0.7), 0 0 24px rgba(0, 255, 255, 0.4);
+}
+
+.summary-marker {
+  color: var(--player-success);
+  font-size: 1.2rem;
+  margin-right: 12px;
+  flex-shrink: 0;
+  line-height: 1.4;
+}
+
+.summary-text {
+  flex: 1;
+  color: var(--player-text);
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+/* ========================================
+   BULLET LIST STYLING
+   ======================================== */
+.bullet-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.bullet-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  background: linear-gradient(135deg, rgba(10, 15, 30, 0.95), rgba(15, 20, 40, 0.92));
+  border-radius: 12px;
+  border: 1px solid var(--player-border);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  transform: translateX(-30px);
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bullet-item.revealed {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.bullet-item.active {
+  background: var(--player-accent-soft);
+  border-color: var(--player-accent);
+  transform: scale(1.02);
+}
+
+.bullet-marker {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--player-accent);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.bullet-text {
+  flex: 1;
+  color: var(--player-text);
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+/* ========================================
+   FLASHCARD STYLING (V2.6 Purple Gradients)
+   ======================================== */
+.flashcard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  padding: 16px 0;
+}
+
+.flashcard {
+  perspective: 1000px;
+  height: 200px;
+  min-height: 200px;
+  cursor: pointer;
+  opacity: 0;
+  transform: scale(0.9);
+  transition: opacity 0.5s, transform 0.5s;
+  transform-style: preserve-3d !important;
+}
+
+.flashcard.revealed {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.flashcard-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.flashcard.flipped .flashcard-inner {
+  transform: rotateY(180deg);
+}
+
+.flashcard-face {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  border-radius: 16px;
+  text-align: center;
+}
+
+/* Purple gradient for front (V2.6) */
+.flashcard-front {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  border: 2px solid rgba(139, 92, 246, 0.5);
+}
+
+/* Different purple gradient for back */
+.flashcard-back {
+  background: linear-gradient(135deg, #8b5cf6, #a855f7);
+  border: 2px solid rgba(168, 85, 247, 0.5);
+  transform: rotateY(180deg);
+}
+
+.flashcard-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 12px;
+  opacity: 0.9;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.flashcard-content {
+  font-size: 1.125rem;
+  font-weight: 500;
+  color: #ffffff;
+  line-height: 1.5;
+}
+
+.flashcard-hint {
+  position: absolute;
+  bottom: 12px;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* ========================================
+   QUIZ SECTION STYLING (V2.6 matching)
+   ======================================== */
+.quiz-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.quiz-question,
+.quiz-card {
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.5s ease;
+  margin-bottom: 16px;
+}
+
+.quiz-question.revealed,
+.quiz-card.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.quiz-question.active,
+.quiz-card.quiz-active {
+  border-color: rgba(59, 130, 246, 0.5);
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
+}
+
+.quiz-question-text {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--player-text);
+  margin-bottom: 16px;
+}
+
+.quiz-pause-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 16px;
+  background: rgba(245, 158, 11, 0.2);
+  border-radius: 8px;
+  color: var(--player-warning);
+  font-weight: 500;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.quiz-answer {
+  padding: 16px;
+  background: rgba(34, 197, 94, 0.15);
+  border-radius: 8px;
+  border-left: 4px solid var(--player-success);
+  color: var(--player-text);
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.5s ease;
+}
+
+.quiz-answer.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ========================================
+   IMAGE AND MEDIA STYLING
+   ======================================== */
+.beat-image {
+  width: 100%;
+  max-height: 400px;
+  object-fit: contain;
+  border-radius: 12px;
+  margin: 8px 0;
+}
+
+.beat-image-container {
+  position: relative;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
+.beat-image-caption {
+  padding: 12px;
+  font-size: 0.95rem;
+  color: #e2e8f0;
+  text-align: center;
+  background: rgba(0, 0, 0, 0.75);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+  font-weight: 500;
+}
+
+/* ========================================
+   LATEX AND CODE STYLING
+   ======================================== */
+.latex-container {
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 8px 0;
+}
+
+.latex-container .katex {
+  font-size: 1.2em;
+  color: var(--player-text);
+}
+
+/* ========================================
+   MARKDOWN CONTENT STYLING (V2.6)
+   ======================================== */
+.markdown-content-container {
+  width: 100%;
+  font-size: 1.15rem;
+  line-height: 1.7;
+  color: #f1f5f9;
+  font-weight: 400;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9), 0 0 8px rgba(0, 0, 0, 0.5);
+}
+
+.markdown-content-container h1 {
+  font-size: 1.8rem;
+  color: #a5b4fc;
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid rgba(165, 180, 252, 0.3);
+  padding-bottom: 0.5rem;
+}
+
+.markdown-content-container h2 {
+  font-size: 1.5rem;
+  color: #a5b4fc;
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.markdown-content-container h3 {
+  font-size: 1.4rem;
+  color: #818cf8;
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid rgba(129, 140, 248, 0.3);
+  padding-bottom: 0.5rem;
+}
+
+.markdown-content-container p {
+  margin-bottom: 1rem;
+}
+
+.markdown-content-container strong {
+  color: #60a5fa;
+  font-weight: 700;
+}
+
+.markdown-content-container em {
+  color: #c4b5fd;
+  font-style: italic;
+}
+
+.markdown-content-container code {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'Consolas', 'Monaco', monospace;
+  color: #a5b4fc;
+  font-size: 0.95em;
+}
+
+.markdown-content-container pre {
+  background: rgba(0, 0, 0, 0.4);
+  padding: 16px;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+
+.markdown-content-container pre code {
+  background: none;
+  padding: 0;
+  color: #e5e7eb;
+}
+
+.markdown-content-container ul,
+.markdown-content-container ol {
+  padding-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.markdown-content-container li {
+  margin-bottom: 0.5rem;
+}
+
+.markdown-content-container blockquote {
+  border-left: 4px solid var(--player-indigo);
+  padding-left: 1rem;
+  margin: 1rem 0;
+  color: var(--player-text-muted);
+  font-style: italic;
+}
+
+/* ========================================
+   TABLE STYLING (V2.6)
+   ======================================== */
+.md-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: rgba(30, 41, 59, 0.8);
+  margin: 1rem 0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.md-table th {
+  background: #312e81;
+  color: #fff;
+  font-weight: 600;
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 2px solid #4338ca;
+}
+
+.md-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--player-text);
+}
+
+.md-table tr:hover {
+  background: rgba(99, 102, 241, 0.1);
+}
+
+/* ========================================
+   INTRO SECTION
+   ======================================== */
+.intro-container {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 48px;
+  z-index: 5;
+}
+
+.intro-background-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.6;
+  z-index: -1;
+}
+
+.intro-title {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--player-text);
+  margin-bottom: 16px;
+  text-shadow: 0 4px 20px var(--player-shadow);
+}
+
+.intro-subtitle {
+  font-size: 1.5rem;
+  color: var(--player-text-muted);
+  margin-bottom: 32px;
+}
+
+.intro-description {
+  max-width: 600px;
+  font-size: 1.125rem;
+  color: var(--player-text);
+  line-height: 1.7;
+  opacity: 0.9;
+}
+
+/* ========================================
+   RECAP SECTION
+   ======================================== */
+.recap-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.recap-video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* ========================================
+   PLAYER CONTROLS
+   ======================================== */
+.player-controls {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: linear-gradient(180deg, rgba(15, 15, 26, 0.98) 0%, rgba(20, 20, 40, 0.95) 100%);
+  border-top: 1px solid rgba(99, 102, 241, 0.4);
+  box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(0, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  padding: 0 24px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
+  z-index: 100;
+}
+
+.timeline-container {
+  width: 200px;
+  flex-shrink: 0;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+  cursor: pointer;
+  position: relative;
+}
+
+.timeline-progress {
+  height: 100%;
+  background: var(--player-accent);
+  border-radius: 3px;
+  transition: width 0.1s linear;
+}
+
+.timeline-handle {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 14px;
+  height: 14px;
+  background: white;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px var(--player-shadow);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.timeline-container:hover .timeline-handle {
+  opacity: 1;
+}
+
+.controls-row {
+  display: none;
+}
+
+.controls-left,
+.controls-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.controls-center {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.controls-section-picker {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  justify-content: center;
+}
+
+.control-button {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: var(--player-text);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.control-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.control-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.control-button.primary {
+  width: 48px;
+  height: 48px;
+  background: var(--player-accent);
+}
+
+.control-button.primary:hover {
+  background: #2563eb;
+}
+
+.time-display {
+  font-size: 0.875rem;
+  color: var(--player-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.section-indicator {
+  font-size: 0.875rem;
+  color: var(--player-text-muted);
+}
+
+/* ========================================
+   SECTION PICKER DROPDOWN
+   ======================================== */
+.section-picker {
+  position: relative;
+}
+
+.section-picker-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--player-border);
+  border-radius: 8px;
+  color: var(--player-text);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.section-picker-trigger:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.section-picker-menu {
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  margin-bottom: 8px;
+  min-width: 200px;
+  max-height: 300px;
+  overflow-y: auto;
+  background: var(--player-content-bg);
+  border: 1px solid var(--player-border);
+  border-radius: 12px;
+  padding: 8px;
+  box-shadow: 0 10px 40px var(--player-shadow);
+}
+
+.section-picker-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.section-picker-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.section-picker-item.active {
+  background: var(--player-accent-soft);
+}
+
+.section-picker-number {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--player-accent);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.section-picker-title {
+  flex: 1;
+  font-size: 0.875rem;
+  color: var(--player-text);
+}
+
+.section-picker-type {
+  font-size: 0.75rem;
+  color: var(--player-text-muted);
+  text-transform: capitalize;
+}
+
+/* ========================================
+   LOADING AND ERROR STATES
+   ======================================== */
+.player-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  background: var(--player-bg);
+  z-index: 1000;
+}
+
+.player-loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid var(--player-border);
+  border-top-color: var(--player-accent);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.player-loading-text {
+  font-size: 1rem;
+  color: var(--player-text-muted);
+}
+
+.player-error {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  background: var(--player-bg);
+  z-index: 1000;
+  padding: 48px;
+  text-align: center;
+}
+
+.player-error-icon {
+  width: 64px;
+  height: 64px;
+  color: var(--player-error);
+}
+
+.player-error-text {
+  font-size: 1.125rem;
+  color: var(--player-text);
+}
+
+/* ========================================
+   RESPONSIVE ADJUSTMENTS
+   ======================================== */
+@media (max-width: 768px) {
+  .player-header {
+    height: 40px;
+    padding: 0 12px;
+  }
+
+  .player-header-logo {
+    font-size: 1.1rem;
+  }
+
+  .player-header-title {
+    font-size: 0.875rem;
+    max-width: 40%;
+  }
+
+  .content-layer {
+    width: 100%;
+    padding: 16px;
+  }
+
+  .player-stage.mode-content .avatar-layer,
+  .player-stage.mode-summary .avatar-layer {
+    width: 40vw;
+    height: 35vh;
+  }
+
+  .section-title {
+    font-size: 1.25rem;
+    padding: 10px 12px;
+    min-height: 40px;
+  }
+
+  .bullet-item {
+    padding: 12px;
+  }
+
+  .flashcard {
+    height: 160px;
+    min-height: 160px;
+  }
+
+  .intro-title {
+    font-size: 1.75rem;
+  }
+
+  .intro-subtitle {
+    font-size: 1.125rem;
+  }
+
+  .summary-item {
+    padding: 10px 12px;
+  }
+
+  .beat-block {
+    padding: 12px 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .content-layer {
+    padding: 12px;
+  }
+
+  .player-controls {
+    height: 70px;
+    padding: 12px 16px;
+  }
+
+  .control-button {
+    width: 36px;
+    height: 36px;
+  }
+
+  .control-button.primary {
+    width: 42px;
+    height: 42px;
+  }
+}
+
+/* ========================================
+   NEBULA BACKGROUND ANIMATIONS
+   ======================================== */
+
+/* Nebula cloud drift - slow organic movement */
+@keyframes nebula-drift {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  25% {
+    transform: translate(3%, 2%) scale(1.05);
+  }
+  50% {
+    transform: translate(-2%, 3%) scale(0.98);
+  }
+  75% {
+    transform: translate(1%, -2%) scale(1.02);
+  }
+}
+
+.animate-nebula-drift {
+  animation: nebula-drift 15s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* Aurora wave - sinusoidal undulation */
+@keyframes aurora-wave {
+  0%, 100% {
+    d: path('M 0 20 Q 25 15 50 20 T 100 20');
+    opacity: 0.2;
+  }
+  33% {
+    d: path('M 0 18 Q 25 25 50 18 T 100 18');
+    opacity: 0.35;
+  }
+  66% {
+    d: path('M 0 22 Q 25 12 50 22 T 100 22');
+    opacity: 0.25;
+  }
+}
+
+.animate-aurora-wave {
+  animation: aurora-wave 20s ease-in-out infinite;
+  will-change: d, opacity;
+}
+
+/* Star twinkle - opacity + scale pulsing */
+@keyframes star-twinkle {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.3);
+  }
+}
+
+.animate-star-twinkle {
+  animation: star-twinkle 3s ease-in-out infinite;
+  will-change: opacity, transform;
+  transform-origin: center;
+}
+
+/* Meteor streak - diagonal translation + fade */
+@keyframes meteor-streak {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0);
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 0.8;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(30%, 50%);
+  }
+}
+
+.animate-meteor-streak {
+  animation: meteor-streak 3s ease-out infinite;
+  will-change: opacity, transform;
+}
+
+/* Orb pulse - scale + glow intensity */
+@keyframes orb-pulse {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.2;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.15);
+    opacity: 0.35;
+  }
+}
+
+.animate-orb-pulse {
+  animation: orb-pulse 8s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+/* Light ray sway - subtle rotation */
+@keyframes light-ray-sway {
+  0%, 100% {
+    transform: rotate(0deg);
+    opacity: 0.03;
+  }
+  50% {
+    transform: rotate(3deg);
+    opacity: 0.08;
+  }
+}
+
+.animate-light-ray-sway {
+  animation: light-ray-sway 12s ease-in-out infinite;
+  transform-origin: 50% 50%;
+  will-change: transform, opacity;
+}
+
+/* Fiber optic sway */
+@keyframes fiber-sway {
+  0%, 100% {
+    transform: translateX(0) scaleY(1);
+    opacity: 0.1;
+  }
+  50% {
+    transform: translateX(2px) scaleY(1.02);
+    opacity: 0.25;
+  }
+}
+
+.animate-fiber-sway {
+  animation: fiber-sway 6s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+/* Sparkle pulse */
+@keyframes sparkle-pulse {
+  0%, 100% {
+    opacity: 0.2;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.4);
+  }
+}
+
+.animate-sparkle-pulse {
+  animation: sparkle-pulse 2s ease-in-out infinite;
+  transform-origin: center;
+  will-change: opacity, transform;
+}
+
+/* ========================================
+   NEBULA CLOUD ANIMATIONS
+   ======================================== */
+
+/* Cloud drift - each cloud has unique movement pattern */
+@keyframes cloud-drift-1 {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    transform: translate(calc(-50% + 20px), calc(-50% - 25px)) scale(1.05);
+  }
+}
+
+@keyframes cloud-drift-2 {
+  0%, 100% {
+    transform: translate(50%, -50%) scale(1);
+  }
+  50% {
+    transform: translate(calc(50% - 15px), calc(-50% + 20px)) scale(1.03);
+  }
+}
+
+@keyframes cloud-drift-3 {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    transform: translate(calc(-50% + 10px), calc(-50% - 15px)) scale(1.04);
+  }
+}
+
+@keyframes cloud-drift-4 {
+  0%, 100% {
+    transform: translate(-50%, 50%) scale(1);
+  }
+  50% {
+    transform: translate(calc(-50% - 18px), calc(50% - 12px)) scale(1.06);
+  }
+}
+
+@keyframes cloud-drift-5 {
+  0%, 100% {
+    transform: translate(50%, -50%) scale(1);
+  }
+  50% {
+    transform: translate(calc(50% + 12px), calc(-50% - 18px)) scale(1.04);
+  }
+}
+
+@keyframes cloud-drift-6 {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    transform: translate(calc(-50% + 15px), calc(-50% + 10px)) scale(1.05);
+  }
+}
+
+@keyframes cloud-drift-7 {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    transform: translate(calc(-50% - 12px), calc(-50% + 15px)) scale(1.03);
+  }
+}
+
+.animate-cloud-drift-1 {
+  animation: cloud-drift-1 22s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-cloud-drift-2 {
+  animation: cloud-drift-2 28s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-cloud-drift-3 {
+  animation: cloud-drift-3 25s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-cloud-drift-4 {
+  animation: cloud-drift-4 30s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-cloud-drift-5 {
+  animation: cloud-drift-5 24s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-cloud-drift-6 {
+  animation: cloud-drift-6 26s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-cloud-drift-7 {
+  animation: cloud-drift-7 20s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* ========================================
+   PRE-INTRO VIDEO OVERLAY
+   ======================================== */
+.pre-intro-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pre-intro-overlay .pre-intro-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.skip-intro-button {
+  position: absolute;
+  bottom: 100px;
+  right: 40px;
+  padding: 12px 24px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  color: white;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  backdrop-filter: blur(4px);
+  animation: fadeInDelayed 0.5s ease-out 2s both;
+}
+
+.skip-intro-button:hover {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: var(--player-cyan, #00ffff);
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+}
+
+@keyframes fadeInDelayed {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

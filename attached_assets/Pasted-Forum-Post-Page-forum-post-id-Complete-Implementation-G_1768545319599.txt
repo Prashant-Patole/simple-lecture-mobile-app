@@ -1,0 +1,172 @@
+Forum Post Page (/forum/post/:id) - Complete Implementation Guide
+Overview
+This page displays a single forum post with its replies, allowing users to view, interact with, and respond to forum discussions.
+
+1. Database Tables Used
+Table	Purpose
+forum_posts	Stores the main question/post
+forum_replies	Stores all replies to posts
+forum_categories	Category info for the post
+forum_upvotes	Tracks which users upvoted which replies
+forum_flags	Stores user reports for moderation
+profiles	User profile info (name, avatar)
+2. API Hooks Used
+useForumPost(postId) - Fetches single post
+
+// Queries:
+// 1. SELECT from forum_posts with category join
+// 2. SELECT from profiles for author info
+// 3. UPDATE forum_posts to increment view_count
+useForumReplies(postId) - Fetches all replies
+
+// Queries:
+// 1. SELECT from forum_replies WHERE post_id = :postId
+// 2. SELECT from profiles for all reply authors
+// 3. SELECT from forum_upvotes to check user's upvote status
+useCreateForumReply() - Creates new reply
+
+// INSERT into forum_replies
+useToggleUpvote() - Add/remove upvote
+
+// INSERT or DELETE from forum_upvotes
+useAcceptAnswer() - Mark reply as accepted
+
+// UPDATE forum_replies SET is_accepted_answer = false (for all post replies)
+// UPDATE forum_replies SET is_accepted_answer = true (for selected reply)
+useFlagPost() - Report content
+
+// INSERT into forum_flags
+3. UI Components Used
+Component	Source	Purpose
+Card, CardContent, CardHeader, CardTitle	@/components/ui/card	Main container for post and replies
+Button	@/components/ui/button	Actions (upvote, accept, report, post)
+Badge	@/components/ui/badge	Status indicators (Answered, AI Generated)
+Avatar, AvatarFallback	@/components/ui/avatar	User profile pictures
+Textarea	@/components/ui/textarea	Reply input field
+Separator	@/components/ui/separator	Visual divider
+Dialog	@/components/ui/dialog	Flag content modal
+Link	react-router-dom	Navigation
+4. Icons Used (from lucide-react)
+Icon	Purpose
+ArrowLeft	Back navigation
+ThumbsUp	Upvote button
+CheckCircle	Accepted answer indicator
+Bot	AI-generated reply indicator
+Flag	Report button
+Clock	Time posted
+Eye	View count
+MessageSquare	Reply count header
+5. Page Structure
+Now I have a complete picture. Let me explain the Forum Post page implementation in detail:
+
+Forum Post Page (/forum/post/:id) - Complete Implementation Guide
+Overview
+This page displays a single forum post with its replies, allowing users to view, interact with, and respond to forum discussions.
+
+1. Database Tables Used
+Table	Purpose
+forum_posts	Stores the main question/post
+forum_replies	Stores all replies to posts
+forum_categories	Category info for the post
+forum_upvotes	Tracks which users upvoted which replies
+forum_flags	Stores user reports for moderation
+profiles	User profile info (name, avatar)
+2. API Hooks Used
+useForumPost(postId) - Fetches single post
+
+// Queries:
+// 1. SELECT from forum_posts with category join
+// 2. SELECT from profiles for author info
+// 3. UPDATE forum_posts to increment view_count
+useForumReplies(postId) - Fetches all replies
+
+// Queries:
+// 1. SELECT from forum_replies WHERE post_id = :postId
+// 2. SELECT from profiles for all reply authors
+// 3. SELECT from forum_upvotes to check user's upvote status
+useCreateForumReply() - Creates new reply
+
+// INSERT into forum_replies
+useToggleUpvote() - Add/remove upvote
+
+// INSERT or DELETE from forum_upvotes
+useAcceptAnswer() - Mark reply as accepted
+
+// UPDATE forum_replies SET is_accepted_answer = false (for all post replies)
+// UPDATE forum_replies SET is_accepted_answer = true (for selected reply)
+useFlagPost() - Report content
+
+// INSERT into forum_flags
+3. UI Components Used
+Component	Source	Purpose
+Card, CardContent, CardHeader, CardTitle	@/components/ui/card	Main container for post and replies
+Button	@/components/ui/button	Actions (upvote, accept, report, post)
+Badge	@/components/ui/badge	Status indicators (Answered, AI Generated)
+Avatar, AvatarFallback	@/components/ui/avatar	User profile pictures
+Textarea	@/components/ui/textarea	Reply input field
+Separator	@/components/ui/separator	Visual divider
+Dialog	@/components/ui/dialog	Flag content modal
+Link	react-router-dom	Navigation
+4. Icons Used (from lucide-react)
+Icon	Purpose
+ArrowLeft	Back navigation
+ThumbsUp	Upvote button
+CheckCircle	Accepted answer indicator
+Bot	AI-generated reply indicator
+Flag	Report button
+Clock	Time posted
+Eye	View count
+MessageSquare	Reply count header
+5. Page Structure
+
+Flowchart
+6. Data Flow
+6. Data Flow
+
+Sequence
+7. Key Features Implementation
+View Count Increment
+Automatically increments when fetching post:
+
+
+await supabase
+  .from('forum_posts')
+  .update({ view_count: (data.view_count || 0) + 1 })
+  .eq('id', postId);
+Reply Sorting
+Replies are ordered by:
+
+Accepted answer first (is_accepted_answer DESC)
+Most upvotes (upvotes DESC)
+Oldest first (created_at ASC)
+Accept Answer Logic
+Only the post author can accept answers:
+
+
+const isAuthor = user?.id === post?.author_id;
+// Show "Accept Answer" button only if isAuthor && !reply.is_accepted_answer
+AI Reply Detection
+AI-generated replies show a special badge and Bot icon:
+
+
+{reply.is_ai_generated && (
+  <Badge variant="secondary">
+    <Bot className="w-3 h-3 mr-1" />
+    AI Generated
+  </Badge>
+)}
+8. State Management
+State	Type	Purpose
+replyContent	string	User's reply text input
+flagDialogOpen	boolean	Controls report dialog visibility
+flagTarget	{ type, id } | null	Which post/reply is being flagged
+9. Conditional Rendering
+Condition	Result
+postLoading	Show skeleton loader
+repliesLoading	Show reply skeleton cards
+replies.length === 0	Show "No replies yet" message
+user is logged in	Show reply form
+user is not logged in	Show "Sign in to post" prompt
+isAuthor	Show "Accept Answer" buttons
+user && !isAuthor	Show "Report" button on post
+user && user.id !== reply.author_id	Show "Report" button on replies

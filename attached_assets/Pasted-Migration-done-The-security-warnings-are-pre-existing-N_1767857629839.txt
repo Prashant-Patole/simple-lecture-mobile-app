@@ -1,0 +1,1787 @@
+Migration done. The security warnings are pre-existing. Now let me create all the files in parallel:
+
+Show all
+3 edits made
+Let me fix the build errors and view more of SubjectForm.tsx to add the Assignments tab:
+
+Show all
+2 edits made
+Let me fix the import paths and update SubjectForm.tsx to add the Assignments tab:
+
+Show all
+1 edit made
+I see - the hook is useChapterTopics not useSubjectTopics, and the field is title not name. Let me fix both files:
+
+Show all
+1 edit made
+Now I see all the issues. Let me fix them all at once:
+
+Show all
+4 edits made
+Done! I've added the Assignments tab to the Subject Edit page with:
+
+Chapter selection (required) and Topic selection (optional)
+Configuration options: title, marks, duration, valid until date, instructions
+Difficulty distribution sliders (Easy/Medium/Hard)
+Question type checkboxes (MCQ, Short Answer, Long Answer, etc.)
+Teacher Made button (disabled with "Coming Soon")
+AI Generate button that fetches documents and generates assignments following your 8 key pedagogical principles
+Preview & confirm step before saving
+Navigate to the Assignments tab in Subject Edit to try it out!
+
+
+Code
+
+Add AI assignments tab
+Preview this version
+
+
+
+
+
+
+7 Jan
+at 15:19
+Fix these issues
+Show more
+
+
+Thought for 16s
+The error is from the topic select having value="". Let me fix it:
+
+Show all
+1 edit made
+Fixed! The issue was using value="" which Radix Select doesn't allow. Now it uses value="all" and converts it back to empty string when needed.
+
+
+Code
+
+Fix select topic empty value
+Preview this version
+
+
+
+
+
+
+7 Jan
+at 15:22
+Fix these issues
+Show more
+
+
+Thought for 12s
+The OpenAI API is rate-limited. Let me switch the edge function to use Lovable AI Gateway which is recommended and avoids these issues:
+
+Show all
+1 edit made
+Switched to Lovable AI Gateway using google/gemini-2.5-flash model which has better rate limits and is pre-configured. Try generating the assignment again!
+
+
+Code
+
+Switch to Lovable AI Gateway
+Preview this version
+
+
+
+
+
+
+7 Jan
+at 15:23
+Fix these issues
+Show more
+
+
+Show all
+2 edits made
+I’ll fix the 429 handling so it doesn’t surface as a 500/blank screen and shows a proper “rate limited” message.
+
+Edge function (ai-generate-assignment): now returns HTTP 429 (or 402) with a friendly JSON { error } instead of throwing and turning it into a 500.
+Frontend hook (useGenerateAIAssignment): now reads the edge function’s actual response body/status and throws a clean error message, so your UI toast shows Rate limit exceeded… instead of Edge function returned 500.
+If you still hit 429, it’s a genuine rate-limit—wait ~30–60s and try again (or reduce rapid retries).
+
+
+Code
+
+Improve AI assignment flow
+Preview this version
+
+
+
+
+
+
+7 Jan
+at 15:32
+how i can confirm the assingment in the Preview & Confirm dilogue give a buuton to coferm then save all generated question with acceted answers
+
+
+
+Show all
+1 tool used
+Let me also see the Preview & Confirm step (step 4) of the dialog to understand the current implementation:
+
+Read
+SubjectAssignmentsTab.tsx
+Good news! The "Confirm & Save" button already exists in the Preview & Confirm dialog (Step 4). Looking at the code:
+
+Current Implementation (Lines 551-565):
+
+
+<div className="flex justify-between">
+  <Button variant="outline" onClick={() => setStep(3)}>
+    Regenerate
+  </Button>
+  <Button onClick={handleConfirmAssignment} disabled={createAssignment.isPending}>
+    {createAssignment.isPending ? (
+      <>
+        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+        Saving...
+      </>
+    ) : (
+      "Confirm & Save"
+    )}
+  </Button>
+</div>
+The handleConfirmAssignment function (Lines 171-206) already:
+
+Validates that questions exist
+Saves the assignment with all generated questions to the database
+Closes the dialog and resets the form
+The button is already there and functional!
+
+However, I noticed you may be encountering the 429 rate limit error before reaching this step. Let me check the edge function logs to see if the AI generation is working correctly now:
+
+Read backend logs
+The logs show that:
+
+At 09:53 - The old code was still using OpenAI directly and got a 429 quota error
+At 09:59 - The updated code using Lovable AI Gateway successfully generated the assignment! (✅ AI response received)
+So the AI generation is now working correctly with the Lovable AI Gateway. The "Confirm & Save" button is already implemented in Step 4.
+
+Here's how the current workflow works:
+
+Current "Confirm & Save" Flow
+Step 4 (Preview & Confirm) shows:
+
+An editable title field
+All generated questions with their type, marks, difficulty, and options
+Correct answers are highlighted in green for MCQs
+Two buttons at the bottom:
+
+"Regenerate" - Goes back to Step 3 to generate again
+"Confirm & Save" - Saves the assignment with all questions
+When you click "Confirm & Save", the handleConfirmAssignment function:
+
+Saves the entire assignment including all generated questions to the assignments table
+Shows a success toast notification
+Closes the dialog
+Are you perhaps not seeing Step 4 because the AI generation is failing? Try clicking "AI Generate" again - it should work now that we switched to the Lovable AI Gateway.
+
+If the button styling or visibility is an issue, or if you want additional features like editing individual questions before saving, please let me know and I can create a plan for those enhancements!
+
+
+
+
+
+
+7 Jan
+at 15:36
+image.png
+
+i tap on conferm and save but i cant see the generated assingment here
+
+
+Thought for 12s
+Let me investigate why the assignment isn't appearing after you confirm and save. I'll check the edge function logs and the database to see what's happening.
+
+Show all
+3 tools used
+Good news! I can see the assignment was actually created successfully in the database:
+
+ID: 9fdaa76b-e924-476f-990a-ff1ec5beca43
+Title: "Chapter Assignment1"
+Subject ID: bc7e6984-8a22-4869-b1d8-732009468abb (matches your current page)
+Source: ai_generated
+The issue is that the table isn't refreshing to show the new assignment. Let me check the component to see how it queries and refreshes the list:
+
+Show all
+3 tools used
+I found the issue. Looking at the database logs, there are multiple errors:
+
+column subject_chapters_1.name does not exist
+This is happening because the query to fetch assignments is trying to join with chapters/topics using a name column that doesn't exist. Let me check the query in the hook:
+
+Show all
+3 tools used
+Found the bug! The query is looking for a name column in subject_chapters and subject_topics, but these tables use title instead of name:
+
+Current (broken) query:
+
+
+chapter:chapter_id(id, name),
+topic:topic_id(id, name)
+Should be:
+
+
+chapter:chapter_id(id, title),
+topic:topic_id(id, title)
+The assignment was saved successfully to the database (we confirmed that), but the fetch query fails because it references non-existent columns, so the table shows empty.
+
+Plan
+Fix: Assignments Not Displaying After Save
+Problem Identified
+The assignment is being saved successfully to the database, but it's not appearing in the table because the query to fetch assignments references a name column that doesn't exist in your subject_chapters and subject_topics tables. These tables use title instead.
+
+Database Evidence
+✅ Assignment saved: 9fdaa76b-e924-476f-990a-ff1ec5beca43 with title "Chapter Assignment1"
+❌ Database error logs show: column subject_chapters_1.name does not exist
+Solution
+Update the query in src/hooks/useSubjectAssignments.ts to use the correct column name:
+
+Change lines 43-47 from:
+
+
+.select(`
+  *,
+  chapter:chapter_id(id, name),
+  topic:topic_id(id, name)
+`)
+To:
+
+
+.select(`
+  *,
+  chapter:chapter_id(id, title),
+  topic:topic_id(id, title)
+`)
+Additional Fix Required
+The SubjectAssignmentsTab.tsx component also needs to be updated to display chapter.title and topic.title instead of chapter.name and topic.name in the table.
+
+Files to Modify
+src/hooks/useSubjectAssignments.ts - Fix the Supabase query to use title instead of name
+src/components/admin/SubjectAssignmentsTab.tsx - Update table rendering to reference .title instead of .name
+Expected Outcome
+After this fix, your saved assignment "Chapter Assignment1" will appear in the table along with any future assignments you create.
+
+
+
+
+
+
+7 Jan
+at 15:37
+Plan approved.
+
+
+
+Show all
+1 tool used
+Now I'll fix both files in parallel:
+
+Show all
+2 edits made
+Fixed! The query now uses title instead of name. Your saved assignment "Chapter Assignment1" should now appear in the table.
+
+
+Code
+
+Fix show assignments display
+Preview this version
+
+
+
+
+
+
+7 Jan
+at 15:37
+Plan approved.
+
+
+
+Thought for 42s
+The fix is already applied! Just refresh the page and your saved assignment "Chapter Assignment1" will appear in the table.
+
+
+
+
+
+
+7 Jan
+at 15:43
+now fetch that assingment in the student side and give proper option to submit al the answers and ai will check that answers and give marks and if student uploded some images fro digram and biger answers then parsed that image in the jason then give that data to ai to give marks to it you can see that imlimentation in mock & pyq's check it onece ans same aplly here also
+
+
+
+Thought for 18s
+Let me explore the existing implementations in MCQ tests and Previous Year Papers to understand how image parsing and AI grading works, then apply that pattern to assignments.
+
+Show all
+3 tools used
+Let me look at the PreviousYearPapers component to see how image parsing and AI answer checking is implemented there:
+
+Show all
+3 tools used
+Now let me look at the edge functions for AI grading and the database schema for assignments:
+
+Show all
+3 tools used
+Let me check what type of questions are stored in the assignments and if there's an assignment submissions table:
+
+Show all
+3 tools used
+Now let me check the assignment_submissions table structure:
+
+Show all
+2 tools used
+Now I have a comprehensive understanding of the existing implementation. Let me look at more of the PreviousYearPapers to see the testing interface and written answer handling:
+
+Show all
+2 tools used
+Now I have a complete picture. Let me see the hooks for assignments to understand how to fetch assignments for students:
+
+Show all
+2 tools used
+Now I have a complete understanding of the existing system. Let me summarize what I found and present a comprehensive plan.
+
+I have thoroughly analyzed the existing codebase. Here's what I found:
+
+Current State Analysis
+What Exists:
+AssignmentViewer.tsx - Uses mock data only, no real database integration
+assignments table - Stores assignments with questions in JSONB format (MCQ, short_answer, long_answer, true_false, application types)
+assignment_submissions table - Has proper schema for student submissions with answers JSONB, score, percentage, feedback, graded_at
+useAssignments.ts - Fetches assignments for enrolled students
+PreviousYearPapers implementation - Has full image upload, extraction, and AI grading workflow that we can replicate
+What Needs to Be Built:
+Hook to fetch assignment questions from the JSONB questions column
+Hook to submit assignment answers and save to assignment_submissions
+AI grading edge function for assignments (similar to ai-compare-math-answers)
+Updated AssignmentViewer with real data, image upload, and AI grading
+Plan
+Implementation Plan: Student Assignment Submission with AI Grading
+Overview
+Transform the AssignmentViewer from mock data to a fully functional assignment submission system with image parsing and AI grading, following the pattern established in PreviousYearPapers.tsx.
+
+Phase 1: Database & Hooks
+1.1 Create Assignment Submission Hook
+File: src/hooks/useAssignmentSubmissions.ts
+
+useAssignmentSubmissions(assignmentId) - Fetch existing submission for an assignment
+useSubmitAssignment() - Submit answers to assignment_submissions table
+useUploadAssignmentAnswerImage() - Upload answer images to storage bucket
+1.2 Create Assignment Questions Hook
+File: src/hooks/useAssignmentQuestions.ts
+
+useAssignmentQuestions(assignmentId) - Parse the JSONB questions column from assignments table
+Returns typed question objects with: question, type, options, correct_answer, marks, explanation
+Phase 2: AI Grading Edge Function
+2.1 Create Assignment Grading Function
+File: supabase/functions/ai-grade-assignment/index.ts
+
+Purpose: Grade subjective answers (short_answer, long_answer, application types)
+
+Features:
+
+Accept array of { question, correct_answer, student_answer, marks, type }
+Use Lovable AI Gateway with Gemini Flash
+For each answer, AI will:
+Compare student answer with expected answer
+Assign partial marks for partially correct answers
+Return { question_id, marks_awarded, feedback }
+Handle image-extracted text the same as typed text
+System Prompt:
+
+You are a teacher grading student assignments. For each answer:
+1. Compare the student's answer with the correct answer
+2. Award full marks if essentially correct
+3. Award partial marks for partially correct answers
+4. Award 0 for incorrect or irrelevant answers
+5. Provide brief constructive feedback
+Phase 3: Update AssignmentViewer Component
+3.1 Replace Mock Data with Real Data
+File: src/components/learning/AssignmentViewer.tsx
+
+Changes:
+
+Import useAssignments to list assignments for the current subject/chapter
+Import useAssignmentQuestions to get questions for selected assignment
+Import useAssignmentSubmissions to check existing submissions
+3.2 Add Test Interface (Similar to PreviousYearPapers)
+States: assignments | setup | testing | results
+
+Testing Interface Features:
+
+Question navigation with palette
+Timer (optional, based on assignment duration_minutes)
+Flag questions for review
+Progress indicator
+3.3 Add Answer Input Components
+For Each Question Type:
+
+MCQ / True-False: Radio buttons (already exists)
+Short Answer / Long Answer / Application:
+Textarea for typed answer
+Image upload button for handwritten/diagram answers
+Show uploaded image preview
+"Extract from image" option (uses useExtractImageAnswer)
+3.4 Image Upload & Extraction Flow
+1. Student clicks "Upload Image" on a question
+2. Image uploaded to Supabase storage (student-answers bucket)
+3. Image URL stored in state
+4. On submit, if image exists but no text:
+   - Call extract-answer-from-image edge function
+   - Store extracted text as the answer
+5. Pass extracted text to AI grading
+3.5 Submission & Grading Flow
+1. Student clicks "Submit Assignment"
+2. Process all image answers → extract text
+3. For MCQ/True-False: Compare directly with correct_answer
+4. For subjective questions: Send to ai-grade-assignment
+5. Calculate total score
+6. Save to assignment_submissions table:
+   - answers: { question_id: { text, image_url, marks_awarded, feedback } }
+   - score, percentage
+   - grading_status: "ai_graded"
+7. Show results screen with:
+   - Total score and percentage
+   - Per-question feedback
+   - Correct answers for MCQs
+   - AI feedback for subjective questions
+Phase 4: Results Display
+4.1 Results Screen
+Display total score with visual indicator (progress bar, trophy icon)
+Show each question with:
+Question text
+Student's answer (text or image)
+Correct answer
+Marks awarded (X/Y format)
+AI feedback (for subjective)
+Explanation (if available)
+4.2 Assignment Status Updates
+Update assignment card to show "Submitted" or "Graded" badge
+Display score on graded assignments
+Prevent re-submission (or allow retake based on settings)
+Files to Create/Modify
+File	Action
+src/hooks/useAssignmentSubmissions.ts	Create
+src/hooks/useAssignmentQuestions.ts	Create
+supabase/functions/ai-grade-assignment/index.ts	Create
+supabase/config.toml	Add function config
+src/components/learning/AssignmentViewer.tsx	Major rewrite
+Data Flow Diagram
+Student opens Assignment Tab
+        ↓
+Fetch assignments for subject/chapter
+        ↓
+Student selects assignment → Fetch questions (JSONB)
+        ↓
+Display test interface with questions
+        ↓
+Student answers (text or image upload)
+        ↓
+Submit → Extract text from images
+        ↓
+Grade MCQs locally + Send subjective to AI
+        ↓
+Save results to assignment_submissions
+        ↓
+Display results with feedback
+Key Reusable Components from PreviousYearPapers
+Image upload handler - handleImageUpload function
+Image extraction - useExtractImageAnswer hook
+Answer normalization - normalizeAnswer function
+Timer component - Time remaining display and auto-submit
+Question palette - Navigation grid for questions
+Results display - Score card and detailed review
+
+
+
+
+
+7 Jan
+at 15:45
+Plan approved.
+
+
+
+Thought for 18s
+I'll implement the student assignment submission system with AI grading. Let me create all the necessary files.
+
+Tasks
+Create assignment hooks
+Create AI grading edge function
+Rewrite AssignmentViewer
+Show all
+5 edits made
+Now I'll rewrite the AssignmentViewer component with the full test interface, image upload, and AI grading:
+
+Show all
+1 edit made
+Implemented the student assignment submission system with AI grading:
+
+Created hooks: useAssignmentSubmissions.ts (submit/fetch submissions, upload images) and useAssignmentQuestions.ts (parse assignment questions)
+Created edge function: ai-grade-assignment uses Gemini Flash to grade subjective answers with partial marks and feedback
+Rewrote AssignmentViewer: Full test interface with question navigation, timer, image upload with text extraction, MCQ local grading + AI grading for subjective questions, and detailed results view
+
+Code
+
+Add student AI grading flow
+Preview this version
+
+
+
+
+
+
+7 Jan
+at 15:49
+i cannot see any asinmnet here
+
+
+
+Thought for 6s
+Let me check if there are assignments in the database and verify the RLS policies.
+
+Show all
+1 edit made
+Fixed: Learning.tsx was not passing subjectId into AssignmentViewer, so the student query never ran—now it passes selectedSubjectId, and your active assignment should show up under Assignments.
+
+
+Code
+
+Show assignments on student view
+Preview this version
+
+
+
+
+
+
+7 Jan
+at 16:00
+i have submites assinment the state should be chnage and show the marks aslo but i stil seeing pending here and make srat assingment button funtion you make the whole card fro tap
+
+
+
+Show all
+3 tools used
+This message was cancelled.
+
+
+
+
+
+7 Jan
+at 16:02
+image.png
+
+i have submites assinment the state should be chnage and show the marks aslo but i stil seeing pending here and make srat assingment button funtion you make the whole card fro tap
+
+
+Show all
+10 tools used
+Plan
+Goal: After a student submits an assignment, the assignment card in the student list must immediately switch from “Pending” to “Submitted/Graded” and show marks/percentage. Also, the “Start Assignment” button must work, and the entire card should be tappable/clickable.
+
+What’s causing your current issue (based on current code):
+
+In AssignmentViewer.tsx the assignment list UI always renders:
+getStatusVariant(false) and the “Pending” badge (hardcoded)
+so it will never change even if a submission exists in DB.
+The “Start Assignment” button has no onClick, so only clicking the card header starts the test (and on mobile taps often land on the button).
+We will fix this in 3 parts.
+
+Part A — Fetch submission status + marks for each assignment in the list
+Files:
+
+src/hooks/useAssignmentQuestions.ts (update)
+(optional) keep src/hooks/useAssignmentSubmissions.ts unchanged, but we will fix invalidations there in Part C
+Implementation steps:
+
+Update useSubjectAssignmentsForStudent(...) so it returns assignments with status + marks for the current logged-in student.
+Import and use useCurrentAuthUser() inside this hook.
+Update the queryKey to include user?.id so caching is correct.
+In the queryFn:
+Fetch assignments exactly as now (filtered by subject/chapter/topic).
+Collect assignmentIds.
+Fetch submissions for this student:
+from('assignment_submissions').select('assignment_id, score, percentage, submitted_at, graded_at')
+.eq('student_id', user.id).in('assignment_id', assignmentIds)
+Create a map { [assignment_id]: submission }.
+Return a merged array where each assignment has:
+status: 'pending' | 'submitted' | 'graded'
+score, percentage, submitted_at, graded_at
+Status logic:
+if no submission => pending
+if submission exists and graded_at is null => submitted
+if submission exists and graded_at not null => graded Note: Right now we set graded_at at submit time, so you’ll likely see “Graded” immediately, which is fine.
+Acceptance check:
+
+Without changing any UI yet, verify in devtools/network that the hook also calls assignment_submissions and returns the merged data.
+Part B — Update AssignmentViewer card UI + click behavior
+File:
+
+src/components/learning/AssignmentViewer.tsx
+Implementation steps:
+
+Replace the hardcoded badge in the list:
+Use assignment.status from the hook result.
+Show:
+Pending: red badge + Clock icon
+Submitted: amber/secondary badge + AlertCircle icon
+Graded: green/default badge + CheckCircle icon
+Show marks on the card when submitted/graded:
+If status !== pending:
+Show something like: Marks: {assignment.score}/{assignment.total_marks} ({assignment.percentage}%)
+If percentage is null, compute from score/total_marks
+Make the “Start Assignment” button functional:
+Add onClick.
+Button label changes based on status:
+pending => “Start Assignment”
+submitted/graded => “View Result”
+Make the whole card tappable:
+Put the click handler on the <Card ...> itself (not only CardHeader).
+Click behavior:
+If pending: call startTest(assignment.id)
+If submitted/graded: open results view:
+setSelectedAssignmentId(assignment.id)
+setTestState('results')
+Ensure button click triggers the same behavior. (No need for stopPropagation if both do the same action.)
+Acceptance check:
+
+You can start an unsubmitted assignment by tapping anywhere on the card OR the button.
+If already submitted, tapping opens results.
+Part C — Ensure status refresh after submission (React Query invalidation + results hydration)
+Files:
+
+src/hooks/useAssignmentSubmissions.ts (update invalidation)
+src/components/learning/AssignmentViewer.tsx (hydrate results from DB when viewing old submissions)
+Fix React Query invalidation bug in useSubmitAssignment: Current:
+
+invalidateQueries({ queryKey: ['assignment-submission', variables.assignmentId] }) But the actual query key is ['assignment-submission', assignmentId, userId], so this invalidate often misses. Update to:
+Invalidate all submissions queries:
+invalidateQueries({ queryKey: ['assignment-submission'] })
+Invalidate the student’s assignment list queries:
+invalidateQueries({ queryKey: ['student-subject-assignments'] })
+Keep invalidateQueries({ queryKey: ['student-assignments'] }) if other pages depend on it (it exists in useAssignments.ts).
+Hydrate results screen from an existing saved submission (so “View Result” works even after refresh): In AssignmentViewer.tsx:
+
+When testState === 'results' and existingSubmission is available:
+set gradedAnswers from existingSubmission.answers
+set totalScore from existingSubmission.score
+set percentage from existingSubmission.percentage
+This can be done with a useEffect watching:
+testState, selectedAssignmentId, existingSubmission?.id
+Acceptance check:
+
+Submit assignment -> go back -> card should immediately show graded/submitted + marks (no more “Pending”).
+Refresh the page -> card still shows marks; “View Result” works.
+Optional improvement (recommended because you asked about diagram/image answers)
+Auto-extract text on Submit if the student uploaded an image but did not click “Extract Text”:
+
+In handleSubmit, before grading subjective questions, for each subjective question:
+If answers[q.id].imageUrl exists AND answers[q.id].text is empty:
+call extractImage.mutateAsync(...) and use returned extracted_text as student_answer. This ensures diagrams/handwritten answers always get sent to the AI for grading even if the student forgets to press “Extract”.
+Testing checklist (what we’ll verify after implementing)
+
+Assignment list shows:
+Pending for new assignment
+Graded/Submitted + marks for submitted assignment (e.g. 12/50, 24%)
+Button works:
+Pending => starts test
+Graded => opens results
+Card tap works on mobile (tap anywhere).
+After submission:
+status + marks update without hard refresh
+After refresh:
+status + marks still correct, results still viewable
+Files we will modify:
+
+src/hooks/useAssignmentQuestions.ts (merge submissions into subject assignments query)
+src/components/learning/AssignmentViewer.tsx (use real status + marks, fix click behavior, hydrate results)
+src/hooks/useAssignmentSubmissions.ts (fix query invalidation keys)
+
+
+
+
+
+7 Jan
+at 16:06
+Plan approved.
+
+
+
+Thought for 17s
+I'll implement all three parts now. Let me first read the files I need to modify.
+
+Show all
+2 tools used
+Now let me implement all three parts in parallel:
+
+Show all
+3 edits made
+Done! Assignment cards now show Graded/Submitted status with scores, the Start Assignment button works, and the entire card is tappable—tap anywhere to start or view results.
+
+
+Code
+
+Improve assignment flow UI data
+Previewing latest version
+
+
+
+
+
+
+8 Jan
+at 12:32
+hey now i am work with replit ai to build a moabile app so fro that tell me the iimplententation for the chapet level contenet you made and aslo tell the macanisam and api endpoints and ulrs aslo so i can just paset the text you give me and the replit do things as you done
+
+
+
+Thought for 14s
+I'll gather all the implementation details about chapter-level content, mechanisms, and API endpoints so you can share them with Replit AI. Let me explore the codebase thoroughly.
+
+Show all
+11 tools used
+Now I have all the information needed. Let me compile a comprehensive documentation for you to share with Replit AI.
+
+Complete Implementation Documentation for Mobile App - Chapter Level Content & Assignments
+Here's the full implementation guide you can paste into Replit AI:
+
+1. SUPABASE PROJECT CONFIGURATION
+Supabase URL: Use your Supabase project URL (format: https://YOUR_PROJECT_ID.supabase.co)
+
+Required Secrets/Environment Variables:
+
+SUPABASE_URL - Your Supabase project URL
+SUPABASE_ANON_KEY - Supabase anonymous/public key
+LOVABLE_API_KEY - For AI grading (Lovable AI Gateway)
+2. DATABASE SCHEMA
+Table: subjects
+
+CREATE TABLE subjects (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  slug TEXT UNIQUE NOT NULL,
+  description TEXT,
+  icon TEXT,
+  color TEXT,
+  is_active BOOLEAN DEFAULT true,
+  display_order INTEGER,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+Table: subject_chapters
+
+CREATE TABLE subject_chapters (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  subject_id UUID REFERENCES subjects(id) ON DELETE CASCADE,
+  chapter_number INTEGER NOT NULL,
+  title TEXT NOT NULL,
+  description TEXT,
+  sequence_order INTEGER,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+Table: subject_topics
+
+CREATE TABLE subject_topics (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  chapter_id UUID REFERENCES subject_chapters(id) ON DELETE CASCADE,
+  topic_number INTEGER NOT NULL,
+  title TEXT NOT NULL,
+  description TEXT,
+  content_markdown TEXT,
+  notes_markdown TEXT,
+  sequence_order INTEGER,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+Table: assignments
+
+CREATE TABLE assignments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  course_id UUID,
+  subject_id UUID REFERENCES subjects(id),
+  chapter_id UUID REFERENCES subject_chapters(id),
+  topic_id UUID REFERENCES subject_topics(id),
+  title TEXT NOT NULL,
+  description TEXT,
+  instructions TEXT,
+  questions JSONB NOT NULL,  -- Array of question objects
+  total_marks INTEGER DEFAULT 100,
+  passing_marks INTEGER DEFAULT 40,
+  duration_minutes INTEGER DEFAULT 60,
+  due_date TIMESTAMP,
+  homework_date DATE,
+  submission_date DATE,
+  valid_until TIMESTAMP WITH TIME ZONE,
+  is_active BOOLEAN DEFAULT true,
+  source_type TEXT DEFAULT 'manual',
+  ai_generation_config JSONB,
+  created_at TIMESTAMP DEFAULT now()
+);
+Questions JSONB Format:
+
+
+[
+  {
+    "id": "q_0",
+    "question": "What is Newton's first law of motion?",
+    "type": "mcq",  // mcq | true_false | short_answer | long_answer | application
+    "options": ["Option A", "Option B", "Option C", "Option D"],
+    "correct_answer": "Option A",
+    "marks": 2,
+    "explanation": "Newton's first law states...",
+    "image_url": null
+  }
+]
+Table: assignment_submissions
+
+CREATE TABLE assignment_submissions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  assignment_id UUID REFERENCES assignments(id),
+  student_id UUID REFERENCES auth.users(id),
+  answers JSONB NOT NULL,  -- Graded answers
+  score INTEGER,
+  percentage NUMERIC,
+  feedback TEXT,
+  submitted_at TIMESTAMP DEFAULT now(),
+  graded_at TIMESTAMP,
+  time_taken_seconds INTEGER
+);
+Answers JSONB Format:
+
+
+{
+  "q_0": {
+    "question_id": "q_0",
+    "text_answer": "Student's answer text",
+    "image_url": "https://storage.url/image.jpg",
+    "marks_awarded": 2,
+    "feedback": "Correct!",
+    "is_correct": true
+  }
+}
+3. API ENDPOINTS (Supabase Edge Functions)
+Base URL
+https://YOUR_PROJECT_ID.supabase.co/functions/v1/
+3.1 REST API Endpoint
+URL: POST /api Path: /api/v1/courses, /api/v1/subjects, /api/v1/categories, /api/v1/student/enrollments
+
+
+// Example: Get all courses
+GET /api/v1/courses?page=1&limit=20&category=jee
+
+// Example: Get single course with details
+GET /api/v1/courses/{courseId}
+
+// Example: Get student enrollments (requires auth)
+GET /api/v1/student/enrollments
+Headers: {
+  "Authorization": "Bearer YOUR_JWT_TOKEN"
+}
+3.2 AI Grade Assignment
+URL: POST /ai-grade-assignment
+
+Request Body:
+
+
+{
+  "questions": [
+    {
+      "question_id": "q_0",
+      "question": "Explain Newton's first law",
+      "type": "short_answer",
+      "correct_answer": "An object at rest stays at rest...",
+      "student_answer": "Objects don't move unless forced",
+      "marks": 5
+    }
+  ]
+}
+Response:
+
+
+{
+  "grades": [
+    {
+      "question_id": "q_0",
+      "marks_awarded": 3,
+      "feedback": "Partially correct. You mentioned the concept but missed the inertia explanation.",
+      "is_correct": false
+    }
+  ],
+  "total_marks_awarded": 3,
+  "total_max_marks": 5,
+  "percentage": 60
+}
+3.3 Extract Answer From Image (OCR)
+URL: POST /extract-answer-from-image
+
+Request Body:
+
+
+{
+  "image_url": "https://storage.url/answer-image.jpg",
+  "question_context": "What is the formula for kinetic energy?"
+}
+Response:
+
+
+{
+  "extracted_text": "KE = \\frac{1}{2}mv^2",
+  "confidence": "high"
+}
+4. COMPLETE FLOW IMPLEMENTATION
+4.1 Fetch Assignments for a Subject (Student View)
+
+// TypeScript/JavaScript
+interface StudentAssignment {
+  id: string;
+  title: string;
+  description: string | null;
+  due_date: string | null;
+  total_marks: number;
+  passing_marks: number;
+  duration_minutes: number | null;
+  chapter_id: string | null;
+  topic_id: string | null;
+  status: 'pending' | 'submitted' | 'graded';
+  score: number | null;
+  percentage: number | null;
+  submitted_at: string | null;
+  graded_at: string | null;
+}
+
+async function getStudentAssignments(
+  supabase: SupabaseClient,
+  subjectId: string,
+  userId: string,
+  chapterId?: string,
+  topicId?: string
+): Promise<StudentAssignment[]> {
+  // Step 1: Fetch assignments
+  let query = supabase
+    .from('assignments')
+    .select('id, title, description, due_date, total_marks, passing_marks, duration_minutes, chapter_id, topic_id')
+    .eq('subject_id', subjectId)
+    .eq('is_active', true)
+    .order('created_at', { ascending: false });
+
+  if (chapterId) query = query.eq('chapter_id', chapterId);
+  if (topicId) query = query.eq('topic_id', topicId);
+
+  const { data: assignments, error } = await query;
+  if (error || !assignments) return [];
+
+  // Step 2: Fetch submissions for these assignments
+  const assignmentIds = assignments.map(a => a.id);
+  const { data: submissions } = await supabase
+    .from('assignment_submissions')
+    .select('assignment_id, score, percentage, submitted_at, graded_at')
+    .eq('student_id', userId)
+    .in('assignment_id', assignmentIds);
+
+  // Step 3: Merge data
+  const submissionMap = new Map(
+    (submissions || []).map(s => [s.assignment_id, s])
+  );
+
+  return assignments.map(assignment => {
+    const submission = submissionMap.get(assignment.id);
+    let status: 'pending' | 'submitted' | 'graded' = 'pending';
+    if (submission) {
+      status = submission.graded_at ? 'graded' : 'submitted';
+    }
+
+    return {
+      ...assignment,
+      status,
+      score: submission?.score ?? null,
+      percentage: submission?.percentage ?? null,
+      submitted_at: submission?.submitted_at ?? null,
+      graded_at: submission?.graded_at ?? null,
+    };
+  });
+}
+4.2 Fetch Assignment Questions
+
+interface AssignmentQuestion {
+  id: string;
+  question: string;
+  type: 'mcq' | 'true_false' | 'short_answer' | 'long_answer' | 'application';
+  options?: string[];
+  correct_answer?: string;
+  marks: number;
+  explanation?: string;
+  image_url?: string;
+}
+
+async function getAssignmentQuestions(
+  supabase: SupabaseClient,
+  assignmentId: string
+) {
+  const { data, error } = await supabase
+    .from('assignments')
+    .select('*')
+    .eq('id', assignmentId)
+    .single();
+
+  if (error || !data) return null;
+
+  // Parse JSONB questions
+  const rawQuestions = data.questions as any[];
+  const questions: AssignmentQuestion[] = rawQuestions.map((q, index) => ({
+    id: q.id || `q_${index}`,
+    question: q.question || q.text || '',
+    type: q.type || 'short_answer',
+    options: q.options || [],
+    correct_answer: q.correct_answer || q.answer || '',
+    marks: q.marks || 1,
+    explanation: q.explanation || '',
+    image_url: q.image_url || null,
+  }));
+
+  return {
+    id: data.id,
+    title: data.title,
+    description: data.description,
+    instructions: data.instructions,
+    total_marks: data.total_marks || questions.reduce((sum, q) => sum + q.marks, 0),
+    passing_marks: data.passing_marks || 0,
+    duration_minutes: data.duration_minutes,
+    due_date: data.due_date,
+    questions,
+  };
+}
+4.3 Submit Assignment with AI Grading
+
+async function submitAssignment(
+  supabase: SupabaseClient,
+  assignmentId: string,
+  userId: string,
+  answers: Record<string, { text?: string; imageUrl?: string }>,
+  questions: AssignmentQuestion[],
+  totalMaxMarks: number,
+  startTime: number
+) {
+  // Separate MCQ and subjective questions
+  const mcqTypes = ['mcq', 'true_false'];
+  const mcqQuestions = questions.filter(q => mcqTypes.includes(q.type));
+  const subjectiveQuestions = questions.filter(q => !mcqTypes.includes(q.type));
+
+  // Grade MCQs locally
+  const gradedAnswers: Record<string, any> = {};
+  let totalMarks = 0;
+
+  for (const q of mcqQuestions) {
+    const studentAnswer = answers[q.id]?.text || '';
+    const isCorrect = studentAnswer.trim().toLowerCase() === (q.correct_answer || '').trim().toLowerCase();
+    const marksAwarded = isCorrect ? q.marks : 0;
+    totalMarks += marksAwarded;
+
+    gradedAnswers[q.id] = {
+      question_id: q.id,
+      text_answer: studentAnswer,
+      image_url: answers[q.id]?.imageUrl,
+      marks_awarded: marksAwarded,
+      is_correct: isCorrect,
+      feedback: isCorrect ? 'Correct!' : `Incorrect. Correct answer: ${q.correct_answer}`,
+    };
+  }
+
+  // Grade subjective questions with AI
+  if (subjectiveQuestions.length > 0) {
+    const questionsToGrade = subjectiveQuestions.map(q => ({
+      question_id: q.id,
+      question: q.question,
+      type: q.type,
+      correct_answer: q.correct_answer || '',
+      student_answer: answers[q.id]?.text || '',
+      marks: q.marks,
+    }));
+
+    const { data: gradeResult, error } = await supabase.functions.invoke(
+      'ai-grade-assignment',
+      { body: { questions: questionsToGrade } }
+    );
+
+    if (!error && gradeResult?.grades) {
+      for (const grade of gradeResult.grades) {
+        const q = subjectiveQuestions.find(sq => sq.id === grade.question_id);
+        if (q) {
+          totalMarks += grade.marks_awarded;
+          gradedAnswers[q.id] = {
+            question_id: q.id,
+            text_answer: answers[q.id]?.text || '',
+            image_url: answers[q.id]?.imageUrl,
+            marks_awarded: grade.marks_awarded,
+            is_correct: grade.is_correct,
+            feedback: grade.feedback,
+          };
+        }
+      }
+    }
+  }
+
+  // Calculate percentage and save
+  const percentage = totalMaxMarks > 0 ? Math.round((totalMarks / totalMaxMarks) * 100) : 0;
+  const timeTaken = Math.floor((Date.now() - startTime) / 1000);
+
+  // Check for existing submission
+  const { data: existing } = await supabase
+    .from('assignment_submissions')
+    .select('id')
+    .eq('assignment_id', assignmentId)
+    .eq('student_id', userId)
+    .maybeSingle();
+
+  const submissionData = {
+    assignment_id: assignmentId,
+    student_id: userId,
+    answers: gradedAnswers,
+    score: totalMarks,
+    percentage,
+    feedback: percentage >= 60 ? 'Good job!' : 'Keep practicing!',
+    submitted_at: new Date().toISOString(),
+    graded_at: new Date().toISOString(),
+    time_taken_seconds: timeTaken,
+  };
+
+  if (existing) {
+    await supabase.from('assignment_submissions').update(submissionData).eq('id', existing.id);
+  } else {
+    await supabase.from('assignment_submissions').insert(submissionData);
+  }
+
+  return { gradedAnswers, totalMarks, percentage };
+}
+4.4 Upload Answer Image
+
+async function uploadAnswerImage(
+  supabase: SupabaseClient,
+  file: File,
+  assignmentId: string,
+  questionId: string
+): Promise<string> {
+  const fileExt = file.name.split('.').pop();
+  const filePath = `assignments/${assignmentId}/${questionId}/${Date.now()}.${fileExt}`;
+
+  const { error } = await supabase.storage
+    .from('student-answers')
+    .upload(filePath, file, { upsert: true });
+
+  if (error) throw error;
+
+  const { data } = supabase.storage
+    .from('student-answers')
+    .getPublicUrl(filePath);
+
+  return data.publicUrl;
+}
+4.5 Extract Text from Image Answer
+
+async function extractTextFromImage(
+  supabase: SupabaseClient,
+  imageUrl: string,
+  questionContext?: string
+) {
+  const { data, error } = await supabase.functions.invoke('extract-answer-from-image', {
+    body: {
+      image_url: imageUrl,
+      question_context: questionContext,
+    },
+  });
+
+  if (error) throw error;
+
+  return {
+    extracted_text: data.extracted_text || '',
+    confidence: data.confidence || 'low',
+  };
+}
+5. EDGE FUNCTION: AI Grade Assignment
+Create file: supabase/functions/ai-grade-assignment/index.ts
+
+
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const { questions } = await req.json();
+
+    if (!questions || !Array.isArray(questions) || questions.length === 0) {
+      return new Response(
+        JSON.stringify({ error: "No questions provided for grading" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) {
+      throw new Error("LOVABLE_API_KEY not configured");
+    }
+
+    const questionsText = questions.map((q, i) => `
+Question ${i + 1} (ID: ${q.question_id}, Type: ${q.type}, Max Marks: ${q.marks}):
+${q.question}
+
+Expected Answer: ${q.correct_answer}
+
+Student's Answer: ${q.student_answer || "(No answer provided)"}
+`).join("\n---\n");
+
+    const systemPrompt = `You are a strict but fair teacher grading student assignment answers.
+
+For each question, you must:
+1. Compare the student's answer with the expected answer
+2. Award marks based on correctness:
+   - Full marks for essentially correct answers
+   - Partial marks for partially correct answers
+   - 0 marks for incorrect, irrelevant, or blank answers
+3. Provide brief, constructive feedback (1-2 sentences)
+
+Respond with a JSON array:
+[{"question_id": "q_0", "marks_awarded": 2, "feedback": "Correct!", "is_correct": true}]
+
+Only output the JSON array.`;
+
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: `Grade:\n\n${questionsText}` },
+        ],
+        temperature: 0.1,
+      }),
+    });
+
+    const aiResponse = await response.json();
+    const content = aiResponse.choices?.[0]?.message?.content || "";
+
+    // Parse JSON from response
+    const jsonMatch = content.match(/\[[\s\S]*\]/);
+    const gradedAnswers = jsonMatch ? JSON.parse(jsonMatch[0]) : [];
+
+    // Validate grades
+    const validatedGrades = questions.map(q => {
+      const graded = gradedAnswers.find(g => g.question_id === q.question_id);
+      const marksAwarded = graded 
+        ? Math.min(Math.max(0, graded.marks_awarded || 0), q.marks) 
+        : 0;
+      
+      return {
+        question_id: q.question_id,
+        marks_awarded: marksAwarded,
+        feedback: graded?.feedback || "",
+        is_correct: graded?.is_correct || marksAwarded === q.marks,
+      };
+    });
+
+    const totalMarksAwarded = validatedGrades.reduce((sum, g) => sum + g.marks_awarded, 0);
+    const totalMaxMarks = questions.reduce((sum, q) => sum + q.marks, 0);
+
+    return new Response(
+      JSON.stringify({
+        grades: validatedGrades,
+        total_marks_awarded: totalMarksAwarded,
+        total_max_marks: totalMaxMarks,
+        percentage: totalMaxMarks > 0 ? Math.round((totalMarksAwarded / totalMaxMarks) * 100) : 0,
+      }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+
+  } catch (error) {
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+});
+6. EDGE FUNCTION: Extract Answer From Image
+Create file: supabase/functions/extract-answer-from-image/index.ts
+
+
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  const chunkSize = 8192;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.slice(i, i + chunkSize);
+    binary += String.fromCharCode.apply(null, [...chunk]);
+  }
+  return btoa(binary);
+}
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const { image_url, question_context } = await req.json();
+
+    if (!image_url) {
+      return new Response(
+        JSON.stringify({ error: 'image_url is required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+
+    // Fetch and convert image to base64
+    let imageDataUrl: string;
+    if (image_url.startsWith('data:')) {
+      imageDataUrl = image_url;
+    } else {
+      const imageResponse = await fetch(image_url);
+      const contentType = imageResponse.headers.get('content-type') || 'image/jpeg';
+      const imageBuffer = await imageResponse.arrayBuffer();
+      const imageBase64 = arrayBufferToBase64(imageBuffer);
+      const mimeType = contentType.split(';')[0].trim();
+      imageDataUrl = `data:${mimeType};base64,${imageBase64}`;
+    }
+
+    const systemPrompt = `You are an expert at reading handwritten and typed mathematical answers from images.
+Extract ONLY the answer, not the question.
+Use LaTeX for equations (e.g., \\frac{1}{2}, x^2).
+Return ONLY the extracted answer as plain text or LaTeX.`;
+
+    const userPrompt = question_context 
+      ? `Extract the answer from this image. Context: "${question_context}"`
+      : `Extract the answer from this image.`;
+
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: userPrompt },
+              { type: 'image_url', image_url: { url: imageDataUrl } }
+            ]
+          }
+        ],
+        max_tokens: 500,
+        temperature: 0.1,
+      }),
+    });
+
+    const data = await response.json();
+    const extractedText = data.choices?.[0]?.message?.content?.trim() || '';
+
+    let confidence: 'high' | 'medium' | 'low' = 'medium';
+    if (extractedText === 'UNREADABLE' || extractedText === '') {
+      confidence = 'low';
+    } else if (extractedText.length > 0 && extractedText.length < 100) {
+      confidence = 'high';
+    }
+
+    return new Response(
+      JSON.stringify({ extracted_text: extractedText, confidence }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+
+  } catch (error) {
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+});
+7. STORAGE BUCKET
+Create a public storage bucket named: student-answers
+
+This stores uploaded answer images at path: assignments/{assignmentId}/{questionId}/{timestamp}.{ext}
+
+8. MOBILE APP UI FLOW
+1. Student opens Subject → Chapters → Topics
+2. Student goes to "Assignments" tab
+3. App fetches assignments with status (pending/submitted/graded)
+4. Student taps assignment card:
+   - If pending → Start test
+   - If graded → View results
+5. Testing screen:
+   - Question navigation palette
+   - Timer (if duration set)
+   - Flag for review
+   - MCQ: Radio buttons
+   - Subjective: Textarea + Image upload
+6. Submit → AI grades subjective, local grades MCQ
+7. Results screen:
+   - Total score & percentage
+   - Per-question feedback
+   - Correct answers shown
+This documentation covers the complete chapter-level content and assignment system. The Replit AI should be able to implement this mobile app version using these specifications.
+
+
+
+
+
+
+8 Jan
+at 13:01
+no just tel that how your chapter lavel classes tab works how its fetch vedios tell that the api keys endpoints and urls you used and how you deffrentiate it from the topic lavel classes tab
+
+
+
+Show all
+7 tools used
+Now I have all the information needed. Let me provide you with the complete documentation for how the chapter-level vs topic-level Classes tab works.
+
+Chapter-Level vs Topic-Level Classes Tab - Complete Documentation for Mobile App
+Overview: How It Works
+The system has two content levels:
+
+Topic Level - Individual lesson/topic within a chapter
+Chapter Level - Entire chapter view (combines all topics, or has its own videos)
+The Classes tab fetches and displays videos differently based on which level the user selects.
+
+Database Schema
+Table: subject_chapters
+Column	Type	Description
+id	uuid	Primary key
+subject_id	uuid	FK to popular_subjects
+chapter_number	integer	Chapter sequence number
+title	text	Chapter title
+description	text	Chapter description
+video_id	text	YouTube/Vimeo video ID (chapter-level video)
+video_platform	text	'youtube' or 'vimeo'
+ai_generated_video_url	text	URL for AI-generated chapter video
+notes_markdown	text	Chapter notes
+pdf_url	text	PDF download URL
+sequence_order	integer	Display order
+Table: subject_topics
+Column	Type	Description
+id	uuid	Primary key
+chapter_id	uuid	FK to subject_chapters
+topic_number	integer	Topic sequence number
+title	text	Topic title
+video_id	text	YouTube/Vimeo video ID (topic-level video)
+video_platform	text	'youtube' or 'vimeo'
+ai_generated_video_url	text	URL for AI-generated topic video
+estimated_duration_minutes	integer	Video duration
+content_markdown	text	Topic content
+notes_markdown	text	Topic notes
+pdf_url	text	PDF download URL
+Table: topic_videos (Additional multi-language videos)
+Column	Type	Description
+id	uuid	Primary key
+topic_id	uuid	FK to subject_topics
+video_name	text	Video display name
+language	text	Language code (e.g., 'english', 'hindi', 'tamil')
+video_platform	text	'youtube' or 'vimeo'
+video_id	text	Platform video ID
+description	text	Video description
+display_order	integer	Display order
+is_active	boolean	Active status
+How the Differentiation Works
+In the Frontend (Learning.tsx):
+
+// TOPIC LEVEL - When user clicks on a specific topic
+if (selectedTopic) {
+  <RecordedVideos 
+    topicId={selectedTopic.id}                      // ← Pass topic ID
+    topicVideoId={selectedTopic.video_id}           // ← Direct video from subject_topics
+    topicVideoPlatform={selectedTopic.video_platform}
+    topicTitle={selectedTopic.title}
+    aiGeneratedVideoUrl={selectedTopic.ai_generated_video_url}
+  />
+}
+
+// CHAPTER LEVEL - When user clicks "Chapter Content" button
+if (selectedChapter) {
+  <RecordedVideos 
+    chapterId={selectedChapter.id}                  // ← Pass chapter ID (no topicId)
+    topicTitle={`Ch ${selectedChapter.chapter_number}: ${selectedChapter.title}`}
+    aiGeneratedVideoUrl={selectedChapter.ai_generated_video_url}
+  />
+}
+Key Difference:
+Prop	Topic Level	Chapter Level
+topicId	Passed (uuid)	NOT passed (undefined)
+chapterId	NOT passed	Passed (uuid)
+topicVideoId	From subject_topics.video_id	NOT passed
+aiGeneratedVideoUrl	From subject_topics.ai_generated_video_url	From subject_chapters.ai_generated_video_url
+Video Fetching Logic
+RecordedVideos Component (src/components/learning/RecordedVideos.tsx):
+
+interface RecordedVideosProps {
+  topicId?: string;        // Only for topic-level
+  chapterId?: string;      // Only for chapter-level
+  topicVideoId?: string;   // Direct video from subject_topics table
+  topicVideoPlatform?: string;
+  topicTitle?: string;
+  aiGeneratedVideoUrl?: string;  // AI lecture URL
+}
+
+// Hook fetches additional multi-language videos ONLY for topics
+const { data: additionalVideos, isLoading } = useTopicVideos(topicId);
+// ^ Returns empty [] when topicId is undefined (chapter level)
+Video Sources Combined:
+
+const allVideos = useMemo(() => {
+  const videos: TopicVideo[] = [];
+  
+  // Source 1: Direct video from subject_topics.video_id (topic level only)
+  if (topicVideoId && topicVideoPlatform) {
+    videos.push({
+      id: `topic-direct-${topicId}`,
+      topic_id: topicId,
+      video_name: topicTitle || "Topic Video",
+      language: "en",
+      video_platform: topicVideoPlatform,
+      video_id: topicVideoId,
+      // ...
+    });
+  }
+  
+  // Source 2: Multi-language videos from topic_videos table (topic level only)
+  if (additionalVideos?.length) {
+    videos.push(...additionalVideos);
+  }
+  
+  return videos;
+}, [topicId, topicVideoId, topicVideoPlatform, topicTitle, additionalVideos]);
+
+// Source 3: AI Generated Video (both topic and chapter level)
+// Displayed separately as a special card with violet styling
+if (aiGeneratedVideoUrl) {
+  // Renders a special "AI Lecture" card
+}
+API/Database Queries
+1. Fetch Chapters with Topics (for sidebar navigation)
+Supabase Query:
+
+
+// Hook: useSubjectChapters(subjectId)
+// File: src/hooks/useLearningCourse.ts
+
+const { data: chapters } = await supabase
+  .from("subject_chapters")
+  .select(`
+    id,
+    title,
+    chapter_number,
+    description,
+    ai_generated_video_url
+  `)
+  .eq("subject_id", subjectId)
+  .order("chapter_number");
+
+const { data: allTopics } = await supabase
+  .from("subject_topics")
+  .select(`
+    id, 
+    title, 
+    topic_number, 
+    estimated_duration_minutes, 
+    content_markdown, 
+    chapter_id, 
+    video_id, 
+    video_platform, 
+    ai_generated_video_url
+  `)
+  .in("chapter_id", chapterIds)
+  .order("topic_number");
+REST API Equivalent:
+
+GET https://{SUPABASE_URL}/rest/v1/subject_chapters
+  ?select=id,title,chapter_number,description,ai_generated_video_url
+  &subject_id=eq.{SUBJECT_ID}
+  &order=chapter_number
+
+Headers:
+  apikey: {SUPABASE_ANON_KEY}
+  Authorization: Bearer {USER_JWT_TOKEN}
+
+GET https://{SUPABASE_URL}/rest/v1/subject_topics
+  ?select=id,title,topic_number,estimated_duration_minutes,content_markdown,chapter_id,video_id,video_platform,ai_generated_video_url
+  &chapter_id=in.({CHAPTER_ID_1},{CHAPTER_ID_2},...)
+  &order=topic_number
+2. Fetch Multi-Language Videos for a Topic
+Supabase Query:
+
+
+// Hook: useTopicVideos(topicId)
+// File: src/hooks/useTopicVideos.ts
+
+const { data } = await supabase
+  .from('topic_videos')
+  .select('*')
+  .eq('topic_id', topicId)
+  .order('language')
+  .order('display_order');
+REST API Equivalent:
+
+GET https://{SUPABASE_URL}/rest/v1/topic_videos
+  ?select=*
+  &topic_id=eq.{TOPIC_ID}
+  &order=language,display_order
+
+Headers:
+  apikey: {SUPABASE_ANON_KEY}
+  Authorization: Bearer {USER_JWT_TOKEN}
+Complete Mobile Implementation Flow
+
+// ========== MOBILE APP IMPLEMENTATION ==========
+
+// Step 1: Fetch chapters for a subject
+async function getChaptersWithTopics(subjectId: string): Promise<Chapter[]> {
+  // Fetch chapters
+  const { data: chapters, error: chaptersError } = await supabase
+    .from('subject_chapters')
+    .select('id, title, chapter_number, description, ai_generated_video_url, video_id, video_platform')
+    .eq('subject_id', subjectId)
+    .order('chapter_number');
+
+  if (chaptersError) throw chaptersError;
+
+  // Fetch all topics for these chapters
+  const chapterIds = chapters.map(c => c.id);
+  
+  const { data: topics, error: topicsError } = await supabase
+    .from('subject_topics')
+    .select('id, title, topic_number, chapter_id, video_id, video_platform, ai_generated_video_url, estimated_duration_minutes')
+    .in('chapter_id', chapterIds)
+    .order('topic_number');
+
+  if (topicsError) throw topicsError;
+
+  // Group topics by chapter
+  return chapters.map(chapter => ({
+    ...chapter,
+    topics: topics.filter(t => t.chapter_id === chapter.id)
+  }));
+}
+
+// Step 2: Get videos for TOPIC level
+async function getTopicVideos(topic: Topic): Promise<VideoList> {
+  const videos = [];
+
+  // Source 1: Direct video from topic
+  if (topic.video_id && topic.video_platform) {
+    videos.push({
+      id: `topic-direct-${topic.id}`,
+      video_name: topic.title,
+      language: 'english',
+      video_platform: topic.video_platform,
+      video_id: topic.video_id,
+    });
+  }
+
+  // Source 2: Multi-language videos from topic_videos table
+  const { data: additionalVideos } = await supabase
+    .from('topic_videos')
+    .select('*')
+    .eq('topic_id', topic.id)
+    .eq('is_active', true)
+    .order('language')
+    .order('display_order');
+
+  if (additionalVideos) {
+    videos.push(...additionalVideos);
+  }
+
+  return {
+    videos,
+    aiGeneratedVideoUrl: topic.ai_generated_video_url
+  };
+}
+
+// Step 3: Get videos for CHAPTER level
+function getChapterVideos(chapter: Chapter): VideoList {
+  // Chapter level: Only uses chapter's own video and AI video
+  // NO additional multi-language videos from topic_videos table
+  
+  const videos = [];
+  
+  if (chapter.video_id && chapter.video_platform) {
+    videos.push({
+      id: `chapter-direct-${chapter.id}`,
+      video_name: `Ch ${chapter.chapter_number}: ${chapter.title}`,
+      language: 'english',
+      video_platform: chapter.video_platform,
+      video_id: chapter.video_id,
+    });
+  }
+
+  return {
+    videos,
+    aiGeneratedVideoUrl: chapter.ai_generated_video_url
+  };
+}
+
+// Step 4: Build video embed URL
+function getVideoEmbedUrl(video: Video): string {
+  if (video.video_platform === 'youtube') {
+    return `https://www.youtube.com/embed/${video.video_id}?autoplay=1`;
+  } else if (video.video_platform === 'vimeo') {
+    return `https://player.vimeo.com/video/${video.video_id}?autoplay=1`;
+  }
+  return '';
+}
+
+// Step 5: Get video thumbnail
+function getVideoThumbnail(video: Video): string {
+  if (video.video_platform === 'youtube') {
+    return `https://img.youtube.com/vi/${video.video_id}/hqdefault.jpg`;
+  }
+  return ''; // Vimeo needs API call for thumbnail
+}
+Summary Table: Chapter vs Topic Level
+Feature	Topic Level	Chapter Level
+Primary Video Source	subject_topics.video_id	subject_chapters.video_id
+AI Generated Video	subject_topics.ai_generated_video_url	subject_chapters.ai_generated_video_url
+Multi-language Videos	YES - from topic_videos table	NO - not supported
+Filter by Language	YES	NO
+Query Key	['topic-videos', topicId]	N/A
+Language Codes Supported
+
+const INDIAN_LANGUAGES = [
+  { value: 'english', label: 'English' },
+  { value: 'hindi', label: 'Hindi (हिन्दी)' },
+  { value: 'kannada', label: 'Kannada (ಕನ್ನಡ)' },
+  { value: 'tamil', label: 'Tamil (தமிழ்)' },
+  { value: 'telugu', label: 'Telugu (తెలుగు)' },
+  { value: 'malayalam', label: 'Malayalam (മലയാളം)' },
+  { value: 'marathi', label: 'Marathi (मराठी)' },
+  { value: 'bengali', label: 'Bengali (বাংলা)' },
+  { value: 'gujarati', label: 'Gujarati (ગુજરાતી)' },
+  { value: 'punjabi', label: 'Punjabi (ਪੰਜਾਬੀ)' },
+  { value: 'odia', label: 'Odia (ଓଡ଼ିଆ)' },
+  { value: 'assamese', label: 'Assamese (অসমীয়া)' },
+  { value: 'urdu', label: 'Urdu (اردو)' },
+];

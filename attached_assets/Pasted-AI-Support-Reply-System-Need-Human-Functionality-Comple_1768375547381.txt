@@ -1,0 +1,313 @@
+AI Support Reply System & "Need Human" Functionality - Complete Documentation
+Overview
+The support system follows an AI-first approach where:
+
+User creates a support ticket
+AI attempts to resolve the issue
+User provides feedback (Resolved / Need Human Support)
+If escalated, Admin manually responds
+1. Database Schema
+support_tickets Table
+Column	Type	Description
+id	uuid	Primary key
+user_id	uuid	The user who created the ticket
+category	text	Ticket category (account, payment, technical, etc.)
+subject	text	Short description of the issue
+status	text	Current status (open, ai_responded, escalated_to_admin, admin_responded, closed_resolved)
+ai_confidence	numeric	AI's confidence score (0-1)
+escalated_at	timestamptz	When ticket was escalated
+assigned_admin_id	uuid	Admin assigned to handle
+created_at	timestamptz	Creation timestamp
+updated_at	timestamptz	Last update
+closed_at	timestamptz	When ticket was closed
+support_messages Table
+Column	Type	Description
+id	uuid	Primary key
+ticket_id	uuid	Foreign key to support_tickets
+sender_type	text	Who sent: user, ai, or admin
+content	text	Message content
+created_at	timestamptz	When message was sent
+2. AI Reply Flow
+Step 1: User Creates Ticket
+
+// src/hooks/useSupportAssistant.ts - createTicket function
+const createTicket = async (category: string, subject: string, initialMessage: string) => {
+  // 1. Create ticket in database
+  const { data: ticket } = await supabase
+    .from('support_tickets')
+    .insert({
+      user_id: user.id,
+      category,
+      subject,
+      status: 'open'  // Initial status
+    })
+    .select()
+    .single();
+
+  // 2. Save the initial message
+  await supabase.from('support_messages').insert({
+    ticket_id: ticket.id,
+    sender_type: 'user',
+    content: initialMessage
+  });
+
+  return ticket;
+};
+Step 2: Send Message to AI
+
+// src/hooks/useSupportAssistant.ts - sendMessage function
+const sendMessage = async (userMessage: string, ticketId?: string) => {
+  // 1. Save user message to database
+  await supabase.from('support_messages').insert({
+    ticket_id: ticketId || currentTicketId,
+    sender_type: 'user',
+    content: userMessage
+  });
+
+  // 2. Call AI Edge Function with streaming
+  const resp = await fetch(
+    `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-support-assistant`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+      },
+      body: JSON.stringify({
+        messages: [...messages, userMsg].map(m => ({ role: m.role, content: m.content })),
+        ticketId: ticketId,
+        userId: user?.id
+      }),
+    }
+  );
+
+  // 3. Process streaming response
+  const reader = resp.body.getReader();
+  // ... streaming logic to update UI in real-time
+
+  // 4. Save AI response to database
+  await supabase.from('support_messages').insert({
+    ticket_id: ticketId,
+    sender_type: 'ai',
+    content: assistantContent
+  });
+
+  // 5. Update ticket status
+  await supabase
+    .from('support_tickets')
+    .update({ status: 'ai_responded' })
+    .eq('id', ticketId);
+};
+Step 3: AI Edge Function Processing
+
+// supabase/functions/ai-support-assistant/index.ts
+
+const SYSTEM_PROMPT = `You are an AI Support Assistant for SimpleLecture LMS platform.
+
+Your role:
+- Help users with technical, account, payment, and platform-related issues.
+- You must NOT answer academic, course subject, exam, or assignment questions.
+
+Rules:
+1. If a query is academic or course-related, politely redirect to the Forum
+2. Provide clear, step-by-step solutions for support issues
+3. Ask the user if the issue is resolved at the end of your response
+4. If you are unsure, say so and indicate you'll escalate the ticket
+...
+
+You can help with:
+- Login issues (password reset, access problems)
+- Payment status (failed, pending, invoice)
+- Course access issues
+- App usage help
+- Certificates, progress tracking
+- General LMS navigation
+- Technical issues
+
+Escalation Conditions:
+- User indicates dissatisfaction
+- You are unsure about the resolution
+- Issue involves account security, payments, or system errors
+`;
+
+// Call Lovable AI Gateway
+const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+  method: "POST",
+  headers: {
+    Authorization: `Bearer ${LOVABLE_API_KEY}`,
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    model: "google/gemini-2.5-flash",
+    messages: aiMessages,
+    stream: true,  // Enable streaming
+  }),
+});
+
+// Return streaming response
+return new Response(response.body, {
+  headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
+});
+3. Feedback Buttons (Resolved / Need Human)
+After AI responds, the user sees two buttons:
+
+
+// src/components/support/SupportFeedbackButtons.tsx
+export const SupportFeedbackButtons = ({ onResolve, onEscalate }) => {
+  return (
+    <div className="bg-muted/50 rounded-lg p-4 border">
+      <p className="text-sm text-muted-foreground mb-3 text-center">
+        Did this resolve your issue?
+      </p>
+      <div className="flex gap-3 justify-center">
+        {/* RESOLVED BUTTON */}
+        <Button 
+          variant="outline" 
+          onClick={onResolve}
+          className="gap-2 text-green-600 border-green-600"
+        >
+          <CheckCircle className="h-4 w-4" />
+          Yes, Resolved
+        </Button>
+        
+        {/* NEED HUMAN BUTTON */}
+        <Button 
+          variant="outline" 
+          onClick={onEscalate}
+          className="gap-2 text-orange-600 border-orange-600"
+        >
+          <ArrowUpCircle className="h-4 w-4" />
+          Need Human Support
+        </Button>
+      </div>
+    </div>
+  );
+};
+When to Show Feedback:
+
+// src/pages/Support.tsx
+// Show feedback buttons only when AI has responded
+const showFeedback = messages.length > 0 && 
+                     messages[messages.length - 1]?.role === 'assistant';
+4. "Need Human Support" (Escalation) Flow
+User Clicks "Need Human Support":
+
+// src/hooks/useSupportAssistant.ts - escalateTicket function
+const escalateTicket = async (ticketId: string) => {
+  const { error } = await supabase
+    .from('support_tickets')
+    .update({ 
+      status: 'escalated_to_admin',        // Change status
+      escalated_at: new Date().toISOString()  // Record escalation time
+    })
+    .eq('id', ticketId);
+
+  if (error) {
+    toast({ title: "Failed to escalate ticket", variant: "destructive" });
+    return false;
+  }
+
+  toast({ title: "Ticket escalated to support team. They will respond shortly." });
+  return true;
+};
+Handle Escalation in UI:
+
+// src/pages/Support.tsx
+const handleEscalate = async () => {
+  if (currentTicketId) {
+    const success = await escalateTicket(currentTicketId);
+    if (success) {
+      setShowChat(false);   // Close chat
+      clearMessages();       // Clear conversation
+    }
+  }
+};
+5. "Resolved" Flow
+
+// src/hooks/useSupportAssistant.ts - resolveTicket function
+const resolveTicket = async (ticketId: string) => {
+  const { error } = await supabase
+    .from('support_tickets')
+    .update({ 
+      status: 'closed_resolved',           // Mark as resolved
+      closed_at: new Date().toISOString()  // Record close time
+    })
+    .eq('id', ticketId);
+
+  if (error) {
+    toast({ title: "Failed to close ticket", variant: "destructive" });
+    return false;
+  }
+
+  toast({ title: "Ticket resolved successfully!" });
+  return true;
+};
+6. Admin Response to Escalated Tickets
+When a ticket is escalated, admin sees it in the Support Dashboard:
+
+
+// src/pages/admin/SupportDashboard.tsx
+
+// Fetch escalated tickets
+const escalatedCount = tickets?.filter(t => t.status === 'escalated_to_admin').length || 0;
+
+// Admin sends reply
+const sendReplyMutation = useMutation({
+  mutationFn: async () => {
+    // 1. Save admin message
+    await supabase.from('support_messages').insert({
+      ticket_id: selectedTicket.id,
+      sender_type: 'admin',   // Mark as admin message
+      content: adminReply.trim()
+    });
+
+    // 2. Update ticket status
+    await supabase
+      .from('support_tickets')
+      .update({ status: 'admin_responded' })
+      .eq('id', selectedTicket.id);
+  },
+  onSuccess: () => {
+    toast({ title: "Reply sent successfully" });
+  }
+});
+
+// Admin closes ticket
+const closeTicketMutation = useMutation({
+  mutationFn: async (ticketId: string) => {
+    await supabase
+      .from('support_tickets')
+      .update({ 
+        status: 'closed_resolved', 
+        closed_at: new Date().toISOString() 
+      })
+      .eq('id', ticketId);
+  }
+});
+7. Complete Ticket Status Flow
+OPEN
+  ↓ (User sends message)
+AI_RESPONDED
+  ↓ (User clicks feedback button)
+  ├─→ "Yes, Resolved" → CLOSED_RESOLVED
+  └─→ "Need Human Support" → ESCALATED_TO_ADMIN
+                                    ↓ (Admin replies)
+                              ADMIN_RESPONDED
+                                    ↓ (Admin closes)
+                              CLOSED_RESOLVED
+8. API Endpoints Summary
+Endpoint	Method	Purpose
+/rest/v1/support_tickets	POST	Create new ticket
+/rest/v1/support_tickets?id=eq.{id}	PATCH	Update ticket status
+/rest/v1/support_messages	POST	Save message (user/ai/admin)
+/rest/v1/support_messages?ticket_id=eq.{id}	GET	Fetch ticket messages
+/functions/v1/ai-support-assistant	POST	Get AI response (streaming)
+9. Key Components
+Component	File	Purpose
+SupportChat	src/components/support/SupportChat.tsx	Chat interface with messages
+SupportFeedbackButtons	src/components/support/SupportFeedbackButtons.tsx	Resolved/Escalate buttons
+SupportTicketForm	src/components/support/SupportTicketForm.tsx	Create new ticket form
+SupportTicketList	src/components/support/SupportTicketList.tsx	User's ticket history
+useSupportAssistant	src/hooks/useSupportAssistant.ts	All support logic/state
+ai-support-assistant	supabase/functions/	Edge function for AI
+10. Visual Flow Diagram

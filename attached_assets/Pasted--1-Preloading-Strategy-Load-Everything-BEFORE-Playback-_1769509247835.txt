@@ -1,0 +1,132 @@
+
+1. Preloading Strategy (Load Everything BEFORE Playback)
+Avatar Videos - Pre-fetch ALL on Mount
+When the player opens, it immediately creates hidden <video> elements for every section's avatar:
+
+
+// EducationalVideoPlayer.tsx - Lines 110-153
+presentationData.sections.forEach((section, index) => {
+  const url = getMediaUrl(jobId, avatarPath);
+  
+  const video = document.createElement('video');
+  video.crossOrigin = 'anonymous';
+  video.preload = 'auto';  // Browser starts downloading immediately
+  
+  video.oncanplay = () => {
+    loadedCount++;
+    if (loadedCount >= sectionsCount) {
+      setAllAvatarsReady(true);  // Only start when ALL are ready
+    }
+  };
+  
+  video.src = url;  // Triggers download
+});
+Result: A loading screen shows until ALL avatars are buffered → then playback starts with zero delay.
+
+Manim/Beat Videos - Pre-buffer Next Video
+While one video plays, the next one preloads in the background:
+
+
+// useBeatVideoPlaylist.ts - Lines 80-94
+const preloadNextVideo = () => {
+  const nextEntry = playlist[currentVideoIndex + 1];
+  
+  if (nextEntry.videoPath && !preloadedVideos.current.has(nextEntry.videoPath)) {
+    const video = document.createElement('video');
+    video.src = getMediaUrl(nextEntry.videoPath);
+    video.preload = 'auto';
+    preloadedVideos.current.add(nextEntry.videoPath);
+  }
+};
+2. Timing Synchronization (Play at EXACT Time)
+Avatar = Master Clock
+The avatar video's timeupdate event drives ALL timing:
+
+
+// usePlayerState.ts
+activeTimeSourceRef = useRef<'avatar' | 'timer'>('timer');
+
+// When avatar is playing:
+avatarVideo.addEventListener('timeupdate', () => {
+  activeTimeSourceRef.current = 'avatar';
+  const currentTime = avatarVideo.currentTime;
+  updateState({ currentTime });  // This drives everything
+});
+Timer Fallback (If No Avatar)
+If avatar fails to load, a 60fps requestAnimationFrame timer simulates time:
+
+
+// useTimerFallback.ts - Lines 37-60
+const tick = (timestamp) => {
+  const elapsed = (timestamp - lastFrameTime.current) / 1000;
+  
+  setCurrentTime(prev => {
+    const newTime = prev + elapsed;
+    onTimeUpdate(newTime);  // Keep everything in sync
+    return newTime;
+  });
+  
+  requestAnimationFrame(tick);  // 60fps loop
+};
+3. Manim Video Triggering (SHOW Phase)
+The player watches currentTime and checks against the video playlist:
+
+
+// EducationalVideoPlayer.tsx - Lines 276-295
+useEffect(() => {
+  // Find which video should play RIGHT NOW
+  const currentEntry = beatVideoPlaylist.find(
+    entry => currentTime >= entry.startTime && currentTime < entry.endTime
+  );
+  
+  if (currentEntry?.isShowPhase && currentEntry.videoPath) {
+    const videoUrl = getMediaUrl(jobId, currentEntry.videoPath);
+    setContentVideoSrc(videoUrl);  // Switch to Manim video
+  } else {
+    setContentVideoSrc(null);  // Back to avatar/content
+  }
+}, [currentTime, beatVideoPlaylist]);
+4. Layer Visibility (Smooth Switching)
+The VideoLayer appears/disappears based on isShowPhase:
+
+
+// Stage.tsx - Lines 104-123
+<div className={cn(
+  "video-layer", 
+  isVisible && "visible"  // CSS transition handles smooth fade
+)}>
+  <video
+    src={videoSrc}
+    muted           // Audio comes from avatar
+    playsInline
+    onEnded={onEnded}
+  />
+</div>
+Summary Flow
+
+┌─────────────────────────────────────────────────────────────────┐
+│  1. MOUNT: Pre-fetch ALL avatar videos → Show loading screen   │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│  2. ALL READY: Start Section 0 avatar → Avatar = master clock  │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│  3. PLAYING: currentTime updates from avatar.timeupdate        │
+│              → Check beatVideoPlaylist for SHOW phases         │
+│              → Preload next Manim video in background          │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│  4. SHOW PHASE: When currentTime hits entry.startTime          │
+│                 → Set contentVideoSrc → VideoLayer becomes      │
+│                   visible → Manim plays (muted)                 │
+│                 → Avatar continues playing audio (hidden)       │
+└─────────────────────────────────────────────────────────────────┘
+The key to smoothness is:
+
+Pre-buffer everything before starting
+Single time source (avatar or timer)
+Look-ahead preloading of next video
+CSS transitions for layer switching

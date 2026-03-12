@@ -1,0 +1,383 @@
+Practice & Tests Tab - Complete Documentation for Mobile App Implementation
+Overview
+The "Practice & Tests" system in SimpleLecture LMS allows students to take various types of tests:
+
+PYQ (Previous Year Questions) - Historical exam papers
+Proficiency Tests - Skill assessment tests
+Exam/Mock Tests - Practice exams
+DPP (Daily Practice Problems) - Topic-specific practice
+Architecture
+Main Components & Files
+Component	File Path	Purpose
+PreviousYearPapers	src/components/learning/PreviousYearPapers.tsx	Main test-taking component for PYQ, Proficiency, and Exam tests
+DPPTab	src/components/learning/DPPTab.tsx	Dedicated component for DPP tests
+PaperTestResults	src/components/learning/PaperTestResults.tsx	Results display with review functionality
+Learning (page)	src/pages/Learning.tsx	Parent page containing all tabs
+React Hooks
+Hook	File	Purpose
+usePreviousYearPapersForSubject	src/hooks/usePreviousYearPaperQuestions.ts	Fetches papers from subject_previous_year_papers
+usePreviousYearPaperQuestions	src/hooks/usePreviousYearPaperQuestions.ts	Fetches questions for a specific paper
+useStudentTests	src/hooks/useStudentTests.ts	Fetches tests from tests table
+useTestResults	src/hooks/useTestResults.ts	Fetches results from test_results table
+usePaperTestResults	src/hooks/usePaperTestResults.ts	Fetches results from paper_test_results table
+useMyTests	src/hooks/useMyTests.ts	Aggregates all test submissions for dashboard
+useTestQuestionsView	src/hooks/useTestQuestionsView.ts	Fetches questions for tests from tests table
+useStudentAnswers	src/hooks/useStudentAnswers.ts	Fetches/saves student written answers
+Database Schema
+1. tests Table (Admin-created tests)
+
+id                  UUID PRIMARY KEY
+title               TEXT NOT NULL
+description         TEXT
+subject_id          UUID (FK → subjects)
+chapter_id          UUID (FK → subject_chapters)
+topic_id            UUID (FK → subject_topics)
+duration_minutes    INTEGER
+total_marks         INTEGER
+test_type           TEXT -- 'proficiency', 'practice', 'mock', 'exam', 'dpp'
+is_active           BOOLEAN
+question_count      INTEGER
+created_at          TIMESTAMP
+2. test_questions Table (Links tests to questions)
+
+id              UUID PRIMARY KEY
+test_id         UUID (FK → tests)
+question_id     UUID (FK → questions)
+order_number    INTEGER
+marks           INTEGER
+3. questions Table
+
+id                      UUID PRIMARY KEY
+topic_id                UUID (FK → subject_topics)
+chapter_id              UUID (FK → subject_chapters)
+previous_year_paper_id  UUID (FK → subject_previous_year_papers)
+question_text           TEXT NOT NULL
+question_type           TEXT -- 'mcq', 'subjective', 'true_false', 'integer'
+question_format         TEXT -- 'single_choice', 'multiple_choice', 'integer', 'subjective'
+options                 JSONB -- { "A": { "text": "Option A" }, ... }
+correct_answer          TEXT NOT NULL
+explanation             TEXT
+difficulty              TEXT -- 'easy', 'medium', 'hard'
+marks                   INTEGER DEFAULT 1
+is_important            BOOLEAN DEFAULT false
+is_verified             BOOLEAN DEFAULT false
+question_image_url      TEXT
+option_images           JSONB
+contains_formula        BOOLEAN
+4. subject_previous_year_papers Table
+
+id              UUID PRIMARY KEY
+subject_id      UUID (FK → subjects)
+chapter_id      UUID (FK → subject_chapters)
+topic_id        UUID (FK → subject_topics)
+year            INTEGER NOT NULL
+exam_name       TEXT NOT NULL
+paper_type      TEXT
+pdf_url         TEXT
+total_questions INTEGER
+document_type   TEXT -- 'mcq', 'practice', 'proficiency'
+paper_category  TEXT -- 'previous_year', 'proficiency', 'exam'
+created_at      TIMESTAMP
+5. test_results Table (For tests from tests table)
+
+id                  UUID PRIMARY KEY
+student_id          UUID (FK → profiles)
+test_id             UUID (FK → tests)
+subject_id          UUID
+test_type           TEXT -- 'dpp', 'proficiency', 'mock', 'practice', 'exam'
+score               INTEGER
+total_questions     INTEGER NOT NULL
+percentage          NUMERIC
+time_taken_seconds  INTEGER
+answers             JSONB -- { "question_id": "selected_answer", ... }
+grading_status      TEXT -- 'pending', 'graded', 'ai_graded'
+submitted_at        TIMESTAMP
+graded_at           TIMESTAMP
+6. paper_test_results Table (For PYQ papers)
+
+id                  UUID PRIMARY KEY
+student_id          UUID (FK → profiles)
+paper_id            UUID (FK → subject_previous_year_papers)
+subject_id          UUID
+paper_category      TEXT -- 'previous_year', 'proficiency', 'exam'
+score               INTEGER
+total_questions     INTEGER NOT NULL
+percentage          NUMERIC
+time_taken_seconds  INTEGER
+answers             JSONB
+grading_status      TEXT
+submitted_at        TIMESTAMP
+graded_at           TIMESTAMP
+7. student_answers Table (For written/image answers)
+
+id                UUID PRIMARY KEY
+user_id           UUID (FK → profiles)
+question_id       UUID (FK → questions)
+paper_id          UUID (FK → subject_previous_year_papers)
+answer_text       TEXT
+answer_image_url  TEXT
+submitted_at      TIMESTAMP
+Tab Structure
+Main Learning Page Tabs
+┌──────────────────────────────────────────────────────────────────────┐
+│ Classes │ AI Assistant │ MCQs │ Assignments │ Practice & Tests │ DPP │ My Results │
+└──────────────────────────────────────────────────────────────────────┘
+Practice & Tests Tab Sub-Tabs
+┌─────────────────────────────────────────────────┐
+│    PYQ     │   Proficiency   │      Test       │
+└─────────────────────────────────────────────────┘
+My Results Tab Sub-Tabs
+┌─────────────────────────────────────────────────────────────────┐
+│   All   │   PYQ   │   Proficiency   │   Test   │     DPP      │
+└─────────────────────────────────────────────────────────────────┘
+API Endpoints (Supabase Queries)
+1. Fetch Papers for Subject
+
+// File: src/hooks/usePreviousYearPaperQuestions.ts
+supabase
+  .from("subject_previous_year_papers")
+  .select("*")
+  .eq("subject_id", subjectId)
+  // Optional filters:
+  .eq("topic_id", topicId)     // For topic-level
+  .eq("chapter_id", chapterId) // For chapter-level
+  .is("topic_id", null)        // For chapter-only mode
+  .order("year", { ascending: false })
+2. Fetch Questions for a Paper
+
+// File: src/hooks/usePreviousYearPaperQuestions.ts
+supabase
+  .from("questions")
+  .select("*")
+  .eq("previous_year_paper_id", paperId)
+  .order("created_at", { ascending: true })
+3. Fetch Tests (Proficiency/Exam/DPP)
+
+// File: src/hooks/useStudentTests.ts
+supabase
+  .from("tests")
+  .select("*")
+  .eq("subject_id", subjectId)
+  .eq("is_active", true)
+  .in("test_type", ["proficiency"]) // or ["practice", "exam", "mock"]
+  .order("created_at", { ascending: false })
+4. Fetch Questions for a Test
+
+// File: src/components/learning/PreviousYearPapers.tsx
+supabase
+  .from("test_questions")
+  .select(`
+    *,
+    question:questions(*)
+  `)
+  .eq("test_id", testId)
+  .order("order_number", { ascending: true })
+5. Submit Test Result (Tests Table)
+
+// File: src/hooks/useTestResults.ts
+supabase
+  .from("test_results")
+  .insert({
+    test_id: testId,
+    student_id: userId,
+    subject_id: subjectId,
+    test_type: "dpp" | "proficiency" | "mock" | "practice",
+    score: correctCount,
+    total_questions: totalCount,
+    percentage: Math.round((correctCount / totalCount) * 100),
+    time_taken_seconds: timeTaken,
+    answers: { [questionId]: selectedAnswer, ... },
+    grading_status: "graded" | "pending"
+  })
+6. Submit Paper Test Result (PYQ)
+
+// File: src/hooks/usePaperTestResults.ts
+supabase
+  .from("paper_test_results")
+  .insert({
+    paper_id: paperId,
+    student_id: userId,
+    subject_id: subjectId,
+    paper_category: "previous_year" | "proficiency" | "exam",
+    score: correctCount,
+    total_questions: totalCount,
+    percentage: percentageScore,
+    time_taken_seconds: timeTaken,
+    answers: answersObject,
+    grading_status: "graded" | "pending"
+  })
+7. Fetch Submitted Results
+
+// Test Results (from tests table)
+supabase
+  .from("test_results")
+  .select(`*, test:tests(title, test_type, duration_minutes)`)
+  .eq("student_id", userId)
+  .order("submitted_at", { ascending: false })
+
+// Paper Test Results (from papers table)
+supabase
+  .from("paper_test_results")
+  .select(`*, paper:subject_previous_year_papers(exam_name, year, paper_type)`)
+  .eq("student_id", userId)
+  .order("submitted_at", { ascending: false })
+8. Upload Answer Image
+
+// File: src/hooks/useStudentAnswers.ts
+// Upload to Supabase Storage
+supabase.storage
+  .from("student-answers")
+  .upload(`${userId}/${questionId}_${timestamp}.${ext}`, file)
+
+// Save answer record
+supabase
+  .from("student_answers")
+  .upsert({
+    user_id: userId,
+    question_id: questionId,
+    paper_id: paperId,
+    answer_text: answerText,
+    answer_image_url: imageUrl
+  }, { onConflict: "user_id,question_id" })
+Edge Functions
+ai-compare-math-answers
+Used for AI grading of integer/numerical questions where student answer may be mathematically equivalent but formatted differently.
+
+
+// Invocation
+supabase.functions.invoke('ai-compare-math-answers', {
+  body: { 
+    items: [
+      { id: questionId, user_answer: "2x + 3", correct_answer: "3 + 2x" }
+    ]
+  }
+})
+
+// Response
+{
+  results: [
+    { id: questionId, is_equivalent: true }
+  ]
+}
+Test Flow State Machine
+┌─────────────┐
+│   papers    │ ──── User clicks "Start Test" ────┐
+└─────────────┘                                    │
+                                                   ▼
+                                          ┌─────────────┐
+                                          │    setup    │ (Optional config dialog)
+                                          └─────────────┘
+                                                   │
+                        Auto-start for PYQ/Proficiency/Exam
+                                                   ▼
+                                          ┌─────────────┐
+                                          │   testing   │ ◄── Timer running
+                                          └─────────────┘
+                                                   │
+                        Submit or Timer expires    │
+                                                   ▼
+                                          ┌─────────────┐
+                                          │   results   │ ──► View score + Review answers
+                                          └─────────────┘
+Component Props
+PreviousYearPapers
+
+interface PreviousYearPapersProps {
+  subjectId: string | null;
+  topicId?: string | null;
+  chapterId?: string | null;
+  chapterOnly?: boolean;  // Show only chapter-level content
+  onViewResults?: () => void;  // Callback to switch to results tab
+}
+DPPTab
+
+interface DPPTabProps {
+  subjectId: string | null;
+  topicId?: string | null;
+  chapterId?: string | null;
+  chapterOnly?: boolean;
+}
+PaperTestResults
+
+interface PaperTestResultsProps {
+  subjectId: string | null;
+  subjectName?: string;
+  onClearDoubt?: (doubtData: DoubtData) => void;  // Navigate to AI Assistant
+}
+Data Types
+Question Format
+
+interface PaperQuestion {
+  id: string;
+  question_text: string;
+  question_type: "mcq" | "subjective" | "true_false" | "integer";
+  question_format: "single_choice" | "multiple_choice" | "true_false" | "subjective" | "integer";
+  options: Record<string, { text: string }>;  // { "A": { text: "..." }, "B": { text: "..." } }
+  correct_answer: string;  // "A", "B", "C", "D" or numeric value
+  explanation?: string;
+  difficulty: string;
+  marks: number;
+  is_verified: boolean;
+  is_important?: boolean;
+}
+Test Result
+
+interface TestResult {
+  id: string;
+  student_id: string;
+  test_id: string;
+  subject_id: string | null;
+  test_type: string;
+  score: number | null;
+  total_questions: number;
+  percentage: number | null;
+  time_taken_seconds: number | null;
+  answers: Record<string, string>;  // { questionId: selectedAnswer }
+  grading_status: "pending" | "graded" | "ai_graded";
+  submitted_at: string;
+  graded_at: string | null;
+  test?: { title: string; test_type: string; duration_minutes: number };
+}
+Mobile App Implementation Considerations
+1. Test Taking UI
+Question navigation (next/previous buttons)
+Question palette for jumping between questions
+Flag/bookmark questions for review
+Timer display (countdown for timed tests)
+Answer selection (radio buttons for MCQ, text input for integer)
+Image upload support for written answers
+2. Offline Support
+Cache questions locally before test starts
+Store answers locally during test
+Sync results when back online
+3. Timer Handling
+Background timer that continues even if app is minimized
+Auto-submit when time expires
+Resume test if app crashes (store state)
+4. Results Display
+Score summary with percentage
+Correct/Incorrect/Unanswered breakdown
+Question-by-question review with correct answers
+Option to clear doubts via AI Assistant
+5. Re-attempt Logic
+Check submittedTestMap or submittedPaperMap for existing submissions
+Display "Submitted" badge with last score
+Show "Re-attempt" button instead of "Start"
+Feature Flags & Test Type Mapping
+Test Type Value	Display Tab	Source Table
+"proficiency"	Proficiency	tests
+"practice"	Test (if no "dpp" in title)	tests
+"mock"	Test	tests
+"exam"	Test	tests
+"dpp"	DPP	tests
+Papers with paper_category = "previous_year"	PYQ	subject_previous_year_papers
+Summary
+This comprehensive documentation covers all aspects of the Practice & Tests functionality. For mobile implementation, you'll need to:
+
+Implement Supabase client for React Native
+Create screens for test list, test-taking, and results
+Handle timer logic with background processing
+Support both MCQ selection and integer input
+Implement image upload for written answers
+Store test state locally for crash recovery
+Sync results with proper error handling

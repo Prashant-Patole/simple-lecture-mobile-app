@@ -1,0 +1,462 @@
+My Results Tab - Complete Documentation
+Overview
+The "My Results" tab displays all test submissions from a student, including Previous Year Papers (PYQ), Proficiency Tests, and Exams. It provides a comprehensive review system with filtering, score visualization, and detailed question-by-question review.
+
+1. Database Schema
+Table: paper_test_results
+Stores aggregated test submission data.
+
+Column	Type	Nullable	Description
+id	uuid	NO	Primary key
+student_id	uuid	NO	FK to auth.users
+paper_id	uuid	NO	FK to subject_previous_year_papers
+subject_id	uuid	YES	FK to subjects
+paper_category	text	NO	previous_year / proficiency / exam
+score	integer	YES	Number of correct answers
+total_questions	integer	NO	Total questions in paper
+percentage	numeric	YES	Score percentage
+time_taken_seconds	integer	YES	Time spent on test
+answers	jsonb	YES	Map of question_id to answer text
+grading_status	text	YES	pending / graded / ai_graded
+submitted_at	timestamptz	YES	When test was submitted
+graded_at	timestamptz	YES	When grading completed
+created_at	timestamptz	YES	Record creation time
+Table: student_answers
+Stores individual question answers (especially for image-based answers).
+
+Column	Type	Nullable	Description
+id	uuid	NO	Primary key
+user_id	uuid	NO	FK to auth.users
+question_id	uuid	NO	FK to questions
+paper_id	uuid	NO	FK to subject_previous_year_papers
+answer_text	text	YES	Text/typed answer
+answer_image_url	text	YES	URL to uploaded image answer
+extracted_answer_text	text	YES	AI-extracted text from image
+extraction_confidence	text	YES	AI extraction confidence level
+submitted_at	timestamptz	YES	When answer was submitted
+created_at	timestamptz	YES	Record creation time
+2. API Endpoints
+Fetch Test Results
+
+GET /rest/v1/paper_test_results?select=*,paper:subject_previous_year_papers(exam_name,year,paper_type)&student_id=eq.{user_id}&order=submitted_at.desc
+Optional Filters:
+
+&subject_id=eq.{subject_id} - Filter by subject
+Response:
+
+
+[
+  {
+    "id": "ef6faf98-ce64-4fe7-b6b5-7aba77c7cc6f",
+    "student_id": "47a9b651-79d6-440b-a18c-9612ecf68b5a",
+    "paper_id": "1721cb9d-8e6f-4c62-afbe-dea7b7610ca2",
+    "subject_id": "bc7e6984-8a22-4869-b1d8-732009468abb",
+    "paper_category": "exam",
+    "score": 8,
+    "total_questions": 10,
+    "percentage": 80.00,
+    "time_taken_seconds": 205,
+    "answers": {
+      "4d93f478-0117-4792-abac-d1a2ccbb2622": "9",
+      "5a7859d1-0886-4bb3-bf3e-f2aecc51d7cf": "$\\left[-\\frac{5}{3}, \\frac{3}{5}\\right]$",
+      "63d5a39d-8b3b-461a-8b56-c764efc9299d": "True"
+    },
+    "grading_status": "ai_graded",
+    "submitted_at": "2026-01-03T09:51:20.426322+00",
+    "graded_at": "2026-01-03T09:51:23.939+00",
+    "paper": {
+      "exam_name": "JEE Advanced 2024",
+      "year": 2024,
+      "paper_type": "Paper 1"
+    }
+  }
+]
+Fetch Student Answers (for review)
+
+GET /rest/v1/student_answers?paper_id=eq.{paper_id}&user_id=eq.{user_id}
+Response:
+
+
+[
+  {
+    "id": "2ec01113-9350-40ba-9223-808d1d742060",
+    "user_id": "47a9b651-79d6-440b-a18c-9612ecf68b5a",
+    "question_id": "8772b413-b77f-49de-92b2-bfe64acc0b7b",
+    "paper_id": "1721cb9d-8e6f-4c62-afbe-dea7b7610ca2",
+    "answer_text": "True",
+    "answer_image_url": "https://...supabase.co/storage/v1/object/public/student-answers/.../image.jpeg",
+    "extracted_answer_text": null,
+    "extraction_confidence": "pending",
+    "submitted_at": "2026-01-03T09:51:17.777+00"
+  }
+]
+Fetch Paper Questions (for review)
+
+GET /rest/v1/questions?previous_year_paper_id=eq.{paper_id}&order=created_at.asc
+3. UI Components Used
+Component	Source	Purpose
+Card, CardContent, CardHeader, CardTitle	shadcn/ui	Result cards and summary
+Button	shadcn/ui	Review button
+Badge	shadcn/ui	Status badges, category labels
+Skeleton	shadcn/ui	Loading states
+Tabs, TabsList, TabsTrigger, TabsContent	shadcn/ui	Category filtering (All/PYQ/Proficiency/Exam)
+Dialog, DialogContent, DialogHeader, DialogTitle	shadcn/ui	Review dialog modal
+MathpixRenderer	Custom	Render LaTeX/math in questions & answers
+Lucide Icons Used:
+FileText - Question count indicator
+Clock - Time taken indicator
+CheckCircle - Correct answer / Graded status
+XCircle - Incorrect answer
+Loader2 - Loading / Pending status
+Eye - Review button icon
+Calendar - Submission date
+Trophy - Empty state icon
+AlertCircle - Grading in progress
+Image - Image answer indicator
+4. React Hooks
+usePaperTestResults(subjectId?: string | null)
+File: src/hooks/usePaperTestResults.ts
+
+Fetches all test results for the authenticated user with paper details.
+
+
+const { data: results, isLoading } = usePaperTestResults(subjectId);
+useStudentAnswers(paperId: string | null)
+File: src/hooks/useStudentAnswers.ts
+
+Fetches individual answers for a specific paper (used in review modal).
+
+
+const { data: studentAnswers } = useStudentAnswers(selectedResult?.paper_id);
+usePreviousYearPaperQuestions(paperId: string | null)
+File: src/hooks/usePreviousYearPaperQuestions.ts
+
+Fetches questions for a paper (used in review modal).
+
+
+const { data: paperQuestions } = usePreviousYearPaperQuestions(selectedResult?.paper_id);
+useMyTests()
+File: src/hooks/useMyTests.ts
+
+Aggregates both DPP and Paper test results with statistics.
+
+
+const { allTests, dppTests, paperTests, totalTests, averageScore, dppStats, paperStats, isLoading } = useMyTests();
+5. Component Structure
+PaperTestResults
+├── Loading State (Skeletons)
+├── Empty State (Trophy icon + message)
+├── Category Tabs
+│   ├── "All" tab with count badge
+│   ├── "PYQ" tab with count badge
+│   ├── "Proficiency" tab with count badge
+│   └── "Exam" tab with count badge
+├── Results List
+│   └── Result Card (for each test)
+│       ├── Paper name + year
+│       ├── Category badge
+│       ├── Submission date
+│       ├── Time taken
+│       ├── Questions count
+│       ├── Score percentage (color-coded)
+│       ├── Status badge (Pending/AI Graded/Graded)
+│       └── Review button
+└── Review Dialog
+    ├── Score Summary Card
+    │   ├── Percentage score
+    │   ├── Correct answers count
+    │   └── Time taken
+    └── Questions Review List
+        └── Question Card (for each question)
+            ├── Question number + difficulty badge
+            ├── Correct/Incorrect badge
+            ├── Question text (MathpixRenderer)
+            ├── Uploaded image (if exists)
+            ├── Your answer (highlighted)
+            ├── Correct answer (if wrong)
+            └── Explanation (if available)
+6. Status & Score Visualization
+Grading Status Badges:
+Status	Color	Icon	Description
+pending	Yellow	Loader2 (spinning)	Awaiting grading
+ai_graded	Blue	CheckCircle	AI automatically graded
+graded	Green	CheckCircle	Manually graded
+Score Color Coding:
+
+const getScoreColor = (percentage: number | null) => {
+  if (percentage === null) return "text-muted-foreground";
+  if (percentage >= 70) return "text-green-600";  // Good
+  if (percentage >= 40) return "text-yellow-600"; // Average
+  return "text-red-600";                           // Poor
+};
+Question Answer Status:
+Condition	Border Color	Badge
+Not answered	Gray	"Not Answered"
+Image only	Blue	"Image Submitted"
+Correct	Green	"Correct"
+Incorrect	Red	"Incorrect"
+7. Data Flow
+┌──────────────────────────────────────────────────────────────┐
+│                     PaperTestResults                          │
+└──────────────────────────────────────────────────────────────┘
+                              │
+         ┌────────────────────┼────────────────────┐
+         ▼                    ▼                    ▼
+┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
+│usePaperTestResults│  │usePreviousYear │  │useStudentAnswers│
+│  (main data)     │  │PaperQuestions  │  │  (image URLs)   │
+└────────┬────────┘  │  (for review)   │  └────────┬────────┘
+         │           └────────┬────────┘           │
+         ▼                    ▼                    ▼
+┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
+│paper_test_results│  │   questions     │  │ student_answers │
+│     (table)      │  │    (table)      │  │    (table)      │
+└─────────────────┘  └─────────────────┘  └─────────────────┘
+8. Where It's Used
+Location	Context	Props
+src/pages/Learning.tsx	Chapter-level "My Results" tab	subjectId={selectedSubjectId}
+Note: Topic-level view no longer has My Results tab (removed per recent update).
+
+9. Key Features
+Category Filtering - Filter results by All, PYQ, Proficiency, or Exam
+Count Badges - Show number of results per category
+Score Visualization - Color-coded percentages
+Detailed Review - Question-by-question breakdown
+Image Answer Support - View uploaded image answers
+Math Rendering - LaTeX/math expressions in questions and answers
+Time Tracking - Display time taken per test
+Grading Status - Track pending/graded/AI-graded status
+Now I have all the information needed. Here's the comprehensive documentation for the My Results tab:
+
+My Results Tab - Complete Documentation
+Overview
+The "My Results" tab displays all test submissions from a student, including Previous Year Papers (PYQ), Proficiency Tests, and Exams. It provides a comprehensive review system with filtering, score visualization, and detailed question-by-question review.
+
+1. Database Schema
+Table: paper_test_results
+Stores aggregated test submission data.
+
+Column	Type	Nullable	Description
+id	uuid	NO	Primary key
+student_id	uuid	NO	FK to auth.users
+paper_id	uuid	NO	FK to subject_previous_year_papers
+subject_id	uuid	YES	FK to subjects
+paper_category	text	NO	previous_year / proficiency / exam
+score	integer	YES	Number of correct answers
+total_questions	integer	NO	Total questions in paper
+percentage	numeric	YES	Score percentage
+time_taken_seconds	integer	YES	Time spent on test
+answers	jsonb	YES	Map of question_id to answer text
+grading_status	text	YES	pending / graded / ai_graded
+submitted_at	timestamptz	YES	When test was submitted
+graded_at	timestamptz	YES	When grading completed
+created_at	timestamptz	YES	Record creation time
+Table: student_answers
+Stores individual question answers (especially for image-based answers).
+
+Column	Type	Nullable	Description
+id	uuid	NO	Primary key
+user_id	uuid	NO	FK to auth.users
+question_id	uuid	NO	FK to questions
+paper_id	uuid	NO	FK to subject_previous_year_papers
+answer_text	text	YES	Text/typed answer
+answer_image_url	text	YES	URL to uploaded image answer
+extracted_answer_text	text	YES	AI-extracted text from image
+extraction_confidence	text	YES	AI extraction confidence level
+submitted_at	timestamptz	YES	When answer was submitted
+created_at	timestamptz	YES	Record creation time
+2. API Endpoints
+Fetch Test Results
+
+GET /rest/v1/paper_test_results?select=*,paper:subject_previous_year_papers(exam_name,year,paper_type)&student_id=eq.{user_id}&order=submitted_at.desc
+Optional Filters:
+
+&subject_id=eq.{subject_id} - Filter by subject
+Response:
+
+
+[
+  {
+    "id": "ef6faf98-ce64-4fe7-b6b5-7aba77c7cc6f",
+    "student_id": "47a9b651-79d6-440b-a18c-9612ecf68b5a",
+    "paper_id": "1721cb9d-8e6f-4c62-afbe-dea7b7610ca2",
+    "subject_id": "bc7e6984-8a22-4869-b1d8-732009468abb",
+    "paper_category": "exam",
+    "score": 8,
+    "total_questions": 10,
+    "percentage": 80.00,
+    "time_taken_seconds": 205,
+    "answers": {
+      "4d93f478-0117-4792-abac-d1a2ccbb2622": "9",
+      "5a7859d1-0886-4bb3-bf3e-f2aecc51d7cf": "$\\left[-\\frac{5}{3}, \\frac{3}{5}\\right]$",
+      "63d5a39d-8b3b-461a-8b56-c764efc9299d": "True"
+    },
+    "grading_status": "ai_graded",
+    "submitted_at": "2026-01-03T09:51:20.426322+00",
+    "graded_at": "2026-01-03T09:51:23.939+00",
+    "paper": {
+      "exam_name": "JEE Advanced 2024",
+      "year": 2024,
+      "paper_type": "Paper 1"
+    }
+  }
+]
+Fetch Student Answers (for review)
+
+GET /rest/v1/student_answers?paper_id=eq.{paper_id}&user_id=eq.{user_id}
+Response:
+
+
+[
+  {
+    "id": "2ec01113-9350-40ba-9223-808d1d742060",
+    "user_id": "47a9b651-79d6-440b-a18c-9612ecf68b5a",
+    "question_id": "8772b413-b77f-49de-92b2-bfe64acc0b7b",
+    "paper_id": "1721cb9d-8e6f-4c62-afbe-dea7b7610ca2",
+    "answer_text": "True",
+    "answer_image_url": "https://...supabase.co/storage/v1/object/public/student-answers/.../image.jpeg",
+    "extracted_answer_text": null,
+    "extraction_confidence": "pending",
+    "submitted_at": "2026-01-03T09:51:17.777+00"
+  }
+]
+Fetch Paper Questions (for review)
+
+GET /rest/v1/questions?previous_year_paper_id=eq.{paper_id}&order=created_at.asc
+3. UI Components Used
+Component	Source	Purpose
+Card, CardContent, CardHeader, CardTitle	shadcn/ui	Result cards and summary
+Button	shadcn/ui	Review button
+Badge	shadcn/ui	Status badges, category labels
+Skeleton	shadcn/ui	Loading states
+Tabs, TabsList, TabsTrigger, TabsContent	shadcn/ui	Category filtering (All/PYQ/Proficiency/Exam)
+Dialog, DialogContent, DialogHeader, DialogTitle	shadcn/ui	Review dialog modal
+MathpixRenderer	Custom	Render LaTeX/math in questions & answers
+Lucide Icons Used:
+FileText - Question count indicator
+Clock - Time taken indicator
+CheckCircle - Correct answer / Graded status
+XCircle - Incorrect answer
+Loader2 - Loading / Pending status
+Eye - Review button icon
+Calendar - Submission date
+Trophy - Empty state icon
+AlertCircle - Grading in progress
+Image - Image answer indicator
+4. React Hooks
+usePaperTestResults(subjectId?: string | null)
+File: src/hooks/usePaperTestResults.ts
+
+Fetches all test results for the authenticated user with paper details.
+
+
+const { data: results, isLoading } = usePaperTestResults(subjectId);
+useStudentAnswers(paperId: string | null)
+File: src/hooks/useStudentAnswers.ts
+
+Fetches individual answers for a specific paper (used in review modal).
+
+
+const { data: studentAnswers } = useStudentAnswers(selectedResult?.paper_id);
+usePreviousYearPaperQuestions(paperId: string | null)
+File: src/hooks/usePreviousYearPaperQuestions.ts
+
+Fetches questions for a paper (used in review modal).
+
+
+const { data: paperQuestions } = usePreviousYearPaperQuestions(selectedResult?.paper_id);
+useMyTests()
+File: src/hooks/useMyTests.ts
+
+Aggregates both DPP and Paper test results with statistics.
+
+
+const { allTests, dppTests, paperTests, totalTests, averageScore, dppStats, paperStats, isLoading } = useMyTests();
+5. Component Structure
+PaperTestResults
+├── Loading State (Skeletons)
+├── Empty State (Trophy icon + message)
+├── Category Tabs
+│   ├── "All" tab with count badge
+│   ├── "PYQ" tab with count badge
+│   ├── "Proficiency" tab with count badge
+│   └── "Exam" tab with count badge
+├── Results List
+│   └── Result Card (for each test)
+│       ├── Paper name + year
+│       ├── Category badge
+│       ├── Submission date
+│       ├── Time taken
+│       ├── Questions count
+│       ├── Score percentage (color-coded)
+│       ├── Status badge (Pending/AI Graded/Graded)
+│       └── Review button
+└── Review Dialog
+    ├── Score Summary Card
+    │   ├── Percentage score
+    │   ├── Correct answers count
+    │   └── Time taken
+    └── Questions Review List
+        └── Question Card (for each question)
+            ├── Question number + difficulty badge
+            ├── Correct/Incorrect badge
+            ├── Question text (MathpixRenderer)
+            ├── Uploaded image (if exists)
+            ├── Your answer (highlighted)
+            ├── Correct answer (if wrong)
+            └── Explanation (if available)
+6. Status & Score Visualization
+Grading Status Badges:
+Status	Color	Icon	Description
+pending	Yellow	Loader2 (spinning)	Awaiting grading
+ai_graded	Blue	CheckCircle	AI automatically graded
+graded	Green	CheckCircle	Manually graded
+Score Color Coding:
+
+const getScoreColor = (percentage: number | null) => {
+  if (percentage === null) return "text-muted-foreground";
+  if (percentage >= 70) return "text-green-600";  // Good
+  if (percentage >= 40) return "text-yellow-600"; // Average
+  return "text-red-600";                           // Poor
+};
+Question Answer Status:
+Condition	Border Color	Badge
+Not answered	Gray	"Not Answered"
+Image only	Blue	"Image Submitted"
+Correct	Green	"Correct"
+Incorrect	Red	"Incorrect"
+7. Data Flow
+┌──────────────────────────────────────────────────────────────┐
+│                     PaperTestResults                          │
+└──────────────────────────────────────────────────────────────┘
+                              │
+         ┌────────────────────┼────────────────────┐
+         ▼                    ▼                    ▼
+┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
+│usePaperTestResults│  │usePreviousYear │  │useStudentAnswers│
+│  (main data)     │  │PaperQuestions  │  │  (image URLs)   │
+└────────┬────────┘  │  (for review)   │  └────────┬────────┘
+         │           └────────┬────────┘           │
+         ▼                    ▼                    ▼
+┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
+│paper_test_results│  │   questions     │  │ student_answers │
+│     (table)      │  │    (table)      │  │    (table)      │
+└─────────────────┘  └─────────────────┘  └─────────────────┘
+8. Where It's Used
+Location	Context	Props
+src/pages/Learning.tsx	Chapter-level "My Results" tab	subjectId={selectedSubjectId}
+Note: Topic-level view no longer has My Results tab (removed per recent update).
+
+9. Key Features
+Category Filtering - Filter results by All, PYQ, Proficiency, or Exam
+Count Badges - Show number of results per category
+Score Visualization - Color-coded percentages
+Detailed Review - Question-by-question breakdown
+Image Answer Support - View uploaded image answers
+Math Rendering - LaTeX/math expressions in questions and answers
+Time Tracking - Display time taken per test
+Grading Status - Track pending/graded/AI-graded status
+
+
+
+

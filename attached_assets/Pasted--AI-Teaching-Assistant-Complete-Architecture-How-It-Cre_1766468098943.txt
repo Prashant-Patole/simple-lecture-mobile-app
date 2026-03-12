@@ -1,0 +1,320 @@
+🎓 AI Teaching Assistant - Complete Architecture
+How It Creates 10-15 Minute Explanations
+The system uses a 6-slide mandatory structure with 150-250 words per slide narration:
+
+Slide	Type	Content
+1	Introduction	Definition + Why it matters
+2	Core Concept	Deep explanation + Formulas
+3	Example	Step-by-step practical example
+4	Advanced Points	Nuances and details
+5	Story (mandatory)	Real-world relatable story
+6	Tips & Tricks (mandatory)	Memory techniques, mnemonics
+Total: ~900-1500 words = ~10-15 minutes of narration
+
+📡 API: /functions/v1/ai-teaching-assistant
+Request Payload
+
+{
+  "question": "Explain Newton's Laws of Motion",
+  "topicId": "uuid-optional",
+  "chapterId": "uuid-optional",
+  "language": "en-IN",  // or "hi-IN", "kn-IN", "ta-IN", "te-IN", "ml-IN"
+  "subjectName": "Physics"
+}
+Response Body
+
+{
+  "cached": false,
+  "answer": "Full text of all narrations combined...",
+  "presentationSlides": [
+    {
+      "title": "Introduction to Newton's Laws",
+      "content": "Newton's Laws form the foundation of **classical mechanics**...",
+      "narration": "Hello students! Today we'll learn about Newton's Laws. These are three fundamental principles that explain how objects move...", // 150-250 words
+      "keyPoints": ["First Law: Inertia", "Second Law: F=ma", "Third Law: Action-Reaction"],
+      "formula": "$$F = ma$$",
+      "infographic": "Diagram showing three boxes representing each law",
+      "infographicUrl": "data:image/png;base64,iVBORw0KGgo...", // AI-generated image
+      "isStory": false,
+      "isTips": false
+    },
+    // ... 5 more slides
+    {
+      "title": "A Story to Remember",
+      "content": "Imagine you're on a skateboard...",
+      "narration": "Let me tell you a story that will help you remember this forever...",
+      "keyPoints": ["Real-world connection"],
+      "isStory": true,
+      "infographicUrl": "data:image/png;base64,...",
+      "videoUrl": "optional-video-url"  // Generated for story slides
+    },
+    {
+      "title": "Tips & Tricks to Remember",
+      "content": "Use the mnemonic 'FAM' - Force, Acceleration, Mass",
+      "narration": "Now here are some tricks to help you remember...",
+      "keyPoints": ["Mnemonic: FAM", "Draw diagrams", "Practice daily"],
+      "isTips": true
+    }
+  ],
+  "latexFormulas": [
+    { "formula": "F = ma", "explanation": "Force equals mass times acceleration" }
+  ],
+  "keyPoints": ["Summary point 1", "Summary point 2"],
+  "followUpQuestions": ["What happens in zero gravity?", "How do these apply to rockets?"],
+  "narrationText": "Full narration text...",
+  "subjectName": "Physics"
+}
+🖼️ How Multiple Images Are Generated (Per Slide)
+Each slide can have an infographic description which triggers image generation:
+
+Image Generation Flow:
+AI generates slide with infographic: "Diagram showing force vectors on a falling ball"
+Backend calls Gemini Image Model for EACH slide:
+
+// Called for EACH slide with infographic description
+fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+  method: "POST",
+  headers: { Authorization: `Bearer ${LOVABLE_API_KEY}` },
+  body: JSON.stringify({
+    model: "google/gemini-2.5-flash-image-preview",
+    modalities: ["image", "text"],
+    messages: [{
+      role: "user",
+      content: `Create a clear, educational infographic...
+        Topic: ${slide.title}
+        Visual Description: ${slide.infographic}
+        Requirements: Clean, professional, easy to understand...`
+    }]
+  })
+});
+Image Response:
+
+{
+  "choices": [{
+    "message": {
+      "images": [{
+        "image_url": {
+          "url": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."
+        }
+      }]
+    }
+  }]
+}
+The infographicUrl (base64 image) is added to each slide and displayed in the popup/zoom effect.
+
+🔊 Audio APIs (for narration)
+1. Sarvam TTS (Indian Languages)
+POST /functions/v1/sarvam-tts
+
+// Request
+{ "text": "Hello students...", "languageCode": "hi-IN", "gender": "male" }
+
+// Response
+{
+  "audioContent": "base64-encoded-mp3...",
+  "languageCode": "hi-IN",
+  "voice": "arvind"
+}
+2. Google TTS (English Fallback)
+POST /functions/v1/google-tts
+
+// Request
+{ "text": "Hello students...", "languageCode": "en-IN", "gender": "male" }
+
+// Response
+{
+  "audioContent": "base64-encoded-mp3...",
+  "languageCode": "en-IN", 
+  "voice": "fable"
+}
+🎬 Complete Flow Diagram
+User Asks Question
+        ↓
+┌───────────────────────────┐
+│  ai-teaching-assistant    │
+│  (Edge Function)          │
+└───────────────────────────┘
+        ↓
+1. Fetch context from DB (topic/chapter content)
+        ↓
+2. Call Gemini AI → Generate 6 slides with narrations
+        ↓
+3. For EACH slide with infographic description:
+   └→ Call Gemini Image Model → Get base64 image
+        ↓
+4. For story slide: optionally generate video
+        ↓
+5. Return JSON with all slides + images
+        ↓
+┌───────────────────────────┐
+│  Frontend (React)         │
+└───────────────────────────┘
+        ↓
+6. Pre-cache ALL audio (Sarvam/Google TTS)
+        ↓
+7. Start presentation with:
+   - Slide content display
+   - Audio narration (150-250 words/slide)
+   - Infographic zoom effect (40-40-20 timing)
+   - Subtitles synchronized
+Now I have the complete picture. Here's how the AI Teaching Assistant system works:
+
+🎓 AI Teaching Assistant - Complete Architecture
+How It Creates 10-15 Minute Explanations
+The system uses a 6-slide mandatory structure with 150-250 words per slide narration:
+
+Slide	Type	Content
+1	Introduction	Definition + Why it matters
+2	Core Concept	Deep explanation + Formulas
+3	Example	Step-by-step practical example
+4	Advanced Points	Nuances and details
+5	Story (mandatory)	Real-world relatable story
+6	Tips & Tricks (mandatory)	Memory techniques, mnemonics
+Total: ~900-1500 words = ~10-15 minutes of narration
+
+📡 API: /functions/v1/ai-teaching-assistant
+Request Payload
+
+{
+  "question": "Explain Newton's Laws of Motion",
+  "topicId": "uuid-optional",
+  "chapterId": "uuid-optional",
+  "language": "en-IN",  // or "hi-IN", "kn-IN", "ta-IN", "te-IN", "ml-IN"
+  "subjectName": "Physics"
+}
+Response Body
+
+{
+  "cached": false,
+  "answer": "Full text of all narrations combined...",
+  "presentationSlides": [
+    {
+      "title": "Introduction to Newton's Laws",
+      "content": "Newton's Laws form the foundation of **classical mechanics**...",
+      "narration": "Hello students! Today we'll learn about Newton's Laws. These are three fundamental principles that explain how objects move...", // 150-250 words
+      "keyPoints": ["First Law: Inertia", "Second Law: F=ma", "Third Law: Action-Reaction"],
+      "formula": "$$F = ma$$",
+      "infographic": "Diagram showing three boxes representing each law",
+      "infographicUrl": "data:image/png;base64,iVBORw0KGgo...", // AI-generated image
+      "isStory": false,
+      "isTips": false
+    },
+    // ... 5 more slides
+    {
+      "title": "A Story to Remember",
+      "content": "Imagine you're on a skateboard...",
+      "narration": "Let me tell you a story that will help you remember this forever...",
+      "keyPoints": ["Real-world connection"],
+      "isStory": true,
+      "infographicUrl": "data:image/png;base64,...",
+      "videoUrl": "optional-video-url"  // Generated for story slides
+    },
+    {
+      "title": "Tips & Tricks to Remember",
+      "content": "Use the mnemonic 'FAM' - Force, Acceleration, Mass",
+      "narration": "Now here are some tricks to help you remember...",
+      "keyPoints": ["Mnemonic: FAM", "Draw diagrams", "Practice daily"],
+      "isTips": true
+    }
+  ],
+  "latexFormulas": [
+    { "formula": "F = ma", "explanation": "Force equals mass times acceleration" }
+  ],
+  "keyPoints": ["Summary point 1", "Summary point 2"],
+  "followUpQuestions": ["What happens in zero gravity?", "How do these apply to rockets?"],
+  "narrationText": "Full narration text...",
+  "subjectName": "Physics"
+}
+🖼️ How Multiple Images Are Generated (Per Slide)
+Each slide can have an infographic description which triggers image generation:
+
+Image Generation Flow:
+AI generates slide with infographic: "Diagram showing force vectors on a falling ball"
+Backend calls Gemini Image Model for EACH slide:
+
+// Called for EACH slide with infographic description
+fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+  method: "POST",
+  headers: { Authorization: `Bearer ${LOVABLE_API_KEY}` },
+  body: JSON.stringify({
+    model: "google/gemini-2.5-flash-image-preview",
+    modalities: ["image", "text"],
+    messages: [{
+      role: "user",
+      content: `Create a clear, educational infographic...
+        Topic: ${slide.title}
+        Visual Description: ${slide.infographic}
+        Requirements: Clean, professional, easy to understand...`
+    }]
+  })
+});
+Image Response:
+
+{
+  "choices": [{
+    "message": {
+      "images": [{
+        "image_url": {
+          "url": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."
+        }
+      }]
+    }
+  }]
+}
+The infographicUrl (base64 image) is added to each slide and displayed in the popup/zoom effect.
+
+🔊 Audio APIs (for narration)
+1. Sarvam TTS (Indian Languages)
+POST /functions/v1/sarvam-tts
+
+// Request
+{ "text": "Hello students...", "languageCode": "hi-IN", "gender": "male" }
+
+// Response
+{
+  "audioContent": "base64-encoded-mp3...",
+  "languageCode": "hi-IN",
+  "voice": "arvind"
+}
+2. Google TTS (English Fallback)
+POST /functions/v1/google-tts
+
+// Request
+{ "text": "Hello students...", "languageCode": "en-IN", "gender": "male" }
+
+// Response
+{
+  "audioContent": "base64-encoded-mp3...",
+  "languageCode": "en-IN", 
+  "voice": "fable"
+}
+🎬 Complete Flow Diagram
+User Asks Question
+        ↓
+┌───────────────────────────┐
+│  ai-teaching-assistant    │
+│  (Edge Function)          │
+└───────────────────────────┘
+        ↓
+1. Fetch context from DB (topic/chapter content)
+        ↓
+2. Call Gemini AI → Generate 6 slides with narrations
+        ↓
+3. For EACH slide with infographic description:
+   └→ Call Gemini Image Model → Get base64 image
+        ↓
+4. For story slide: optionally generate video
+        ↓
+5. Return JSON with all slides + images
+        ↓
+┌───────────────────────────┐
+│  Frontend (React)         │
+└───────────────────────────┘
+        ↓
+6. Pre-cache ALL audio (Sarvam/Google TTS)
+        ↓
+7. Start presentation with:
+   - Slide content display
+   - Audio narration (150-250 words/slide)
+   - Infographic zoom effect (40-40-20 timing)
+   - Subtitles synchronized

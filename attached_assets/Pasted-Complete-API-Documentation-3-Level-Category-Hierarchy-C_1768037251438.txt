@@ -1,0 +1,357 @@
+Complete API Documentation: 3-Level Category Hierarchy & Courses
+Base Configuration
+SUPABASE_URL: https://oxwhqvsoelqqsblmqkxx.supabase.co
+SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im94d2hxdnNvZWxxcXNibG1xa3h4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk1MTU4NTgsImV4cCI6MjA3NTA5MTg1OH0.nZbWSb9AQK5uGAQmc7zXAceTHm9GRQJvqkg4-LNo_DM
+Database Schema
+categories Table
+Column	Type	Description
+id	uuid	Primary key (auto-generated)
+name	text	Category name (e.g., "Board Exams", "NEET UG")
+slug	text	URL-friendly identifier (e.g., "board-exams")
+icon	text	Emoji or icon (e.g., "📚", "🩺")
+description	text	Category description
+parent_id	uuid	Reference to parent category (NULL for Level 1)
+level	integer	1 = Parent, 2 = Sub-category, 3 = Sub-sub-category
+display_order	integer	Sort order within same level
+is_popular	boolean	Show in popular section
+is_active	boolean	Visibility flag
+created_at	timestamp	Creation timestamp
+updated_at	timestamp	Last update timestamp
+course_categories Junction Table
+Column	Type	Description
+id	uuid	Primary key
+course_id	uuid	Reference to courses table
+category_id	uuid	Reference to categories table
+created_at	timestamp	Creation timestamp
+API Endpoints
+1. Get All Categories (Flat List)
+
+GET https://oxwhqvsoelqqsblmqkxx.supabase.co/functions/v1/api/api/v1/categories
+Headers:
+
+
+{
+  "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im94d2hxdnNvZWxxcXNibG1xa3h4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk1MTU4NTgsImV4cCI6MjA3NTA5MTg1OH0.nZbWSb9AQK5uGAQmc7zXAceTHm9GRQJvqkg4-LNo_DM",
+  "Content-Type": "application/json"
+}
+Response:
+
+
+[
+  {
+    "id": "d1807178-486e-483b-bdb9-a2b095eb96e8",
+    "name": "Board Exams",
+    "slug": "board-exams",
+    "icon": "📚",
+    "description": "Complete preparation for board examinations",
+    "parent_id": null,
+    "level": 1,
+    "display_order": 1,
+    "is_popular": false,
+    "is_active": true
+  },
+  {
+    "id": "a6e8898a-3802-4b20-950f-21ee4e74a4dd",
+    "name": "10th/SSLC",
+    "slug": "10th-sslc",
+    "icon": null,
+    "description": "Class 10 board exam preparation",
+    "parent_id": "d1807178-486e-483b-bdb9-a2b095eb96e8",
+    "level": 2,
+    "display_order": 1,
+    "is_popular": false,
+    "is_active": true
+  }
+]
+2. Direct Supabase Query - Get Categories with Hierarchy
+To build the 3-level hierarchy in your app:
+
+
+// Using Supabase JS Client
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  'https://oxwhqvsoelqqsblmqkxx.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im94d2hxdnNvZWxxcXNibG1xa3h4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk1MTU4NTgsImV4cCI6MjA3NTA5MTg1OH0.nZbWSb9AQK5uGAQmc7zXAceTHm9GRQJvqkg4-LNo_DM'
+);
+
+// Fetch all categories
+const { data: categories, error } = await supabase
+  .from('categories')
+  .select('*')
+  .eq('is_active', true)
+  .order('level')
+  .order('display_order');
+Building the Hierarchy Tree:
+
+
+function buildCategoryHierarchy(categories) {
+  const categoryMap = new Map();
+  const level1Categories = [];
+
+  // First pass: create all category objects
+  categories.forEach((cat) => {
+    categoryMap.set(cat.id, {
+      id: cat.id,
+      name: cat.name,
+      slug: cat.slug,
+      icon: cat.icon,
+      level: cat.level,
+      display_order: cat.display_order || 0,
+      subcategories: [],
+    });
+  });
+
+  // Second pass: build hierarchy
+  categories.forEach((cat) => {
+    const category = categoryMap.get(cat.id);
+    if (!category) return;
+
+    if (cat.level === 1) {
+      // Level 1: Add to root array
+      level1Categories.push(category);
+    } else if (cat.parent_id) {
+      // Level 2 or 3: Add to parent's subcategories
+      const parent = categoryMap.get(cat.parent_id);
+      if (parent) {
+        parent.subcategories.push(category);
+      }
+    }
+  });
+
+  // Sort subcategories by display_order
+  level1Categories.forEach((cat) => {
+    cat.subcategories.sort((a, b) => a.display_order - b.display_order);
+    cat.subcategories.forEach((subcat) => {
+      subcat.subcategories.sort((a, b) => a.display_order - b.display_order);
+    });
+  });
+
+  return level1Categories.sort((a, b) => a.display_order - b.display_order);
+}
+Resulting Hierarchy Structure:
+
+
+[
+  {
+    "id": "d1807178-...",
+    "name": "Board Exams",
+    "slug": "board-exams",
+    "icon": "📚",
+    "level": 1,
+    "subcategories": [
+      {
+        "id": "a6e8898a-...",
+        "name": "10th/SSLC",
+        "slug": "10th-sslc",
+        "level": 2,
+        "subcategories": [
+          {
+            "id": "...",
+            "name": "CBSE",
+            "slug": "cbse-10th",
+            "level": 3,
+            "subcategories": []
+          }
+        ]
+      }
+    ]
+  }
+]
+3. Get Courses by Category
+
+GET https://oxwhqvsoelqqsblmqkxx.supabase.co/functions/v1/api/api/v1/courses?category=board-exams&page=1&limit=20
+Headers:
+
+
+{
+  "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "Content-Type": "application/json"
+}
+Query Parameters:
+
+Parameter	Type	Description
+category	string	Category slug to filter by
+page	integer	Page number (default: 1)
+limit	integer	Items per page (default: 20)
+Response:
+
+
+{
+  "data": [
+    {
+      "id": "course-uuid",
+      "name": "NEET Complete Course 2025",
+      "slug": "neet-complete-course-2025",
+      "thumbnail_url": "https://...",
+      "short_description": "...",
+      "price_inr": 15999,
+      "original_price_inr": 29999,
+      "duration_months": 12,
+      "student_count": 5000,
+      "rating": 4.8,
+      "is_active": true,
+      "categories": [
+        {
+          "category": {
+            "id": "...",
+            "name": "NEET UG",
+            "slug": "neet-ug",
+            "level": 2
+          }
+        }
+      ]
+    }
+  ],
+  "page": 1,
+  "limit": 20,
+  "total": 45,
+  "totalPages": 3
+}
+4. Direct Supabase Query - Courses by Category Hierarchy
+For cascading category filtering (courses from parent include all children):
+
+
+// Get courses for a specific category AND all its descendants
+async function getCoursesByHierarchy(parentCategoryId, subCategoryId, subSubCategoryId) {
+  
+  // Case 1: Sub-sub category selected (Level 3) - direct filter
+  if (subSubCategoryId) {
+    const { data } = await supabase
+      .from('course_categories')
+      .select(`
+        courses (
+          id, name, slug, thumbnail_url, short_description,
+          price_inr, original_price_inr, duration_months,
+          student_count, rating, is_active
+        )
+      `)
+      .eq('category_id', subSubCategoryId);
+    
+    return data?.map(cc => cc.courses).filter(c => c?.is_active);
+  }
+  
+  // Case 2: Sub-category selected (Level 2) - include Level 3 children
+  if (subCategoryId) {
+    // Get sub-sub categories (Level 3)
+    const { data: level3Cats } = await supabase
+      .from('categories')
+      .select('id')
+      .eq('parent_id', subCategoryId)
+      .eq('is_active', true);
+    
+    const categoryIds = [subCategoryId, ...(level3Cats?.map(c => c.id) || [])];
+    
+    const { data } = await supabase
+      .from('course_categories')
+      .select('courses(*)')
+      .in('category_id', categoryIds);
+    
+    // Deduplicate courses
+    const uniqueCourses = new Map();
+    data?.forEach(cc => {
+      if (cc.courses?.is_active) {
+        uniqueCourses.set(cc.courses.id, cc.courses);
+      }
+    });
+    
+    return Array.from(uniqueCourses.values());
+  }
+  
+  // Case 3: Parent category selected (Level 1) - include Level 2 & 3
+  if (parentCategoryId) {
+    // Get all descendants
+    const { data: level2Cats } = await supabase
+      .from('categories')
+      .select('id')
+      .eq('parent_id', parentCategoryId)
+      .eq('is_active', true);
+    
+    const level2Ids = level2Cats?.map(c => c.id) || [];
+    
+    const { data: level3Cats } = await supabase
+      .from('categories')
+      .select('id')
+      .in('parent_id', level2Ids)
+      .eq('is_active', true);
+    
+    const allCategoryIds = [
+      parentCategoryId,
+      ...level2Ids,
+      ...(level3Cats?.map(c => c.id) || [])
+    ];
+    
+    const { data } = await supabase
+      .from('course_categories')
+      .select('courses(*)')
+      .in('category_id', allCategoryIds);
+    
+    // Deduplicate
+    const uniqueCourses = new Map();
+    data?.forEach(cc => {
+      if (cc.courses?.is_active) {
+        uniqueCourses.set(cc.courses.id, cc.courses);
+      }
+    });
+    
+    return Array.from(uniqueCourses.values());
+  }
+  
+  // Case 4: No category - return popular courses
+  const { data } = await supabase
+    .from('courses')
+    .select('*')
+    .eq('is_active', true)
+    .order('student_count', { ascending: false })
+    .limit(50);
+  
+  return data;
+}
+5. Get Single Course with Full Details
+
+GET https://oxwhqvsoelqqsblmqkxx.supabase.co/functions/v1/api/api/v1/courses/{course_id}
+Response:
+
+
+{
+  "id": "course-uuid",
+  "name": "NEET Complete Course 2025",
+  "slug": "neet-complete-course-2025",
+  "description": "Full course description...",
+  "thumbnail_url": "https://...",
+  "promo_video_url": "https://...",
+  "price_inr": 15999,
+  "original_price_inr": 29999,
+  "duration_months": 12,
+  "features": ["AI Tutoring", "Live Classes", "Practice Tests"],
+  "categories": [
+    { "category": { "id": "...", "name": "NEET UG", "level": 2 } }
+  ],
+  "subjects": [
+    { "subject": { "id": "...", "name": "Physics", "icon": "⚛️" } }
+  ],
+  "instructors": [
+    { "instructor": { "id": "...", "full_name": "Dr. Smith", "specialization": "Physics" } }
+  ],
+  "faqs": [
+    { "question": "What is included?", "answer": "..." }
+  ]
+}
+Sample Category Data (Currently in Database)
+Level 1 (Parent Categories):
+
+Name	Slug	Icon
+Board Exams	board-exams	📚
+Medical Entrance	medical-entrance	🩺
+Engineering Entrance	engineering-entrance	⚙️
+Integrated Programs	integrated-programs	🎯
+Pharmacy Courses	pharmacy-courses	💊
+Level 2 (Sub-categories):
+
+Name	Parent	Slug
+NEET UG	Medical Entrance	neet-ug
+NEET PG	Medical Entrance	neet-pg
+JEE Main	Engineering Entrance	jee-main
+JEE Advanced	Engineering Entrance	jee-advanced
+10th/SSLC	Board Exams	10th-sslc
+D.Pharm 1st Year	Pharmacy Courses	dpharm-1st-year

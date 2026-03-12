@@ -1,0 +1,80 @@
+Supabase REST API Endpoints
+Base URL: https://oxwhqvsoelqqsblmqkxx.supabase.co/rest/v1
+
+Headers (all requests):
+
+apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im94d2hxdnNvZWxxcXNibG1xa3h4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk1MTU4NTgsImV4cCI6MjA3NTA5MTg1OH0.nZbWSb9AQK5uGAQmc7zXAceTHm9GRQJvqkg4-LNo_DM
+authorization: Bearer {USER_JWT_TOKEN}
+accept-profile: public
+1. Get User Profile
+GET /profiles?id=eq.{user_id}&select=*
+Response:
+
+
+[{"id":"47a9b651-...","full_name":"Pramod","avatar_url":null,"phone":"9886733599","created_at":"2025-12-05T05:20:32+00:00"}]
+2. Get Enrollments
+GET /enrollments?student_id=eq.{user_id}&is_active=eq.true&select=*,courses(*),batches(*)
+Response:
+
+
+[{"id":"d098397f-...","course_id":"d106db94-...","batch_id":"11111111-...","enrolled_at":"2025-12-05T05:20:32+00:00","courses":{"id":"d106db94-...","name":"JEE Main + Advanced Bundle"},"batches":{"id":"11111111-...","name":"JEE 2025 Batch A"}}]
+3. Get Student Progress
+GET /student_progress?student_id=eq.{user_id}&select=*,topic:subject_topics(id,title),chapter:subject_chapters(id,title,subject:popular_subjects(id,name))
+4. Get Class Attendance
+GET /class_attendance?student_id=eq.{user_id}&select=*,scheduled_class:scheduled_classes(id,scheduled_at,subject,course_id)
+5. Get Timetable
+GET /course_timetables?course_id=in.({course_ids})&is_active=eq.true&select=*,subject:popular_subjects(id,name),instructor:teacher_profiles(id,full_name,avatar_url),course:courses(id,name)&order=day_of_week.asc,start_time.asc
+6. Get DPT Submissions
+GET /dpt_submissions?student_id=eq.{user_id}&select=*&order=submitted_at.desc
+7. Get Doubt Logs
+GET /doubt_logs?student_id=eq.{user_id}&select=*,topic:subject_topics(id,title)&order=created_at.desc
+8. Get AI Video Logs
+GET /ai_video_watch_logs?student_id=eq.{user_id}&select=*,subject:popular_subjects(name),chapter:subject_chapters(title),topic:subject_topics(title)&order=created_at.desc
+9. Get Podcast Logs
+GET /podcast_listen_logs?student_id=eq.{user_id}&select=*,subject:popular_subjects(name),chapter:subject_chapters(title),topic:subject_topics(title)&order=created_at.desc
+10. Get Daily Activity Logs
+GET /daily_activity_logs?student_id=eq.{user_id}&select=*&order=activity_date.asc&limit=30
+11. Get Course Subjects
+GET /course_subjects?course_id=in.({course_ids})&select=course_id,subject_id,display_order,popular_subjects:subject_id(id,name,description,thumbnail_url)&order=display_order.asc
+12. Get Assignment Submissions
+GET /assignment_submissions?student_id=eq.{user_id}&select=*,assignment:assignments(id,title,course_id)
+Supabase REST API Endpoints
+Base URL: https://oxwhqvsoelqqsblmqkxx.supabase.co/rest/v1
+
+Headers (all requests):
+
+apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im94d2hxdnNvZWxxcXNibG1xa3h4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk1MTU4NTgsImV4cCI6MjA3NTA5MTg1OH0.nZbWSb9AQK5uGAQmc7zXAceTHm9GRQJvqkg4-LNo_DM
+authorization: Bearer {USER_JWT_TOKEN}
+accept-profile: public
+1. Get User Profile
+GET /profiles?id=eq.{user_id}&select=*
+Response:
+
+
+[{"id":"47a9b651-...","full_name":"Pramod","avatar_url":null,"phone":"9886733599","created_at":"2025-12-05T05:20:32+00:00"}]
+2. Get Enrollments
+GET /enrollments?student_id=eq.{user_id}&is_active=eq.true&select=*,courses(*),batches(*)
+Response:
+
+
+[{"id":"d098397f-...","course_id":"d106db94-...","batch_id":"11111111-...","enrolled_at":"2025-12-05T05:20:32+00:00","courses":{"id":"d106db94-...","name":"JEE Main + Advanced Bundle"},"batches":{"id":"11111111-...","name":"JEE 2025 Batch A"}}]
+3. Get Student Progress
+GET /student_progress?student_id=eq.{user_id}&select=*,topic:subject_topics(id,title),chapter:subject_chapters(id,title,subject:popular_subjects(id,name))
+4. Get Class Attendance
+GET /class_attendance?student_id=eq.{user_id}&select=*,scheduled_class:scheduled_classes(id,scheduled_at,subject,course_id)
+5. Get Timetable
+GET /course_timetables?course_id=in.({course_ids})&is_active=eq.true&select=*,subject:popular_subjects(id,name),instructor:teacher_profiles(id,full_name,avatar_url),course:courses(id,name)&order=day_of_week.asc,start_time.asc
+6. Get DPT Submissions
+GET /dpt_submissions?student_id=eq.{user_id}&select=*&order=submitted_at.desc
+7. Get Doubt Logs
+GET /doubt_logs?student_id=eq.{user_id}&select=*,topic:subject_topics(id,title)&order=created_at.desc
+8. Get AI Video Logs
+GET /ai_video_watch_logs?student_id=eq.{user_id}&select=*,subject:popular_subjects(name),chapter:subject_chapters(title),topic:subject_topics(title)&order=created_at.desc
+9. Get Podcast Logs
+GET /podcast_listen_logs?student_id=eq.{user_id}&select=*,subject:popular_subjects(name),chapter:subject_chapters(title),topic:subject_topics(title)&order=created_at.desc
+10. Get Daily Activity Logs
+GET /daily_activity_logs?student_id=eq.{user_id}&select=*&order=activity_date.asc&limit=30
+11. Get Course Subjects
+GET /course_subjects?course_id=in.({course_ids})&select=course_id,subject_id,display_order,popular_subjects:subject_id(id,name,description,thumbnail_url)&order=display_order.asc
+12. Get Assignment Submissions
+GET /assignment_submissions?student_id=eq.{user_id}&select=*,assignment:assignments(id,title,course_id)

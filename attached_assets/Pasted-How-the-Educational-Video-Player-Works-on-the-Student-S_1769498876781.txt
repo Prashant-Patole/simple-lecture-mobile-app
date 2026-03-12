@@ -1,0 +1,136 @@
+How the Educational Video Player Works on the Student Side
+Data Flow Architecture
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           DATABASE (Supabase)                              │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  subject_topics / subject_chapters                                          │
+│  ┌─────────────────────────────────────────────────────────────────────────┐│
+│  │ ai_presentation_json     →  Complete JSON with sections, segments, etc ││
+│  │ ai_generated_video_url   →  External player URL (contains job ID)       ││
+│  └─────────────────────────────────────────────────────────────────────────┘│
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    useLearningCourse.ts (Hook)                             │
+│  Fetches ai_presentation_json + ai_generated_video_url for:                │
+│    - Chapters (line 112)                                                    │
+│    - Topics (line 129)                                                      │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      Learning.tsx (Page)                                   │
+│  Passes data as props:                                                      │
+│    aiPresentationJson={selectedTopic.ai_presentation_json}                  │
+│    aiGeneratedVideoUrl={selectedTopic.ai_generated_video_url}               │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    RecordedVideos.tsx (Component)                          │
+│  Renders the "Watch AI Lecture" button + conditionally opens:               │
+│    - Native player (if aiPresentationJson exists)                           │
+│    - Iframe fallback (if only aiGeneratedVideoUrl exists)                   │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│            EducationalVideoPlayerDialog.tsx                                │
+│  Props received:                                                            │
+│    presentationData    →  The full JSON (from database)                     │
+│    externalJobId       →  Extracted from ai_generated_video_url             │
+│                                                                             │
+│  Logic:                                                                     │
+│    if (presentationData) → Use directly, no fetching needed                │
+│    else if (externalJobId) → Fetch from external service via proxy         │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│               EducationalVideoPlayer.tsx (Core Player)                     │
+│  Receives:                                                                  │
+│    presentationData    →  Sections, narration, timing, beat videos         │
+│    jobId               →  Used for media URL resolution                     │
+│    getMediaUrl()       →  Function to construct proxied media URLs          │
+└─────────────────────────────────────────────────────────────────────────────┘
+Step-by-Step Flow
+1. Database Storage
+When a video is "Published" from the admin panel, the complete presentation.json is saved to:
+
+subject_topics.ai_presentation_json (for topic-level lectures)
+subject_chapters.ai_presentation_json (for chapter-level lectures)
+This JSON contains all sections, narration segments, timing data, beat videos, flashcards, etc.
+
+2. Data Fetching (useLearningCourse.ts)
+
+// For chapters (line 106-112)
+.select(`id, title, ..., ai_generated_video_url, ai_presentation_json`)
+
+// For topics (line 129)
+.select("id, title, ..., ai_generated_video_url, ai_presentation_json")
+Both the URL and JSON are fetched in a single query.
+
+3. Props Passed to RecordedVideos (Learning.tsx)
+
+<RecordedVideos 
+  topicTitle={selectedTopic.title}
+  aiGeneratedVideoUrl={selectedTopic.ai_generated_video_url}
+  aiPresentationJson={selectedTopic.ai_presentation_json}  // ← JSON passed directly
+/>
+4. Conditional Rendering (RecordedVideos.tsx)
+
+{showAIVideo && aiPresentationJson ? (
+  // ✅ Native Player - JSON available
+  <EducationalVideoPlayerDialog
+    presentationData={aiPresentationJson}           // Direct JSON
+    externalJobId={extractJobIdFromUrl(aiGeneratedVideoUrl)}  // For media URLs
+    documentName={topicTitle}
+  />
+) : showAIVideo && aiGeneratedVideoUrl ? (
+  // ❌ Legacy Fallback - Only URL available, uses iframe
+  <Dialog>
+    <iframe src={aiGeneratedVideoUrl} />
+  </Dialog>
+) : null}
+5. Player Dialog Logic (EducationalVideoPlayerDialog.tsx)
+
+// Skip fetching if JSON already provided
+const shouldFetch = !directPresentationData && !!externalJobId;
+
+const presentationData = directPresentationData || fetchedPresentationData;
+Student Mode: JSON is passed directly → No network request to external service
+Admin Mode: Only job ID → Fetches JSON from external video generation service via proxy
+
+6. Media Resolution (mediaResolver.ts)
+Even though the JSON is local, media assets (avatars, videos, images) are still stored externally. The jobId is extracted from the URL and used to construct proxied media URLs:
+
+
+export const getAdminMediaUrl = (jobId: string, path: string): string => {
+  const params = new URLSearchParams({
+    action: 'media',
+    job_id: jobId,
+    file_path: cleanPath,
+  });
+  return `${supabaseUrl}/functions/v1/video-generation-proxy?${params}`;
+};
+This routes through your Supabase edge function to:
+
+Handle CORS
+Support video streaming (Range headers)
+Proxy to external media server
+Key Differences: Admin vs Student Mode
+Aspect	Admin Mode	Student Mode
+JSON Source	Fetched from external service via usePresentationReview	Pre-loaded from database column
+Network Requests	API call for presentation.json	None (already in props)
+Media Assets	Proxied through edge function	Same (uses jobId from URL)
+Job ID	Passed directly	Extracted from ai_generated_video_url
+Summary
+The student-side player is optimized for performance by storing the complete presentation JSON in the database. When a student clicks "Watch AI Lecture":
+
+JSON is already available in the component props (fetched with course data)
+No additional API call needed for presentation structure
+Only media assets (videos/images) are streamed on-demand through the proxy
+The jobId extracted from the stored URL enables the proxy to locate assets
+This architecture ensures fast startup and seamless playback for students! 🚀

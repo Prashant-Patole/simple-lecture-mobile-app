@@ -1,0 +1,344 @@
+Complete Prompt for Replit: AI Teaching Assistant Mobile Implementation
+Overview
+This document provides complete API specifications, payloads, responses, UI/UX details, and animations for implementing the AI Teaching Assistant feature in a mobile app. The feature generates interactive 6-slide educational presentations with AI-generated infographics, text-to-speech narration, and engaging animations.
+
+1. API Endpoints & Authentication
+Base URL
+https://oxwhqvsoelqqsblmqkxx.supabase.co
+Authentication Header (Required for all requests)
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im94d2hxdnNvZWxxcXNibG1xa3h4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk1MTU4NTgsImV4cCI6MjA3NTA5MTg1OH0.nZbWSb9AQK5uGAQmc7zXAceTHm9GRQJvqkg4-LNo_DM
+Content-Type: application/json
+2. Main API: AI Teaching Assistant
+Endpoint
+POST https://oxwhqvsoelqqsblmqkxx.supabase.co/functions/v1/ai-teaching-assistant
+Request Payload
+
+{
+  "question": "Explain Newton's Laws of Motion",
+  "topicId": "optional-uuid-of-topic",
+  "chapterId": "optional-uuid-of-chapter",
+  "language": "en-IN",
+  "subjectName": "Physics",
+  "mode": "full"
+}
+Field	Type	Required	Description
+question	string	Yes	The user's question
+topicId	string (UUID)	No	Topic ID for context
+chapterId	string (UUID)	No	Chapter ID for context
+language	string	No	"en-IN" (English) or "hi-IN" (Hindi)
+subjectName	string	No	Subject name (Physics, Chemistry, Mathematics, Biology)
+mode	string	No	"full" (default) or "detect_topic"
+Response Structure
+
+{
+  "cached": false,
+  "cache_id": "uuid-for-audio-saving",
+  "answer": "Full narration text combined from all slides...",
+  "presentationSlides": [
+    {
+      "title": "Introduction to Newton's Laws",
+      "content": "Newton's Laws of Motion describe the relationship between **force** and **motion**...",
+      "narration": "Hello students! Today we're going to explore one of the most fundamental concepts in physics...",
+      "keyPoints": [
+        "First Law: Law of Inertia",
+        "Second Law: F = ma",
+        "Third Law: Action-Reaction"
+      ],
+      "formula": "F = ma",
+      "infographic": "Diagram showing all three Newton's laws with examples",
+      "infographicUrl": "data:image/png;base64,iVBORw0KGgo...",
+      "isStory": false,
+      "isTips": false
+    },
+    // ... 5 more slides (total 6 slides)
+  ],
+  "latexFormulas": [
+    {
+      "formula": "F = ma",
+      "explanation": "Force equals mass times acceleration"
+    }
+  ],
+  "keyPoints": [
+    "Newton's First Law describes inertia",
+    "Second Law relates force to acceleration",
+    "Third Law explains action-reaction pairs"
+  ],
+  "followUpQuestions": [
+    "What is the difference between mass and weight?",
+    "How does friction affect Newton's Laws?"
+  ],
+  "narrationText": "Combined narration from all slides...",
+  "subjectName": "Physics",
+  "detected_topic": "Newton's Laws of Motion",
+  "related_concepts": ["Inertia", "Force", "Acceleration", "Momentum"]
+}
+3. Topic Detection Mode (Quick Analysis)
+Request
+
+{
+  "question": "What is photosynthesis?",
+  "subjectName": "Biology",
+  "mode": "detect_topic"
+}
+Response
+
+{
+  "detected_topic": "Photosynthesis",
+  "description": "The process by which plants convert light energy into chemical energy",
+  "related_concepts": ["Chlorophyll", "Carbon Dioxide", "Glucose", "Light Energy"],
+  "confidence": 0.95
+}
+4. Slide Structure (6 Mandatory Slides)
+Each presentation MUST have exactly 6 slides:
+
+Slide #	Type	Purpose
+1	Introduction	Topic overview, definition, key terms
+2	Core Concept	Main explanation with formulas
+3	Example	Step-by-step worked example
+4	Advanced Points	Nuances, edge cases, details
+5	Story (isStory: true)	Real-world analogy/story for memory
+6	Tips & Tricks (isTips: true)	Mnemonics, memory techniques
+Slide Object Structure
+
+interface PresentationSlide {
+  title: string;           // Slide title
+  content: string;         // Main content with **bold** markdown
+  narration: string;       // 150-250 words for TTS (spoken text)
+  keyPoints: string[];     // 3-5 bullet points
+  formula?: string;        // LaTeX formula (e.g., "E = mc^2")
+  infographic?: string;    // Description for AI image generation
+  infographicUrl?: string; // Generated image (base64 or URL)
+  videoUrl?: string;       // Video for story slide (optional)
+  isStory?: boolean;       // true for slide 5
+  isTips?: boolean;        // true for slide 6
+}
+5. Text-to-Speech API (Sarvam TTS)
+Endpoint
+POST https://api.sarvam.ai/text-to-speech
+Headers
+api-subscription-key: YOUR_SARVAM_API_KEY
+Content-Type: application/json
+Request Payload
+
+{
+  "inputs": ["Hello students, today we will learn about Newton's Laws of Motion."],
+  "target_language_code": "en-IN",
+  "speaker": "meera",
+  "pitch": 0,
+  "pace": 0.9,
+  "loudness": 1.5,
+  "speech_sample_rate": 22050,
+  "enable_preprocessing": true,
+  "model": "bulbul:v1"
+}
+Supported Languages & Speakers
+Language	Code	Speakers
+English (India)	en-IN	meera, arvind
+Hindi	hi-IN	meera, arvind
+Bengali	bn-IN	meera, arvind
+Kannada	kn-IN	meera, arvind
+Tamil	ta-IN	meera, arvind
+Telugu	te-IN	meera, arvind
+Marathi	mr-IN	meera, arvind
+Gujarati	gu-IN	meera, arvind
+Malayalam	ml-IN	meera, arvind
+Punjabi	pa-IN	meera, arvind
+Odia	od-IN	meera, arvind
+Response
+
+{
+  "audios": ["base64-encoded-audio-data"]
+}
+The audio is returned as base64-encoded WAV/MP3. Convert to playable format in mobile app.
+
+6. Flow States & Animations
+State Machine
+idle → thinking → topic-detected → preparing → preparing-audio → ready
+State	Duration	Animation	Description
+idle	-	Input form visible	User can type/speak question
+thinking	2-3s	Brain orbiting animation	AI analyzing question
+topic-detected	1-2s	Target lock animation	Show detected topic
+preparing	5-15s	Slides building animation	AI generating slides & images
+preparing-audio	5-20s	Audio wave animation	Pre-caching TTS for all slides
+ready	-	Presentation visible	Show slides with playback controls
+Animation Specifications
+1. Thinking Animation
+Central: Pulsing brain icon (48x48px)
+Orbiting: Lightbulb (slow), Sparkles (medium), Zap (fast)
+Background: 20 floating particles
+Neural network: 8 pulsing connection lines
+Text: "Understanding your question..."
+2. Topic Detected Animation
+Central: Target icon (48x48px)
+Same orbital elements as thinking
+Text: "Now I understand..."
+Sub-text: "You're looking for {topicName}"
+3. Preparation Animation
+Steps cycle through:
+"Creating slides for {topicName}"
+"Preparing presentation for {topicName}"
+Progress indicator with step count
+4. Audio Preparation Animation
+Text: "Preparing voice narration..."
+Progress bar: "{current}/{total} slides ready"
+Volume icon animation
+CSS Animations (Tailwind)
+
+/* Add to tailwind.config.ts */
+keyframes: {
+  'orbit-slow': {
+    '0%': { transform: 'rotate(0deg)' },
+    '100%': { transform: 'rotate(360deg)' }
+  },
+  'orbit-medium': {
+    '0%': { transform: 'rotate(0deg)' },
+    '100%': { transform: 'rotate(-360deg)' }
+  },
+  'orbit-fast': {
+    '0%': { transform: 'rotate(0deg)' },
+    '100%': { transform: 'rotate(360deg)' }
+  },
+  'brain-pulse': {
+    '0%, 100%': { transform: 'scale(1)' },
+    '50%': { transform: 'scale(1.05)' }
+  },
+  'glow-pulse': {
+    '0%, 100%': { opacity: 0.3 },
+    '50%': { opacity: 0.6 }
+  },
+  'float-particle': {
+    '0%, 100%': { transform: 'translateY(0) translateX(0)', opacity: 0.2 },
+    '50%': { transform: 'translateY(-20px) translateX(10px)', opacity: 0.5 }
+  }
+},
+animation: {
+  'orbit-slow': 'orbit-slow 8s linear infinite',
+  'orbit-medium': 'orbit-medium 5s linear infinite',
+  'orbit-fast': 'orbit-fast 3s linear infinite',
+  'brain-pulse': 'brain-pulse 2s ease-in-out infinite',
+  'glow-pulse': 'glow-pulse 2s ease-in-out infinite',
+  'float-particle': 'float-particle 3s ease-in-out infinite'
+}
+7. Presentation UI Layout
+Main Screen Layout
+┌─────────────────────────────────────┐
+│ [Back] Subject Name AI Teacher      │
+├─────────────────────────────────────┤
+│                                     │
+│  ┌─────────────┐  ┌──────────────┐  │
+│  │  FORMULA    │  │  INFOGRAPHIC │  │
+│  │  & KEY      │  │  IMAGE       │  │
+│  │  POINTS     │  │              │  │
+│  │             │  │              │  │
+│  └─────────────┘  └──────────────┘  │
+│                                     │
+├─────────────────────────────────────┤
+│ [Subtitle Bar - Synced with Audio]  │
+├─────────────────────────────────────┤
+│ ⏮ ⏪ ▶️ ⏩ ⏭ 🔊 ⚙️               │
+│ Slide 1/6  ──●────────── 0:45/3:20  │
+└─────────────────────────────────────┘
+Left Panel (40% width)
+Title at top
+Formula in LaTeX (use KaTeX library)
+Key points as bullet list
+Right Panel (60% width)
+Infographic image (full height)
+Zoom on tap (40% → 100% → back)
+Infographic Zoom Animation (40-40-20 Rule)
+40% of slide duration: Normal view (split layout)
+40% of slide duration: Zoomed view (infographic fullscreen)
+20% of slide duration: Return to normal
+Bottom Controls
+Play/Pause button
+Previous/Next slide
+Mute button
+Speed control (0.5x, 1x, 1.5x, 2x)
+Progress bar with time display
+Fullscreen toggle
+8. Voice Input (Speech-to-Text)
+Use platform native APIs:
+
+iOS: Speech framework
+Android: SpeechRecognizer API
+React Native: react-native-voice
+Flow
+User taps microphone button
+Start listening animation (pulsing mic icon)
+Real-time transcript appears in input field
+When user stops speaking (1s silence), auto-submit
+Transition to "thinking" state
+9. Audio Pre-caching Strategy
+Before showing presentation, pre-cache ALL audio:
+
+
+async function precacheAllSlides(slides, language) {
+  const total = slides.length;
+  let cached = 0;
+  
+  for (const slide of slides) {
+    const text = cleanTextForTTS(slide.narration);
+    const audio = await fetchTTS(text, language);
+    await cacheAudio(text, language, audio);
+    cached++;
+    onProgress(cached, total); // Update UI
+  }
+}
+Text Cleaning for TTS
+Remove markdown (bold, italic)
+Convert LaTeX to spoken form: $E = mc^2$ → "E equals m c squared"
+Remove special characters
+Limit to 500 characters per chunk
+10. Error Handling
+API Errors
+Status	Error	Action
+400	Question is required	Show validation error
+402	Payment required	Show "Add credits" message
+429	Rate limit exceeded	Show "Try again in 1 minute"
+500	Unknown error	Show "Please try again"
+Subject Relevance Check
+If question is not related to the subject, API returns:
+
+
+{
+  "presentationSlides": [{
+    "title": "Subject Scope",
+    "content": "I am the Physics AI Professor. Your question appears to be related to a different subject.",
+    "keyPoints": ["Ask questions about Physics", "Choose the right AI Professor for other subjects"]
+  }]
+}
+11. Database Tables (For History)
+teaching_qa_cache
+
+CREATE TABLE teaching_qa_cache (
+  id UUID PRIMARY KEY,
+  topic_id UUID,
+  chapter_id UUID,
+  question_hash TEXT,
+  question_text TEXT,
+  answer_text TEXT,
+  presentation_slides JSONB,
+  latex_formulas JSONB,
+  language TEXT,
+  audio_urls JSONB,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+Fetch History
+GET https://oxwhqvsoelqqsblmqkxx.supabase.co/rest/v1/teaching_qa_cache?select=*&order=created_at.desc&limit=20
+12. Complete Mobile Implementation Checklist
+ API integration with auth headers
+ State machine for flow states
+ Thinking animation (brain + orbits)
+ Topic detected animation
+ Preparation animation with progress
+ Audio preparation with progress bar
+ Slide renderer (2-column layout)
+ LaTeX formula rendering (KaTeX)
+ Infographic display with zoom
+ TTS audio playback with controls
+ Subtitle sync with audio
+ Voice input (speech-to-text)
+ Playback controls (play/pause/speed)
+ History screen
+ Error handling
+ Offline caching (optional)

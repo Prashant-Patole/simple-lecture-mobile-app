@@ -1,0 +1,380 @@
+SimpleLecture Blog System — Complete Specification for Mobile App
+API Endpoint (Supabase REST)
+Base URL: https://oxwhqvsoelqqsblmqkxx.supabase.co/rest/v1
+
+Headers (all requests):
+
+apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im94d2hxdnNvZWxxcXNibG1xa3h4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk1MTU4NTgsImV4cCI6MjA3NTA5MTg1OH0.nZbWSb9AQK5uGAQmc7zXAceTHm9GRQJvqkg4-LNo_DM
+Authorization: Bearer <same anon key>
+Content-Type: application/json
+1. Blog Listing — GET all published posts
+Request:
+
+GET /blog_posts?status=eq.published&order=published_at.desc&select=id,title,slug,meta_description,keywords,featured_image_url,published_at,course_id,courses(name,slug)
+Response — Array of:
+
+
+{
+  "id": "uuid",
+  "title": "NEET UG Complete Preparation...",
+  "slug": "neet-ug-complete-preparation-...",
+  "meta_description": "A comprehensive guide to...",
+  "keywords": ["NEET", "medical entrance", "biology"],
+  "featured_image_url": "https://images.unsplash.com/photo-...",
+  "published_at": "2026-03-11T06:15:00Z",
+  "course_id": "uuid or null",
+  "courses": { "name": "NEET UG", "slug": "neet-ug" }  // or null
+}
+2. Single Blog Post — GET by slug
+Request:
+
+GET /blog_posts?slug=eq.{slug}&status=eq.published&select=*,courses(name,slug)
+Response — Single object:
+
+
+{
+  "id": "uuid",
+  "title": "Post Title",
+  "slug": "post-slug",
+  "meta_description": "SEO description",
+  "keywords": ["keyword1", "keyword2"],
+  "featured_image_url": "https://images.unsplash.com/photo-...",
+  "published_at": "2026-03-11T06:15:00Z",
+  "course_id": "uuid or null",
+  "courses": { "name": "Course Name", "slug": "course-slug" },
+  "sections": [
+    {
+      "heading": "Section Title",
+      "content": "Paragraph text... can be multiple lines with \\n",
+      "image_url": "https://images.unsplash.com/photo-..." 
+    },
+    {
+      "heading": "Another Section",
+      "content": "More content...",
+      "image_url": "https://images.unsplash.com/photo-..."
+    }
+  ]
+}
+sections is a JSONB array — always 5-6 items. Each section has heading, content, and image_url.
+
+3. Blog Listing Screen Layout
+
+┌─────────────────────────────┐
+│  ✨ SimpleLecture Blog      │
+│                             │
+│  Insights for               │
+│  Smarter Learning  (gradient│
+│                    text)    │
+│  Subtitle text...           │
+├─────────────────────────────┤
+│                             │
+│  ┌─────────────────────────┐│
+│  │ FEATURED POST           ││
+│  │ ┌───────┬──────────────┐││
+│  │ │ IMAGE │ "Featured"   │││
+│  │ │ (full │  badge       │││
+│  │ │ height│ Title (bold) │││
+│  │ │ left  │ Description  │││
+│  │ │ side) │ Date → Read  │││
+│  │ └───────┴──────────────┘││
+│  └─────────────────────────┘│
+│                             │
+│  ┌───────────┐ ┌───────────┐│
+│  │ POST CARD │ │ POST CARD ││
+│  │ [Image]   │ │ [Image]   ││
+│  │ Date/Tag  │ │ Date/Tag  ││
+│  │ Title     │ │ Title     ││
+│  │ Desc      │ │ Desc      ││
+│  │ Read more→│ │ Read more→││
+│  └───────────┘ └───────────┘│
+└─────────────────────────────┘
+Rules:
+
+First post = featured (large 2-column card: image left, text right)
+Remaining posts = 2-column grid (1 column on mobile)
+Each card: image (h-52, object-cover) → date + course badge → title (line-clamp-2) → description (line-clamp-2) → "Read more →"
+If no featured_image_url, show gradient placeholder with BookOpen icon
+Date format: "MMM d, yyyy" (e.g., "Mar 11, 2026")
+4. Blog Post Detail Screen Layout
+
+┌─────────────────────────────┐
+│  HERO IMAGE (full width)    │
+│  h-320 mobile, h-420 tablet│
+│  gradient overlay on bottom │
+├─────────────────────────────┤
+│  Home / Blog / Post Title   │  ← breadcrumb
+│                             │
+│  POST TITLE (bold, large)   │
+│  📅 March 11, 2026          │
+│  🕐 5 min read              │
+│  [Course Badge]             │
+├─────────────────────────────┤
+│  TABLE OF CONTENTS          │  ← only if >2 sections
+│  (bordered card)            │
+│  # In this article          │
+│  │ Section 1 heading        │
+│  │ Section 2 heading        │
+│  │ Section 3 heading...     │
+├─────────────────────────────┤
+│                             │
+│  SECTION 0:                 │
+│  ── Heading (h2, bold) ──   │
+│  [Section Image, rounded]   │
+│  Drop-cap first letter      │
+│  Content text (leading 1.8) │
+│                             │
+│  ──── 🎯 ────  (divider)   │
+│                             │
+│  SECTION 1:                 │
+│  ── Heading ──              │
+│  [Section Image]            │
+│  Content text               │
+│                             │
+│  ──── 💡 ────  (divider)   │
+│  ... repeat for all sections│
+│                             │
+├─────────────────────────────┤
+│  TOPICS:                    │
+│  [keyword1] [keyword2] ...  │  ← pill badges
+├─────────────────────────────┤
+│  🔗 Share  [Copy link]      │
+├─────────────────────────────┤
+│  COURSE CTA CARD            │
+│  (gradient bg, border)      │
+│  📖 Interested in {course}? │
+│  Explore the full...        │
+│  [View Course Details →]    │
+├─────────────────────────────┤
+│  ← All Blog Posts           │
+└─────────────────────────────┘
+Section rendering rules:
+
+Element	Style
+Section heading	Bold, 24-30px, full width
+Section image	Rounded corners (12px), full width, max-height 400px, object-cover, lazy load
+If image_url is null	Show gradient placeholder (h-48/56) with emoji icon centered
+Section content	16-18px, muted color, line-height 1.8, whitespace pre-line (preserves \n)
+First section only	Drop cap — first character is 4x size, bold, floated left
+Section dividers (between sections)	Horizontal gradient line with emoji in center
+Section emojis cycle	📖 🎯 💡 🚀 📝 ✨ (index % 6)
+Gradient placeholder colors cycle:
+
+0: primary/20 → primary/5
+1: accent/20 → accent/5  
+2: primary/15 → accent/10 → primary/5
+3: accent/15 → primary/10
+4: primary/10 → accent/15
+5: accent/10 → primary/5 → accent/5
+Reading time: Math.max(1, Math.ceil(totalWordCount / 200)) minutes
+
+Keywords: Rendered as outlined pill badges with subtle hover effect
+
+Course CTA: Only shown if courses is not null. Links to /course/{courses.slug}
+
+5. Color Theme
+The app uses CSS variables. Key colors:
+
+primary — brand blue/purple
+accent — secondary color
+foreground — text color
+muted-foreground — secondary text (gray)
+background — page bg
+card — card bg
+border — border color
+For mobile, map these to your app's theme system.
+
+This covers the complete data structure, API endpoints, layout, typography, and rendering logic. The mobile app should replicate this exact structure using native components.
+
+Here's the complete blog system documentation you can share with Replit for the mobile app:
+
+SimpleLecture Blog System — Complete Specification for Mobile App
+API Endpoint (Supabase REST)
+Base URL: https://oxwhqvsoelqqsblmqkxx.supabase.co/rest/v1
+
+Headers (all requests):
+
+apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im94d2hxdnNvZWxxcXNibG1xa3h4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk1MTU4NTgsImV4cCI6MjA3NTA5MTg1OH0.nZbWSb9AQK5uGAQmc7zXAceTHm9GRQJvqkg4-LNo_DM
+Authorization: Bearer <same anon key>
+Content-Type: application/json
+1. Blog Listing — GET all published posts
+Request:
+
+GET /blog_posts?status=eq.published&order=published_at.desc&select=id,title,slug,meta_description,keywords,featured_image_url,published_at,course_id,courses(name,slug)
+Response — Array of:
+
+
+{
+  "id": "uuid",
+  "title": "NEET UG Complete Preparation...",
+  "slug": "neet-ug-complete-preparation-...",
+  "meta_description": "A comprehensive guide to...",
+  "keywords": ["NEET", "medical entrance", "biology"],
+  "featured_image_url": "https://images.unsplash.com/photo-...",
+  "published_at": "2026-03-11T06:15:00Z",
+  "course_id": "uuid or null",
+  "courses": { "name": "NEET UG", "slug": "neet-ug" }  // or null
+}
+2. Single Blog Post — GET by slug
+Request:
+
+GET /blog_posts?slug=eq.{slug}&status=eq.published&select=*,courses(name,slug)
+Response — Single object:
+
+
+{
+  "id": "uuid",
+  "title": "Post Title",
+  "slug": "post-slug",
+  "meta_description": "SEO description",
+  "keywords": ["keyword1", "keyword2"],
+  "featured_image_url": "https://images.unsplash.com/photo-...",
+  "published_at": "2026-03-11T06:15:00Z",
+  "course_id": "uuid or null",
+  "courses": { "name": "Course Name", "slug": "course-slug" },
+  "sections": [
+    {
+      "heading": "Section Title",
+      "content": "Paragraph text... can be multiple lines with \\n",
+      "image_url": "https://images.unsplash.com/photo-..." 
+    },
+    {
+      "heading": "Another Section",
+      "content": "More content...",
+      "image_url": "https://images.unsplash.com/photo-..."
+    }
+  ]
+}
+sections is a JSONB array — always 5-6 items. Each section has heading, content, and image_url.
+
+3. Blog Listing Screen Layout
+
+┌─────────────────────────────┐
+│  ✨ SimpleLecture Blog      │
+│                             │
+│  Insights for               │
+│  Smarter Learning  (gradient│
+│                    text)    │
+│  Subtitle text...           │
+├─────────────────────────────┤
+│                             │
+│  ┌─────────────────────────┐│
+│  │ FEATURED POST           ││
+│  │ ┌───────┬──────────────┐││
+│  │ │ IMAGE │ "Featured"   │││
+│  │ │ (full │  badge       │││
+│  │ │ height│ Title (bold) │││
+│  │ │ left  │ Description  │││
+│  │ │ side) │ Date → Read  │││
+│  │ └───────┴──────────────┘││
+│  └─────────────────────────┘│
+│                             │
+│  ┌───────────┐ ┌───────────┐│
+│  │ POST CARD │ │ POST CARD ││
+│  │ [Image]   │ │ [Image]   ││
+│  │ Date/Tag  │ │ Date/Tag  ││
+│  │ Title     │ │ Title     ││
+│  │ Desc      │ │ Desc      ││
+│  │ Read more→│ │ Read more→││
+│  └───────────┘ └───────────┘│
+└─────────────────────────────┘
+Rules:
+
+First post = featured (large 2-column card: image left, text right)
+Remaining posts = 2-column grid (1 column on mobile)
+Each card: image (h-52, object-cover) → date + course badge → title (line-clamp-2) → description (line-clamp-2) → "Read more →"
+If no featured_image_url, show gradient placeholder with BookOpen icon
+Date format: "MMM d, yyyy" (e.g., "Mar 11, 2026")
+4. Blog Post Detail Screen Layout
+
+┌─────────────────────────────┐
+│  HERO IMAGE (full width)    │
+│  h-320 mobile, h-420 tablet│
+│  gradient overlay on bottom │
+├─────────────────────────────┤
+│  Home / Blog / Post Title   │  ← breadcrumb
+│                             │
+│  POST TITLE (bold, large)   │
+│  📅 March 11, 2026          │
+│  🕐 5 min read              │
+│  [Course Badge]             │
+├─────────────────────────────┤
+│  TABLE OF CONTENTS          │  ← only if >2 sections
+│  (bordered card)            │
+│  # In this article          │
+│  │ Section 1 heading        │
+│  │ Section 2 heading        │
+│  │ Section 3 heading...     │
+├─────────────────────────────┤
+│                             │
+│  SECTION 0:                 │
+│  ── Heading (h2, bold) ──   │
+│  [Section Image, rounded]   │
+│  Drop-cap first letter      │
+│  Content text (leading 1.8) │
+│                             │
+│  ──── 🎯 ────  (divider)   │
+│                             │
+│  SECTION 1:                 │
+│  ── Heading ──              │
+│  [Section Image]            │
+│  Content text               │
+│                             │
+│  ──── 💡 ────  (divider)   │
+│  ... repeat for all sections│
+│                             │
+├─────────────────────────────┤
+│  TOPICS:                    │
+│  [keyword1] [keyword2] ...  │  ← pill badges
+├─────────────────────────────┤
+│  🔗 Share  [Copy link]      │
+├─────────────────────────────┤
+│  COURSE CTA CARD            │
+│  (gradient bg, border)      │
+│  📖 Interested in {course}? │
+│  Explore the full...        │
+│  [View Course Details →]    │
+├─────────────────────────────┤
+│  ← All Blog Posts           │
+└─────────────────────────────┘
+Section rendering rules:
+
+Element	Style
+Section heading	Bold, 24-30px, full width
+Section image	Rounded corners (12px), full width, max-height 400px, object-cover, lazy load
+If image_url is null	Show gradient placeholder (h-48/56) with emoji icon centered
+Section content	16-18px, muted color, line-height 1.8, whitespace pre-line (preserves \n)
+First section only	Drop cap — first character is 4x size, bold, floated left
+Section dividers (between sections)	Horizontal gradient line with emoji in center
+Section emojis cycle	📖 🎯 💡 🚀 📝 ✨ (index % 6)
+Gradient placeholder colors cycle:
+
+0: primary/20 → primary/5
+1: accent/20 → accent/5  
+2: primary/15 → accent/10 → primary/5
+3: accent/15 → primary/10
+4: primary/10 → accent/15
+5: accent/10 → primary/5 → accent/5
+Reading time: Math.max(1, Math.ceil(totalWordCount / 200)) minutes
+
+Keywords: Rendered as outlined pill badges with subtle hover effect
+
+Course CTA: Only shown if courses is not null. Links to /course/{courses.slug}
+
+5. Color Theme
+The app uses CSS variables. Key colors:
+
+primary — brand blue/purple
+accent — secondary color
+foreground — text color
+muted-foreground — secondary text (gray)
+background — page bg
+card — card bg
+border — border color
+For mobile, map these to your app's theme system.
+
+This covers the complete data structure, API endpoints, layout, typography, and rendering logic. The mobile app should replicate this exact structure using native components.
+
+
+
+
+

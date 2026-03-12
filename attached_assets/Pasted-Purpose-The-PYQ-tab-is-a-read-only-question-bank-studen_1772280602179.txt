@@ -1,0 +1,179 @@
+Purpose
+The PYQ tab is a read-only question bank — students browse previous year questions for exam preparation. There are no submissions, no answers, no grading. It's purely for viewing/studying.
+
+Database Table: pyq_questions
+Each row has these fields:
+
+Column	Type	Notes
+id	UUID	Primary key
+subject_id	UUID	Required — links to popular_subjects
+chapter_id	UUID	Optional filter
+topic_id	UUID	Optional filter
+pyq_type	Enum	"consolidated", "important", or "predictive"
+question_text	Text	Supports LaTeX/math notation (Mathpix format)
+question_format	Enum	"mcq", "subjective", or "true_false"
+options	JSONB	For MCQs: {"A": "text or {text: '...'}", "B": "...", ...}
+marks	Integer	e.g. 1, 2, 4
+difficulty	Enum	"Low", "Medium", "Intermediate", "Advanced"
+question_image_url	Text	Optional image URL
+is_verified	Boolean	Admin verification flag
+created_at	Timestamp	Sort key (newest first)
+API Call (Supabase REST)
+Single endpoint, filtered by query params:
+
+GET https://oxwhqvsoelqqsblmqkxx.supabase.co/rest/v1/pyq_questions
+  ?subject_id=eq.{SUBJECT_UUID}
+  &pyq_type=eq.{consolidated|important|predictive}
+  &order=created_at.desc
+  &limit=1000
+Headers:
+
+apikey: {SUPABASE_ANON_KEY}
+Authorization: Bearer {USER_JWT_TOKEN}
+Optional extra filters (append if provided):
+
+&chapter_id=eq.{CHAPTER_UUID}
+&topic_id=eq.{TOPIC_UUID}
+Using Supabase SDK (JS/Dart/Kotlin):
+
+
+const { data, error } = await supabase
+  .from("pyq_questions")
+  .select("*")
+  .eq("subject_id", subjectId)
+  .eq("pyq_type", "consolidated")  // or "important" or "predictive"
+  .order("created_at", { ascending: false })
+  .limit(1000);
+UI Layout (Mobile)
+Header
+FileText icon + "PYQ's" title, left-aligned
+Tab Bar (3 tabs)
+Consolidated (default active)
+Important
+Predictive
+Horizontal tab strip, tappable segments
+Question Cards (scrollable list)
+Each card contains:
+
+Question number + text: Q1. followed by rendered text (supports LaTeX math via KaTeX)
+Question image (if question_image_url exists): max-height: 192px, object-fit: contain, rounded border
+Options (MCQ only): Single-column list on mobile, each option in a muted background pill showing A., B., etc. Options can also contain LaTeX math
+True/False (if question_format === "true_false"): Two side-by-side pills labeled "True" and "False"
+Subjective: No options shown, just the question text
+Footer badges (horizontal row, wrapping):
+Format badge: mcq, subjective, or true/false (outline style)
+Difficulty badge: Color-coded — Low=green, Medium=yellow, Intermediate=orange, Advanced=red
+Marks badge: e.g. "2 marks" (secondary style)
+Empty State
+When no questions exist for a tab: centered text "No {type} questions available yet."
+
+Loading State
+3 skeleton rectangles (height: 80px, full width, rounded)
+
+Math/LaTeX Rendering
+Question text and option text use Mathpix notation which gets normalized to standard LaTeX before rendering:
+
+The function convertMathpixToStandard(text) converts Mathpix-style delimiters to standard $...$ and $$...$$
+Then rendered with a Markdown+KaTeX pipeline
+For mobile (React Native): Use react-native-katex or react-native-math-view to render LaTeX. Parse the text through the same normalizer logic.
+
+For mobile (Flutter): Use flutter_math_fork or catex package.
+
+Key Behavior Notes
+Subject-level content: PYQs only need a subject_id — they work even without selecting a chapter or topic
+No interaction: Students only read questions. No answer submission, no scoring
+Deep link: The dashboard "Important Questions" button navigates to /learning/{courseId}?subject={subjectId}&tab=pyqs, which auto-selects the PYQ tab
+Tab switching: Changing between Consolidated/Important/Predictive re-fetches from the same table with a different pyq_type filter
+Here's the complete documentation for the PYQ's (Previous Year Questions) Tab for Replit mobile implementation:
+
+Purpose
+The PYQ tab is a read-only question bank — students browse previous year questions for exam preparation. There are no submissions, no answers, no grading. It's purely for viewing/studying.
+
+Database Table: pyq_questions
+Each row has these fields:
+
+Column	Type	Notes
+id	UUID	Primary key
+subject_id	UUID	Required — links to popular_subjects
+chapter_id	UUID	Optional filter
+topic_id	UUID	Optional filter
+pyq_type	Enum	"consolidated", "important", or "predictive"
+question_text	Text	Supports LaTeX/math notation (Mathpix format)
+question_format	Enum	"mcq", "subjective", or "true_false"
+options	JSONB	For MCQs: {"A": "text or {text: '...'}", "B": "...", ...}
+marks	Integer	e.g. 1, 2, 4
+difficulty	Enum	"Low", "Medium", "Intermediate", "Advanced"
+question_image_url	Text	Optional image URL
+is_verified	Boolean	Admin verification flag
+created_at	Timestamp	Sort key (newest first)
+API Call (Supabase REST)
+Single endpoint, filtered by query params:
+
+GET https://oxwhqvsoelqqsblmqkxx.supabase.co/rest/v1/pyq_questions
+  ?subject_id=eq.{SUBJECT_UUID}
+  &pyq_type=eq.{consolidated|important|predictive}
+  &order=created_at.desc
+  &limit=1000
+Headers:
+
+apikey: {SUPABASE_ANON_KEY}
+Authorization: Bearer {USER_JWT_TOKEN}
+Optional extra filters (append if provided):
+
+&chapter_id=eq.{CHAPTER_UUID}
+&topic_id=eq.{TOPIC_UUID}
+Using Supabase SDK (JS/Dart/Kotlin):
+
+
+const { data, error } = await supabase
+  .from("pyq_questions")
+  .select("*")
+  .eq("subject_id", subjectId)
+  .eq("pyq_type", "consolidated")  // or "important" or "predictive"
+  .order("created_at", { ascending: false })
+  .limit(1000);
+UI Layout (Mobile)
+Header
+FileText icon + "PYQ's" title, left-aligned
+Tab Bar (3 tabs)
+Consolidated (default active)
+Important
+Predictive
+Horizontal tab strip, tappable segments
+Question Cards (scrollable list)
+Each card contains:
+
+Question number + text: Q1. followed by rendered text (supports LaTeX math via KaTeX)
+Question image (if question_image_url exists): max-height: 192px, object-fit: contain, rounded border
+Options (MCQ only): Single-column list on mobile, each option in a muted background pill showing A., B., etc. Options can also contain LaTeX math
+True/False (if question_format === "true_false"): Two side-by-side pills labeled "True" and "False"
+Subjective: No options shown, just the question text
+Footer badges (horizontal row, wrapping):
+Format badge: mcq, subjective, or true/false (outline style)
+Difficulty badge: Color-coded — Low=green, Medium=yellow, Intermediate=orange, Advanced=red
+Marks badge: e.g. "2 marks" (secondary style)
+Empty State
+When no questions exist for a tab: centered text "No {type} questions available yet."
+
+Loading State
+3 skeleton rectangles (height: 80px, full width, rounded)
+
+Math/LaTeX Rendering
+Question text and option text use Mathpix notation which gets normalized to standard LaTeX before rendering:
+
+The function convertMathpixToStandard(text) converts Mathpix-style delimiters to standard $...$ and $$...$$
+Then rendered with a Markdown+KaTeX pipeline
+For mobile (React Native): Use react-native-katex or react-native-math-view to render LaTeX. Parse the text through the same normalizer logic.
+
+For mobile (Flutter): Use flutter_math_fork or catex package.
+
+Key Behavior Notes
+Subject-level content: PYQs only need a subject_id — they work even without selecting a chapter or topic
+No interaction: Students only read questions. No answer submission, no scoring
+Deep link: The dashboard "Important Questions" button navigates to /learning/{courseId}?subject={subjectId}&tab=pyqs, which auto-selects the PYQ tab
+Tab switching: Changing between Consolidated/Important/Predictive re-fetches from the same table with a different pyq_type filter
+
+
+
+
+

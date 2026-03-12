@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Educational Video Player V2</title>
+  <link rel="stylesheet" href="player_v2.css?v=2.5.5">
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+
+<body>
+  <!-- LAYER 0: Black Background (body background) -->
+
+  <div id="player-container">
+    <!-- Header Bar -->
+    <div id="header-bar">
+      <div id="header-logo">Simple Lecture</div>
+      <div id="header-title"></div>
+      <div id="header-spacer"></div>
+    </div>
+
+    <!-- Stage Area: Contains content and avatar layers -->
+    <div id="stage">
+
+      <!-- LAYER 1: Content Display Area -->
+      <div id="content-layer">
+        <div id="section-title"></div>
+        <div id="content-box">
+          <!-- Dynamic content rendered here by section renderers -->
+        </div>
+      </div>
+
+      <!-- LAYER 2: Avatar Area (floating, repositions based on section) -->
+      <div id="avatar-layer">
+        <!-- Hidden video source for chroma keying -->
+        <video id="avatar-video" muted loop playsinline style="display: none;"></video>
+        <!-- Canvas for chroma-keyed output -->
+        <canvas id="avatar-canvas"></canvas>
+      </div>
+
+      <!-- Content Video Overlay (for Manim/WAN videos) -->
+      <div id="video-layer" class="hidden">
+        <video id="content-video" playsinline></video>
+      </div>
+
+    </div>
+
+    <!-- Controls Bar -->
+    <div id="controls-bar">
+      <button id="btn-play" class="control-btn" title="Play/Pause">
+        <span class="icon-play">▶</span>
+        <span class="icon-pause hidden">⏸</span>
+      </button>
+
+      <button id="btn-prev" class="control-btn" title="Previous Slide">⏮</button>
+      <button id="btn-next" class="control-btn" title="Next Slide">⏭</button>
+
+      <div id="timeline-container">
+        <div id="timeline-track">
+          <div id="timeline-fill"></div>
+          <div id="timeline-handle"></div>
+        </div>
+        <span id="time-display">0:00 / 0:00</span>
+      </div>
+
+      <select id="slide-picker" title="Jump to Slide">
+        <!-- Populated dynamically -->
+      </select>
+
+      <button id="btn-fullscreen" class="control-btn" title="Fullscreen">⛶</button>
+      <button id="btn-dev" class="control-btn" title="Toggle Dev Panel (D)">Dev</button>
+    </div>
+
+    <!-- Dev Panel -->
+    <div id="dev-panel">
+      <div class="dev-header">DEV CONTROLS</div>
+
+      <div class="dev-section">
+        <label>Avatar Scale</label>
+        <input type="range" id="dev-avatar-scale" min="0.5" max="1.5" step="0.05" value="1.0">
+      </div>
+
+      <div class="dev-section">
+        <label>Chroma Threshold</label>
+        <input type="range" id="dev-chroma-threshold" min="50" max="200" step="5" value="100">
+      </div>
+
+      <div class="dev-section">
+        <label>Content Width %</label>
+        <input type="range" id="dev-content-width" min="50" max="90" step="5" value="70">
+      </div>
+
+      <div class="dev-info">
+        <div class="info-row"><span>Slide:</span><span id="dev-slide-info">-</span></div>
+        <div class="info-row"><span>Section:</span><span id="dev-section-info">-</span></div>
+        <div class="info-row"><span>Audio:</span><span id="dev-audio-info">-</span></div>
+        <div class="info-row"><span>Video:</span><span id="dev-video-info">-</span></div>
+      </div>
+
+      <div class="dev-segment-list" id="dev-segments">
+        <!-- Populated with current slide segments -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Hidden Audio Element -->
+  <audio id="narration-audio"></audio>
+
+  <script src="player_v2.js?v=2.5.5"></script>
+</body>
+
+</html>

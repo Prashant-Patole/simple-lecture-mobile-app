@@ -1,0 +1,3332 @@
+[
+    {
+        "id": "3c2f5fed-8660-4ab9-bab4-56528811145d",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "Given below are two statements:\n\nStatement (I) : Planck's constant and angular momentum have the same dimensions.\n\nStatement (II) : Linear momentum and moment of force have the same dimensions.\n\nIn light of the above statements, choose the correct answer from the options given below :",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": "Statement I is true but Statement II is false"
+            },
+            "B": {
+                "text": "Both Statement I and Statement II are false"
+            },
+            "C": {
+                "text": "Both Statement I and Statement II are true"
+            },
+            "D": {
+                "text": "Statement I is false but Statement II is true"
+            }
+        },
+        "correct_answer": "A",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.08304+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "8a45414b-8973-4179-b44b-614eab86788c",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "Position of an ant (S in metres) moving in Y-Z plane is given by  $S = 2t^2\\hat{j} + 5\\hat{k}$  (where  $t$  is in second). The magnitude and direction of velocity of the ant at  $t = 1$  s will be :",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": " $16 \\text{ m s}^{-1}$  in y-direction"
+            },
+            "B": {
+                "text": " $4 \\text{ m s}^{-1}$  in x-direction"
+            },
+            "C": {
+                "text": " $9 \\text{ m s}^{-1}$  in z-direction"
+            },
+            "D": {
+                "text": " $4 \\text{ m s}^{-1}$  in y-direction"
+            }
+        },
+        "correct_answer": "D",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.08304+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "43a965cb-2f6d-4905-a5e2-e9ab8b58857f",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "A train is moving with a speed of  $12 \\text{ m s}^{-1}$  on rails which are  $1.5$  m apart. To negotiate a curve radius  $400$  m, the height by which the outer rail should be raised with respect to the inner rail is (Given,  $g = 10 \\text{ m s}^{-2}$ ):",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": " $6.0$  cm"
+            },
+            "B": {
+                "text": " $5.4$  cm"
+            },
+            "C": {
+                "text": " $4.8$  cm"
+            },
+            "D": {
+                "text": " $4.2$  cm"
+            }
+        },
+        "correct_answer": "B",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.08304+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "64ef54ca-b3c1-44eb-b540-1377cb8198ac",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "Two bodies of mass  $4$  g and  $25$  g are moving with equal kinetic energies. The ratio of magnitude of their linear momentum is :",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": " $3 : 5$ "
+            },
+            "B": {
+                "text": " $5 : 4$ "
+            },
+            "C": {
+                "text": " $2 : 5$ "
+            },
+            "D": {
+                "text": " $4 : 5$ "
+            }
+        },
+        "correct_answer": "C",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.08304+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "8734b17e-881e-490c-86e1-79f756a994c8",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "A body of mass  $1000$  kg is moving horizontally with a velocity  $6 \\text{ m s}^{-1}$ . If  $200$  kg extra mass is added, the final velocity (in  $\\text{m s}^{-1}$ ) is:",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": " $6$ "
+            },
+            "B": {
+                "text": " $2$ "
+            },
+            "C": {
+                "text": " $3$ "
+            },
+            "D": {
+                "text": " $5$ "
+            }
+        },
+        "correct_answer": "D",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.08304+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "78951dc0-fcff-43d2-9047-c2cce72e838c",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "The acceleration due to gravity on the surface of earth is  $g$ . If the diameter of earth reduces to half of its original value and mass remains constant, then acceleration due to gravity on the surface of earth would be :",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": " $\\frac{g}{4}$ "
+            },
+            "B": {
+                "text": " $2g$ "
+            },
+            "C": {
+                "text": " $\\frac{g}{2}$ "
+            },
+            "D": {
+                "text": " $4g$ "
+            }
+        },
+        "correct_answer": "D",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.08304+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "e127b896-21a8-4ce6-91e4-98c01dfc5b47",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "Given below are two statements :\n\nStatement (I) : Viscosity of gases is greater than that of liquids.\n\nStatement (II) : Surface tension of a liquid decreases due to the presence of insoluble impurities.\n\nIn the light of the above statements, choose the most appropriate answer from the options given below :",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": "Statement I is correct but statement II is incorrect"
+            },
+            "B": {
+                "text": "Statement I is incorrect but Statement II is correct"
+            },
+            "C": {
+                "text": "Both Statement I and Statement II are incorrect"
+            },
+            "D": {
+                "text": "Both Statement I and Statement II are correct"
+            }
+        },
+        "correct_answer": "B",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.08304+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "b89fcdbb-eac5-4672-9aed-624c2c86be89",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": " $0.08$  kg air is heated at constant volume through  $5^\\circ \\text{C}$ . The specific heat of air at constant volume is  $0.17 \\text{ kcal kg}^{-1} \\text{ } ^\\circ \\text{C}^{-1}$  and  $1 \\text{ J} = 4.18 \\text{ joule cal}^{-1}$ . The change in its internal energy is approximately.",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": " $318 \\text{ J}$ "
+            },
+            "B": {
+                "text": " $298 \\text{ J}$ "
+            },
+            "C": {
+                "text": " $284 \\text{ J}$ "
+            },
+            "D": {
+                "text": " $142 \\text{ J}$ "
+            }
+        },
+        "correct_answer": "C",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.08304+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "53dccb2e-95fa-45e5-9f4c-210942615010",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "A wire of resistance  $R$  and length  $L$  is cut into 5 equal parts. If these parts are joined parallelly, then resultant resistance will be :",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": " $\\frac{R}{25}$ "
+            },
+            "B": {
+                "text": " $\\frac{R}{5}$ "
+            },
+            "C": {
+                "text": " $25R$ "
+            },
+            "D": {
+                "text": " $5R$ "
+            }
+        },
+        "correct_answer": "A",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.08304+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "e06840a1-829e-48b5-b3c5-3abdadc6aedb",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "A wire of length 10 cm and radius  $\\sqrt{7} \\times 10^{-4}$  m connected across the right gap of a meter bridge. When a resistance of  $4.5 \\Omega$  is connected on the left gap by using a resistance box, the balance length is found to be at 60 cm from the left end. If the resistivity of the wire is  $R \\times 10^{-7}$   $\\Omega$  m, then value of  $R$  is :",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": "63"
+            },
+            "B": {
+                "text": "70"
+            },
+            "C": {
+                "text": "66"
+            },
+            "D": {
+                "text": "35"
+            }
+        },
+        "correct_answer": "C",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.08304+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "a1a09572-7160-4ae4-8237-1e05868f23b6",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "A proton moving with a constant velocity passes through a region of space without any change in its velocity.\n\nIf  $\\vec{E}$  and  $\\vec{B}$  represent the electric and magnetic fields respectively, then the region of space may have :\n\n(A)  $E = 0, B = 0$ ; (B)  $E = 0, B \\neq 0$ ; (C)  $E \\neq 0, B = 0$ ; (D)  $E \\neq 0, B \\neq 0$\n\nChoose the most appropriate answer from the options given below :",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": "(A), (B) and (C) only"
+            },
+            "B": {
+                "text": "(A), (C) and (D) only"
+            },
+            "C": {
+                "text": "(A), (B) and (D) only"
+            },
+            "D": {
+                "text": "(B), (C) and (D) only"
+            }
+        },
+        "correct_answer": "C",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.08304+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "6803a2e8-7d73-4416-8545-343a95fea67d",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "A rectangular loop of length 2.5 m and width 2 m is placed at  $60^\\circ$  to a magnetic field of 4 T. The loop is removed from the field in 10 sec. The average emf induced in the loop during this time is",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": "-2 V"
+            },
+            "B": {
+                "text": "+2 V"
+            },
+            "C": {
+                "text": "+1 V"
+            },
+            "D": {
+                "text": "-1 V"
+            }
+        },
+        "correct_answer": "C",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.08304+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "dfaba177-7041-4d89-9218-1a8c9c2c105f",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "A plane electromagnetic wave propagating in  $x$ -direction is described by\n\n$E_y = (200 \\text{ V m}^{-1}) \\sin[1.5 \\times 10^7 t - 0.05 x]$ ; The intensity of the wave is :\n\n(Use  $\\epsilon_0 = 8.85 \\times 10^{-12}$   $\\text{C}^2 \\text{N}^{-1} \\text{m}^{-2}$ )",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": " $35.4 \\text{ W m}^{-2}$ "
+            },
+            "B": {
+                "text": " $53.1 \\text{ W m}^{-2}$ "
+            },
+            "C": {
+                "text": " $26.6 \\text{ W m}^{-2}$ "
+            },
+            "D": {
+                "text": " $106.2 \\text{ W m}^{-2}$ "
+            }
+        },
+        "correct_answer": "B",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.08304+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "ac147ee7-710a-428b-9509-9fb98ac05c40",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "If the refractive index of the material of a prism is  $\\cot(\\frac{A}{2})$ , where  $A$  is the angle of prism then the angle of minimum deviation will be",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": " $\\pi - 2A$ "
+            },
+            "B": {
+                "text": " $\\frac{\\pi}{2} - 2A$ "
+            },
+            "C": {
+                "text": " $\\pi - A$ "
+            },
+            "D": {
+                "text": " $\\frac{\\pi}{2} - A$ "
+            }
+        },
+        "correct_answer": "A",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.08304+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "0a018408-9b84-4b32-8bc8-b8a10283c099",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "A convex lens of focal length 40 cm forms an image of an extended source of light on a photoelectric cell. A current  $I$  is produced. The lens is replaced by another convex lens having the same diameter but focal length 20 cm. The photoelectric current now is",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": " $\\frac{I}{2}$ "
+            },
+            "B": {
+                "text": " $4I$ "
+            },
+            "C": {
+                "text": " $2I$ "
+            },
+            "D": {
+                "text": " $I$ "
+            }
+        },
+        "correct_answer": "D",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.08304+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "8a5f5d25-dd6c-4e69-9ef5-5cf54675c4c1",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "The radius of third stationary orbit of electron for Bohr's atom is  $R$ . The radius of fourth stationary orbit will be:",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": " $\\frac{4}{3}R$ "
+            },
+            "B": {
+                "text": " $\\frac{16}{9}R$ "
+            },
+            "C": {
+                "text": " $\\frac{3}{4}R$ "
+            },
+            "D": {
+                "text": " $\\frac{9}{16}R$ "
+            }
+        },
+        "correct_answer": "B",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.08304+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "4237353a-5a50-43a5-b5fb-ec5ca43e3da4",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "Which of the following circuits is reverse - biased ?\n\n(1) ![Circuit diagram showing a diode connected in series with a resistor R, with the anode connected to +2V and the cathode connected to ground.]()\n(2) ![Circuit diagram showing a diode connected in series with a resistor R, with the cathode connected to -5V and the anode connected to ground.]()\n(3) ![Circuit diagram showing a diode connected in series with a resistor R, with the anode connected to +2V and the cathode connected to -10V.]()\n(4) ![Circuit diagram showing a diode connected in series with a resistor R, with the cathode connected to +2V and the anode connected to +4V.]()",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": "![Circuit diagram showing a diode connected in series with a resistor R, with the anode connected to +2V and the cathode connected to ground.]()"
+            },
+            "B": {
+                "text": "![Circuit diagram showing a diode connected in series with a resistor R, with the cathode connected to -5V and the anode connected to ground.]()"
+            },
+            "C": {
+                "text": "![Circuit diagram showing a diode connected in series with a resistor R, with the anode connected to +2V and the cathode connected to -10V.]()"
+            },
+            "D": {
+                "text": "![Circuit diagram showing a diode connected in series with a resistor R, with the cathode connected to +2V and the anode connected to +4V.]()"
+            }
+        },
+        "correct_answer": "D",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.08304+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "c1068ffc-ed62-457d-853d-cbf28fc2b7cf",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "Identify the physical quantity that cannot be measured using spherometer :",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": "Radius of curvature of concave surface"
+            },
+            "B": {
+                "text": "Specific rotation of liquids"
+            },
+            "C": {
+                "text": "Thickness of thin plates"
+            },
+            "D": {
+                "text": "Radius of curvature of convex surface"
+            }
+        },
+        "correct_answer": "B",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.08304+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "964b5505-165f-448a-86d6-271455c9fb6c",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "A particle starts from origin at  $t = 0$  with a velocity  $5\\hat{i}$  m  $s^{-1}$  and moves in  $x$ - $y$  plane under action of a force which produces a constant acceleration of  $(3\\hat{i} + 2\\hat{j})$  m  $s^{-2}$ . If the  $x$ -coordinate of the particle at that instant is 84 m, then the speed of the particle at this time is  $\\sqrt{\\alpha}$  m  $s^{-1}$ . The value of  $\\alpha$  is _____.",
+        "question_type": "integer",
+        "options": {
+            "A": {
+                "text": ""
+            },
+            "B": {
+                "text": ""
+            },
+            "C": {
+                "text": ""
+            },
+            "D": {
+                "text": ""
+            }
+        },
+        "correct_answer": "673",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.08304+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "ee21cbe7-d7ad-4642-a886-f845bc74e91e",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "Four particles, each of mass 1 kg are placed at four corners of a square of side 2 m. The moment of inertia of the system about an axis perpendicular to its plane and passing through one of its vertex is _____ kg  $m^2$ .",
+        "question_type": "integer",
+        "options": {
+            "A": {
+                "text": ""
+            },
+            "B": {
+                "text": ""
+            },
+            "C": {
+                "text": ""
+            },
+            "D": {
+                "text": ""
+            }
+        },
+        "correct_answer": "16",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.08304+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "d0c3c6f7-13ac-4b0d-af35-7d0c4333d18a",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "If average depth of an ocean is 4000 m and the bulk modulus of water is  $2 \\times 10^9$  N  $m^{-2}$ , then fractional compression  $\\frac{\\Delta V}{V}$  of water at the bottom of ocean is  $\\alpha \\times 10^{-2}$ . The value of  $\\alpha$  is _____, (Given,  $g = 10$  m  $s^{-2}$ ,  $\\rho = 1000$  kg  $m^{-3}$ )",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": ""
+            },
+            "B": {
+                "text": ""
+            },
+            "C": {
+                "text": ""
+            },
+            "D": {
+                "text": ""
+            }
+        },
+        "correct_answer": "B",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.08304+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "6eaee799-02f2-493d-a33a-9cb80c24d067",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "A particle executes simple harmonic motion with an amplitude of 4 cm. At the mean position, velocity of the particle is 10 cm  $s^{-1}$ . The distance of the particle from the mean position when its speed becomes 5 cm  $s^{-1}$  is  $\\sqrt{\\alpha}$  cm, where  $\\alpha$  = _____.",
+        "question_type": "integer",
+        "options": {
+            "A": {
+                "text": ""
+            },
+            "B": {
+                "text": ""
+            },
+            "C": {
+                "text": ""
+            },
+            "D": {
+                "text": ""
+            }
+        },
+        "correct_answer": "12",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.08304+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "aadc9acc-169d-47df-bbb3-7c73670cee18",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "A thin metallic wire having cross sectional area of  $10^{-4} \\text{ m}^2$  is used to make a ring of radius 30 cm. A positive charge of  $2\\pi \\text{ C}$  is uniformly distributed over the ring, while another positive charge of  $30 \\text{ pC}$  is kept at the centre of the ring. The tension in the ring is ________ N; provided that the ring does not get deformed (neglect the influence of gravity).\n\n(Given,  $\\frac{1}{4\\pi\\epsilon_0} = 9 \\times 10^9 \\text{ SI units}$ )",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": ""
+            },
+            "B": {
+                "text": ""
+            },
+            "C": {
+                "text": ""
+            },
+            "D": {
+                "text": ""
+            }
+        },
+        "correct_answer": "C",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.08304+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "2f7021b2-5d22-4bfb-a52b-8cc7ec25b8bc",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "The charge accumulated on the capacitor connected in the following circuit is ________  $\\mu\\text{C}$ .\n\n(Given  $C = 150 \\mu\\text{F}$ )\n\n![Circuit diagram showing a 10 V battery connected to a network of resistors and a capacitor. The network consists of two parallel branches. The left branch contains a 1 Ohm resistor in series with a parallel combination of a 6 Ohm resistor and a capacitor C. The right branch contains a 2 Ohm resistor in series with a parallel combination of a 4 Ohm resistor and a 4 Ohm resistor. The capacitor C is connected between points A and B.](ab5392ddbf4af970d4ef7bff2e4df925_img.jpg)\n\nCircuit diagram showing a 10 V battery connected to a network of resistors and a capacitor. The network consists of two parallel branches. The left branch contains a 1 Ohm resistor in series with a parallel combination of a 6 Ohm resistor and a capacitor C. The right branch contains a 2 Ohm resistor in series with a parallel combination of a 4 Ohm resistor and a 4 Ohm resistor. The capacitor C is connected between points A and B.",
+        "question_type": "integer",
+        "options": {
+            "A": {
+                "text": ""
+            },
+            "B": {
+                "text": ""
+            },
+            "C": {
+                "text": ""
+            },
+            "D": {
+                "text": ""
+            }
+        },
+        "correct_answer": "400",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.08304+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "8dd36df4-0e21-46eb-a79a-e30e1e840b4d",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "Two long, straight wires carry equal currents in opposite directions as shown in figure. The separation between the wires is 5.0 cm. The magnitude of the magnetic field at a point P midway between the wires is ________  $\\mu\\text{T}$ . (Given:  $\\mu_0 = 4\\pi \\times 10^{-7} \\text{ T m A}^{-1}$ )\n\n![Diagram showing two parallel long straight wires carrying current. The left wire carries 10 A upwards, and the right wire carries 10 A downwards. Point P is located midway between the wires.](29d638143e0fbfb368ab967dac226c2a_img.jpg)\n\nDiagram showing two parallel long straight wires carrying current. The left wire carries 10 A upwards, and the right wire carries 10 A downwards. Point P is located midway between the wires.",
+        "question_type": "integer",
+        "options": {
+            "A": {
+                "text": ""
+            },
+            "B": {
+                "text": ""
+            },
+            "C": {
+                "text": ""
+            },
+            "D": {
+                "text": ""
+            }
+        },
+        "correct_answer": "160",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.08304+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "da0c55a3-6f26-4571-9deb-700e537da753",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "Two coils have mutual inductance 0.002 H. The current changes in the first coil according to the relation\n\n$i = i_0 \\sin \\omega t$ , where  $i_0 = 5 \\text{ A}$  and  $\\omega = 50\\pi \\text{ rad s}^{-1}$ . The maximum value of emf in the second coil is  $\\frac{\\pi}{\\alpha} \\text{ V}$ . The value of  $\\alpha$  is _________.",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": ""
+            },
+            "B": {
+                "text": ""
+            },
+            "C": {
+                "text": ""
+            },
+            "D": {
+                "text": ""
+            }
+        },
+        "correct_answer": "B",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.08304+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "5ad401f8-0ff5-4592-a535-a630acedf612",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "Two immiscible liquids of refractive indices  $\\frac{8}{5}$  and  $\\frac{3}{2}$  respectively are put in a beaker as shown in the figure. The height of each column is 6 cm. A coin is placed at the bottom of the beaker. For near normal vision, the apparent depth of the coin is  $\\frac{4}{\\alpha} \\text{ cm}$ . The value of  $\\alpha$  is _________.\n\n![Diagram of a beaker containing two immiscible liquids. The top liquid has refractive index mu_1 = 3/2 and height 6 cm. The bottom liquid has refractive index mu_2 = 8/5 and height 6 cm. A coin is placed at the bottom of the beaker.](0bd48c1eecb2ba5149750173c9cb1138_img.jpg)\n\nDiagram of a beaker containing two immiscible liquids. The top liquid has refractive index mu_1 = 3/2 and height 6 cm. The bottom liquid has refractive index mu_2 = 8/5 and height 6 cm. A coin is placed at the bottom of the beaker.",
+        "question_type": "integer",
+        "options": {
+            "A": {
+                "text": ""
+            },
+            "B": {
+                "text": ""
+            },
+            "C": {
+                "text": ""
+            },
+            "D": {
+                "text": ""
+            }
+        },
+        "correct_answer": "31",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.08304+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "fda8deca-00fb-4fca-bba7-e6710ae21c6c",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "In a nuclear fission process, a high mass nuclide ( $A \\approx 236$ ) with binding energy 7.6 MeV / Nucleon dissociated into two middle mass nuclides ( $A \\approx 118$ ), having binding energy of 8.6 MeV / Nucleon. The energy released in the process would be _________ MeV.",
+        "question_type": "integer",
+        "options": {
+            "A": {
+                "text": ""
+            },
+            "B": {
+                "text": ""
+            },
+            "C": {
+                "text": ""
+            },
+            "D": {
+                "text": ""
+            }
+        },
+        "correct_answer": "236",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.08304+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "502cc2a5-bbe4-4966-b397-c3fc747f621e",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "The electronic configuration for Neodymium is:\n\n[Atomic Number for Neodymium 60]",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": " $[Xe] 4f^4 6s^2$ "
+            },
+            "B": {
+                "text": " $[Xe] 5f^4 7s^2$ "
+            },
+            "C": {
+                "text": " $[Xe] 4f^6 6s^2$ "
+            },
+            "D": {
+                "text": " $[Xe] 4f^5 5d^1 6s^2$ "
+            }
+        },
+        "correct_answer": "A",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.08304+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "ce88df41-5b52-40ea-9725-badc4bbd504d",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "Which of the following electronic configuration would be associated with the highest magnetic moment ?",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": " $[Ar] 3d^7$ "
+            },
+            "B": {
+                "text": " $[Ar] 3d^8$ "
+            },
+            "C": {
+                "text": " $[Ar] 3d^3$ "
+            },
+            "D": {
+                "text": " $[Ar] 3d^6$ "
+            }
+        },
+        "correct_answer": "D",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.08304+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "7aa80453-be9d-4d8f-a071-b4f831492e91",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "Choose the polar molecule from the following :",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": " $CCl_4$ "
+            },
+            "B": {
+                "text": " $CO_2$ "
+            },
+            "C": {
+                "text": " $CH_2 = CH_2$ "
+            },
+            "D": {
+                "text": " $CHCl_3$ "
+            }
+        },
+        "correct_answer": "D",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.08304+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "d7d3dd8d-817c-46a0-ac96-06769e49eb6f",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "Which of the following is strongest Bronsted base?",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": " $NH_2$ "
+            },
+            "B": {
+                "text": " $NH$ "
+            },
+            "C": {
+                "text": " $NH$ "
+            },
+            "D": {
+                "text": " $N$ "
+            }
+        },
+        "correct_answer": "D",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.08304+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "f0c04745-18cf-4e69-8181-a3e7753061bd",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "Given below are two statements :\n\n**Statement (I)** : Aqueous solution of ammonium carbonate is basic.\n\n**Statement (II)** : Acidic/basic nature of salt solution of a salt of weak acid and weak base depends on  $K_a$  and  $K_b$  value of acid and the base forming it.\n\nIn the light of the above statements, choose the most appropriate answer from the options given below :",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": "Both Statement I and Statement II are correct"
+            },
+            "B": {
+                "text": "Statement I is correct but Statement II is incorrect"
+            },
+            "C": {
+                "text": "Both Statement I and Statement II are incorrect"
+            },
+            "D": {
+                "text": "Statement I is incorrect but Statement II is correct"
+            }
+        },
+        "correct_answer": "A",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.08304+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "425a90a9-dc55-41c5-a60a-95d3ecae3bcf",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "Given below are two statements : one is labelled as Assertion (A) and the other is labelled as Reason (R).\n\n**Assertion (A)** : Melting point of Boron (2453 K) is unusually high in group 13 elements.\n\n**Reason (R)** : Solid Boron has very strong crystalline lattice.\n\nIn the light of the above statements, choose the most appropriate answer from the options given below :",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": "Both (A) and (R) are correct but (R) is not the correct explanation of (A)"
+            },
+            "B": {
+                "text": "Both (A) and (R) are correct and (R) is the correct explanation of (A)"
+            },
+            "C": {
+                "text": "(A) is true but (R) is false"
+            },
+            "D": {
+                "text": "(A) is false but (R) is true"
+            }
+        },
+        "correct_answer": "B",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.08304+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "9855c991-b488-462d-b927-089c73ddc575",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "IUPAC name of following compound (P) is :",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": "1-Ethyl-5,5-dimethylcyclohexane"
+            },
+            "B": {
+                "text": "3-Ethyl-1,1-dimethylcyclohexane"
+            },
+            "C": {
+                "text": "1-Ethyl-3,3-dimethylcyclohexane"
+            },
+            "D": {
+                "text": "1,1-Dimethyl-3-ethylcyclohexane"
+            }
+        },
+        "correct_answer": "B",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.08304+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "04c725a8-d68e-4ad6-9b19-2d76b284914d",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "![Chemical structure of Cyclohexene, a six-membered ring with one double bond.]()\n\nCyclohexene is _____ type of an organic compound.",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": "Benzenoid aromatic"
+            },
+            "B": {
+                "text": "Benzenoid non-aromatic"
+            },
+            "C": {
+                "text": "Acyclic"
+            },
+            "D": {
+                "text": "Alicyclic"
+            }
+        },
+        "correct_answer": "D",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.08304+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "5255b819-cd89-48a1-bb68-aecd3231ea66",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "Which of the following has highly acidic hydrogen?\n\n(1)\n\n![Chemical structure of 2-methylbutanoic acid, showing the carboxylic acid group and a methyl group attached to the alpha carbon.]()\n\n(2)\n\n![Chemical structure of 2,2-dimethylpropanoic acid, showing the carboxylic acid group and two methyl groups attached to the alpha carbon.]()\n\n(3)\n\n![Chemical structure of 2-methylbutan-2-ol, showing a secondary alcohol group.]()\n\n(4)\n\n![Chemical structure of 2,2-dimethylpropan-2-ol, showing a secondary alcohol group.]()",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": "![Chemical structure of 2-methylbutanoic acid, showing the carboxylic acid group and a methyl group attached to the alpha carbon.]()"
+            },
+            "B": {
+                "text": "![Chemical structure of 2,2-dimethylpropanoic acid, showing the carboxylic acid group and two methyl groups attached to the alpha carbon.]()"
+            },
+            "C": {
+                "text": "![Chemical structure of 2-methylbutan-2-ol, showing a secondary alcohol group.]()"
+            },
+            "D": {
+                "text": "![Chemical structure of 2,2-dimethylpropan-2-ol, showing a secondary alcohol group.]()"
+            }
+        },
+        "correct_answer": "D",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.08304+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "e497bd94-a1dc-4019-a4d1-294a9cb99934",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "The ascending order of acidity of  $-OH$  group in the following compounds is :(A)  $Bu-OH$ (B)  $O_2N$ -Phenol-OH(C)  $MeO$ -Phenol-OH\n\n(D) Phenol-OH\n\n(E)  $O_2N$ -Phenol-OH\n\nChoose the correct answer from the options given below :",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": "(A) &lt; (D) &lt; (C) &lt; (B) &lt; (E)"
+            },
+            "B": {
+                "text": "(C) &lt; (A) &lt; (D) &lt; (B) &lt; (E)"
+            },
+            "C": {
+                "text": "(C) &lt; (D) &lt; (B) &lt; (A) &lt; (E)"
+            },
+            "D": {
+                "text": "(A) &lt; (C) &lt; (D) &lt; (B) &lt; (E)"
+            }
+        },
+        "correct_answer": "D",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.08304+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "5f0333ae-f441-4afc-b7db-95bbd99d0d61",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "Highest enol content will be shown by :",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": ""
+            },
+            "B": {
+                "text": ""
+            },
+            "C": {
+                "text": ""
+            },
+            "D": {
+                "text": ""
+            }
+        },
+        "correct_answer": "B",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.08304+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "a291aa94-6024-491a-8a14-e3a2a221b40b",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "A solution of two miscible liquids showing negative deviation from Raoult's law will have :",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": "increased vapour pressure, increased boiling point"
+            },
+            "B": {
+                "text": "increased vapour pressure, decreased boiling point"
+            },
+            "C": {
+                "text": "decreased vapour pressure, decreased boiling point"
+            },
+            "D": {
+                "text": "decreased vapour pressure, increased boiling point"
+            }
+        },
+        "correct_answer": "D",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.08304+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "df4c827a-34fc-490b-ba7c-22f5d33acfb9",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "Element not showing variable oxidation state is :",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": "Bromine"
+            },
+            "B": {
+                "text": "Iodine"
+            },
+            "C": {
+                "text": "Chlorine"
+            },
+            "D": {
+                "text": "Fluorine"
+            }
+        },
+        "correct_answer": "D",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.08304+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "44f75d9f-adef-4b55-a7aa-edca1c7a6632",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": " $\\text{NaCl}$  reacts with conc.  $\\text{H}_2\\text{SO}_4$  and  $\\text{K}_2\\text{Cr}_2\\text{O}_7$  to give reddish fumes (B), which react with  $\\text{NaOH}$  to give yellow solution (C). (B) and (C) respectively are :",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": " $\\text{CrO}_2\\text{Cl}_2$ ,  $\\text{Na}_2\\text{CrO}_4$ "
+            },
+            "B": {
+                "text": " $\\text{Na}_2\\text{CrO}_4$ ,  $\\text{CrO}_2\\text{Cl}_2$ "
+            },
+            "C": {
+                "text": " $\\text{CrO}_2\\text{Cl}_2$ ,  $\\text{KHSO}_4$ "
+            },
+            "D": {
+                "text": " $\\text{CrO}_2\\text{Cl}_2$ ,  $\\text{Na}_2\\text{Cr}_2\\text{O}_7$ "
+            }
+        },
+        "correct_answer": "A",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.08304+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "db0bca16-cbe6-4370-87ff-0c9d6665f1f4",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "Given below are two statements :\n\n**Statement (I)** : The 4f and 5f - series of elements are placed separately in the Periodic table to preserve the principle of classification.\n\n**Statement (II)** : s-block elements can be found in pure form in nature.\n\nIn light of the above statements, choose the most appropriate answer from the options given below:",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": "Statement I is false but Statement II is true"
+            },
+            "B": {
+                "text": "Both Statement I and Statement II are true"
+            },
+            "C": {
+                "text": "Statement I is true but Statement II is false"
+            },
+            "D": {
+                "text": "Both Statement I and Statement II are false"
+            }
+        },
+        "correct_answer": "C",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.08304+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "c57dbaed-af9f-49d2-8e04-8d53626bdbd9",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "Yellow compound of lead chromate gets dissolved on treatment with hot  $\\text{NaOH}$  solution. The product of lead formed is a :",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": "Tetraanionic complex with coordination number six"
+            },
+            "B": {
+                "text": "Neutral complex with coordination number four"
+            },
+            "C": {
+                "text": "Dianionic complex with coordination number six"
+            },
+            "D": {
+                "text": "Dianionic complex with coordination number four"
+            }
+        },
+        "correct_answer": "D",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.08304+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "f255ed1b-e3cc-4a4c-85f2-3a8840d55352",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "Consider the following complex ions\n\n$$P = [\\text{FeF}_6]^{3-}, Q = [\\text{V}(\\text{H}_2\\text{O})_6]^{2+}, R = [\\text{Fe}(\\text{H}_2\\text{O})_6]^{2+}$$\n\nThe correct order of the complex ions, according to their spin only magnetic moment values (in B.M.) is :",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": " $R < Q < P$ "
+            },
+            "B": {
+                "text": " $R < P < Q$ "
+            },
+            "C": {
+                "text": " $Q < R < P$ "
+            },
+            "D": {
+                "text": " $Q < P < R$ "
+            }
+        },
+        "correct_answer": "C",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.08304+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "8a90975b-ac17-406b-9267-d18000e2e6de",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "The correct statement regarding nucleophilic substitution reaction in a chiral alkyl halide is :",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": "Retention occurs in  $S_N1$  reaction and inversion occurs in  $S_N2$  reaction."
+            },
+            "B": {
+                "text": "Racemisation occurs in  $S_N1$  reaction and retention occurs in  $S_N2$  reaction."
+            },
+            "C": {
+                "text": "Racemisation occurs in both  $S_N1$  and  $S_N2$  reactions."
+            },
+            "D": {
+                "text": "Racemisation occurs in  $S_N1$  reaction and inversion occurs in  $S_N2$  reaction."
+            }
+        },
+        "correct_answer": "D",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.08304+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "21dada72-e381-48eb-83a4-72978c932639",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "Given below are two statements :\n\n**Statement (I)** : p-nitrophenol is more acidic than m-nitrophenol and o-nitrophenol.\n\n**Statement (II)** : Ethanol will give immediate turbidity with Lucas reagent.\n\nIn the light of the above statements, choose the correct answer from the options given below :",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": "Statement I is true but Statement II is false"
+            },
+            "B": {
+                "text": "Both Statement I and Statement II are true"
+            },
+            "C": {
+                "text": "Both Statement I and Statement II are false"
+            },
+            "D": {
+                "text": "Statement I is false but Statement II is true"
+            }
+        },
+        "correct_answer": "A",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.08304+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "9e2c6a19-c9bb-4e48-b77f-368e26bae6b9",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "Two nucleotides are joined together by a linkage known as :",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": "Phosphodiester linkage"
+            },
+            "B": {
+                "text": "Glycosidic linkage"
+            },
+            "C": {
+                "text": "Disulphide linkage"
+            },
+            "D": {
+                "text": "Peptide linkage"
+            }
+        },
+        "correct_answer": "A",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.08304+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "c9b5679a-1206-43c8-9994-14ab56b8c955",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "The average kinetic energy of a monatomic molecule is  $0.414 \\text{ eV}$  at temperature:\n\n(Use  $K_B = 1.38 \\times 10^{-23}$  J  $\\text{mol}^{-1}$   $\\text{K}^{-1}$ )",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": "3000 K"
+            },
+            "B": {
+                "text": "3200 K"
+            },
+            "C": {
+                "text": "1600 K"
+            },
+            "D": {
+                "text": "1500 K"
+            }
+        },
+        "correct_answer": "B",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.08304+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "6788e9aa-5b80-48fd-8096-a318a19b802c",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "An electric charge  $10^{-6}$   $\\mu\\text{C}$  is placed at origin  $(0, 0)$  m of X-Y co-ordinate system. Two points  $P$  and  $Q$  are situated at  $\\left(\\sqrt{3}, \\sqrt{3}\\right)$  m and  $\\left(\\sqrt{6}, 0\\right)$  m respectively. The potential difference between the points  $P$  and  $Q$\n\nwill be :",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": " $\\sqrt{3}$  V"
+            },
+            "B": {
+                "text": " $\\sqrt{6}$  V"
+            },
+            "C": {
+                "text": "0 V"
+            },
+            "D": {
+                "text": "3 V"
+            }
+        },
+        "correct_answer": "C",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.08304+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "1072c003-40a6-451b-b320-8eee42aa7edc",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "Four distinct points  $(2k, 3k)$ ,  $(1, 0)$ ,  $(0, 1)$  and  $(0, 0)$  lie on a circle for  $k$  equal to :",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": " $\\frac{2}{13}$ "
+            },
+            "B": {
+                "text": " $\\frac{3}{13}$ "
+            },
+            "C": {
+                "text": " $\\frac{5}{13}$ "
+            },
+            "D": {
+                "text": " $\\frac{1}{13}$ "
+            }
+        },
+        "correct_answer": "C",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.216475+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "1c7a0762-6b34-498c-bed5-f6681857b78d",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "Let the area of the region  $\\{(x, y) : x - 2y + 4 \\ge 0, x + 2y^2 \\ge 0, x + 4y^2 \\le 8, y \\ge 0\\}$  be  $\\frac{m}{n}$ , where  $m$  and  $n$  are coprime numbers. Then  $m + n$  is equal to _____.",
+        "question_type": "integer",
+        "options": {
+            "A": {
+                "text": ""
+            },
+            "B": {
+                "text": ""
+            },
+            "C": {
+                "text": ""
+            },
+            "D": {
+                "text": ""
+            }
+        },
+        "correct_answer": "119",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.216475+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "a65f0c8c-e7c3-45cd-8486-b7b9a0b1273f",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "If the solution of the differential equation  $(2x + 3y - 2)dx + (4x + 6y - 7)dy = 0$ ,  $y(0) = 3$ , is  $\\alpha x + \\beta y + 3 \\log_e |2x + 3y - \\gamma| = 6$ , then  $\\alpha + 2\\beta + 3\\gamma$  is equal to _____.",
+        "question_type": "integer",
+        "options": {
+            "A": {
+                "text": ""
+            },
+            "B": {
+                "text": ""
+            },
+            "C": {
+                "text": ""
+            },
+            "D": {
+                "text": ""
+            }
+        },
+        "correct_answer": "29",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.216475+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "259d73df-60aa-49e0-a328-2deabe39d31e",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "The least positive integral value of  $\\alpha$ , for which the angle between the vectors  $\\alpha \\hat{i} - 2\\hat{j} + 2\\hat{k}$  and  $\\alpha \\hat{i} + 2\\alpha \\hat{j} - 2\\hat{k}$  is acute, is _____.",
+        "question_type": "integer",
+        "options": {
+            "A": {
+                "text": ""
+            },
+            "B": {
+                "text": ""
+            },
+            "C": {
+                "text": ""
+            },
+            "D": {
+                "text": ""
+            }
+        },
+        "correct_answer": "5",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.216475+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "2c29b498-7591-40de-944d-baa524e0d7e6",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "A fair die is tossed repeatedly until a six is obtained. Let  $X$  denote the number of tosses required and let  $a = P(X = 3)$ ,  $b = P(X \\ge 3)$  and  $c = P(X \\ge 6 | X > 3)$ . Then  $\\frac{b+c}{a}$  is equal to _____.",
+        "question_type": "integer",
+        "options": {
+            "A": {
+                "text": ""
+            },
+            "B": {
+                "text": ""
+            },
+            "C": {
+                "text": ""
+            },
+            "D": {
+                "text": ""
+            }
+        },
+        "correct_answer": "12",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.216475+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "317ce210-c894-401a-8724-41b9fe1f2ff4",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "Mass of methane required to produce 22 g of CO after complete combustion is g. (Given Molar mass in g  $\\text{mol}^{-1}$ , C = 12.0, H = 1.0, O = 16.0)",
+        "question_type": "integer",
+        "options": {
+            "A": {
+                "text": ""
+            },
+            "B": {
+                "text": ""
+            },
+            "C": {
+                "text": ""
+            },
+            "D": {
+                "text": ""
+            }
+        },
+        "correct_answer": "8",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.216475+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "92562884-3e23-4a66-b1ee-006212c915e8",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "The number of electrons present in all the completely filled subshells having  $n = 4$  and  $s = +\\frac{1}{2}$  is _________  \n(Where  $n$  = principal quantum number and  $s$  = spin quantum number)",
+        "question_type": "integer",
+        "options": {
+            "A": {
+                "text": ""
+            },
+            "B": {
+                "text": ""
+            },
+            "C": {
+                "text": ""
+            },
+            "D": {
+                "text": ""
+            }
+        },
+        "correct_answer": "16",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.216475+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "8e6d2a3e-b64d-44a3-8849-66d867051879",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "Sum of bond order of CO and  $\\text{NO}^+$  is _________",
+        "question_type": "integer",
+        "options": {
+            "A": {
+                "text": ""
+            },
+            "B": {
+                "text": ""
+            },
+            "C": {
+                "text": ""
+            },
+            "D": {
+                "text": ""
+            }
+        },
+        "correct_answer": "6",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.216475+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "538001ed-9e09-4d15-8afd-46e0695b00d5",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "If three moles of an ideal gas at 300 K expand isothermally from  $30 \\text{ dm}^3$  to  $45 \\text{ dm}^3$  against a constant opposing pressure of 80 kPa, then the amount of heat transferred is _________ J.",
+        "question_type": "integer",
+        "options": {
+            "A": {
+                "text": ""
+            },
+            "B": {
+                "text": ""
+            },
+            "C": {
+                "text": ""
+            },
+            "D": {
+                "text": ""
+            }
+        },
+        "correct_answer": "1200",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.216475+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "5b74a345-077f-4d89-b232-b7829a57f602",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "Among the following, total number of meta directing functional groups is (Integer based)  \n-  $\\text{OCH}_3$ ,  $\\text{NO}_2$ ,  $\\text{CN}$ ,  $\\text{CH}_3$ ,  $\\text{NHCOCH}_3$ ,  $\\text{COR}$ ,  $\\text{OH}$ ,  $\\text{COOH}$ ,  $\\text{Cl}$",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": ""
+            },
+            "B": {
+                "text": ""
+            },
+            "C": {
+                "text": ""
+            },
+            "D": {
+                "text": ""
+            }
+        },
+        "correct_answer": "D",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.216475+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "40a8a735-8122-4cad-b0ca-94ffd855c124",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "Among the given organic compounds, the total number of aromatic compounds is _________\n\n(A)\n\n(B)\n\n(C)\n\n(D)",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": ""
+            },
+            "B": {
+                "text": ""
+            },
+            "C": {
+                "text": ""
+            },
+            "D": {
+                "text": ""
+            }
+        },
+        "correct_answer": "C",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.216475+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "4326775f-5077-4013-9bac-59095d082a80",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "3-Methylhex-2-ene on reaction with  $\\text{HBr}$  in presence of peroxide forms an addition product (A). The number of possible stereoisomers for 'A' is _____.",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": ""
+            },
+            "B": {
+                "text": ""
+            },
+            "C": {
+                "text": ""
+            },
+            "D": {
+                "text": ""
+            }
+        },
+        "correct_answer": "D",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.216475+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "943571ef-5e3b-4e75-af77-b767a3729088",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "The mass of silver (Molar mass of Ag:  $108 \\text{ g mol}^{-1}$ ) displaced by a quantity of electricity which displaces  $5600 \\text{ mL}$  of  $\\text{O}_2$  at S.T.P. will be _____ g.",
+        "question_type": "integer",
+        "options": {
+            "A": {
+                "text": ""
+            },
+            "B": {
+                "text": ""
+            },
+            "C": {
+                "text": ""
+            },
+            "D": {
+                "text": ""
+            }
+        },
+        "correct_answer": "108",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.216475+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "b95d64d1-3601-4dd6-ab71-7e5c21890676",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "Consider the following data for the given reaction\n\n$$\\begin{array}{l}2\\text{HI}_{(\\text{g})} \\rightarrow \\text{H}_2\\text{I}_{2(\\text{g})} + \\text{I}_{2(\\text{g})} \\\\ \\text{HI}(\\text{mol L}^{-1}) \\quad 0.005 \\quad 0.01 \\quad 0.02 \\\\ \\text{Rate}(\\text{mol L}^{-1} \\text{ s}^{-1}) \\quad 7.5 \\times 10^{-4} \\quad 3.0 \\times 10^{-3} \\quad 1.2 \\times 10^{-2}\\end{array}$$\n\nThe order of the reaction is _____.",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": ""
+            },
+            "B": {
+                "text": ""
+            },
+            "C": {
+                "text": ""
+            },
+            "D": {
+                "text": ""
+            }
+        },
+        "correct_answer": "B",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.216475+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "8a3ed54f-acba-46ff-ab8d-382b563579fc",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "If the shortest distance of the parabola  $y^2 = 4x$  from the centre of the circle  $x^2 + y^2 - 4x - 16y + 64 = 0$  is  $d$ , then  $d^2$  is equal to :",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": "16"
+            },
+            "B": {
+                "text": "24"
+            },
+            "C": {
+                "text": "20"
+            },
+            "D": {
+                "text": "36"
+            }
+        },
+        "correct_answer": "C",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.216475+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "4d802c02-9957-4048-afb7-61797538af0d",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "From the given list, the number of compounds with +4 oxidation state of Sulphur  $\\text{SO}_3, \\text{H}_2\\text{SO}_3, \\text{SOCl}_2, \\text{SF}_4, \\text{BaSO}_4, \\text{H}_2\\text{S}_2\\text{O}_7$",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": ""
+            },
+            "B": {
+                "text": ""
+            },
+            "C": {
+                "text": ""
+            },
+            "D": {
+                "text": ""
+            }
+        },
+        "correct_answer": "C",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.216475+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "5fe7984c-c8c8-4b14-843e-3fd527cd7f6e",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "If  $S = \\{z \\in \\mathbb{C} : |z - i| = |z + i| = |z - 1|\\}$ , then,  $n(S)$  is:",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": "1"
+            },
+            "B": {
+                "text": "0"
+            },
+            "C": {
+                "text": "3"
+            },
+            "D": {
+                "text": "2"
+            }
+        },
+        "correct_answer": "A",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.216475+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "1809d94d-6bd7-43e2-8ccd-f60a0a1fd362",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "The number of common terms in the progressions  $4, 9, 14, 19, \\dots$ , up to  $25^{\\text{th}}$  term and  $3, 6, 9, 12, \\dots$ , up to  $37^{\\text{th}}$  term is:",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": "9"
+            },
+            "B": {
+                "text": "5"
+            },
+            "C": {
+                "text": "7"
+            },
+            "D": {
+                "text": "8"
+            }
+        },
+        "correct_answer": "C",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.216475+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "7e92b62e-94a2-4017-b27d-5196c28535c1",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "If  $A$  denotes the sum of all the coefficients in the expansion of  $(1 - 3x + 10x^2)^n$  and  $B$  denotes the sum of all the coefficients in the expansion of  $(1 + x^2)^n$ , then:",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": " $A = B^3$ "
+            },
+            "B": {
+                "text": " $3A = B$ "
+            },
+            "C": {
+                "text": " $B = A^3$ "
+            },
+            "D": {
+                "text": " $A = 3B$ "
+            }
+        },
+        "correct_answer": "A",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.216475+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "11f287b9-5fdf-474e-8a4a-6bd2e91b6583",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": " $n^{-1}C_r = (k^2 - 8)^n C_{r+1}$  if and only if:",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": " $2\\sqrt{2} < k \\le 3$ "
+            },
+            "B": {
+                "text": " $2\\sqrt{3} < k \\le 3\\sqrt{2}$ "
+            },
+            "C": {
+                "text": " $2\\sqrt{3} < k < 3\\sqrt{3}$ "
+            },
+            "D": {
+                "text": " $2\\sqrt{2} < k < 2\\sqrt{3}$ "
+            }
+        },
+        "correct_answer": "A",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.216475+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "eb9a0d96-5435-4b52-8d7e-b2b2c6992e48",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "The portion of the line  $4x + 5y = 20$  in the first quadrant is trisected by the lines  $L_1$  and  $L_2$  passing through the origin. The tangent of an angle between the lines  $L_1$  and  $L_2$  is :",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": " $\\frac{8}{5}$ "
+            },
+            "B": {
+                "text": " $\\frac{25}{41}$ "
+            },
+            "C": {
+                "text": " $\\frac{2}{5}$ "
+            },
+            "D": {
+                "text": " $\\frac{30}{41}$ "
+            }
+        },
+        "correct_answer": "D",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.216475+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "74a6e808-44b0-4489-8cc0-6fde61d6e0a7",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "The length of the chord of the ellipse  $\\frac{x^2}{25} + \\frac{y^2}{16} = 1$ , whose mid point is  $(1, \\frac{2}{5})$ , is equal to:",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": " $\\frac{\\sqrt{1691}}{5}$ "
+            },
+            "B": {
+                "text": " $\\frac{\\sqrt{2009}}{5}$ "
+            },
+            "C": {
+                "text": " $\\frac{\\sqrt{1741}}{5}$ "
+            },
+            "D": {
+                "text": " $\\frac{\\sqrt{1541}}{5}$ "
+            }
+        },
+        "correct_answer": "A",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.216475+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "d9076a97-a48a-40d2-8339-5d184897c033",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "If  $a = \\lim_{x \\to 0} \\frac{\\sqrt{1+\\sqrt{1+x^4}-\\sqrt{2}}}{x^4}$  and  $b = \\lim_{x \\to 0} \\frac{\\sin^2 x}{\\sqrt{2}-\\sqrt{1+\\cos x}}$ , then the value of  $ab^3$  is :",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": "36"
+            },
+            "B": {
+                "text": "32"
+            },
+            "C": {
+                "text": "25"
+            },
+            "D": {
+                "text": "30"
+            }
+        },
+        "correct_answer": "B",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.216475+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "b16430b4-9c6e-4a40-b25f-e9111a75bfaa",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "Let  $a_1, a_2, \\dots, a_{10}$  be 10 observations such that  $\\sum_{k=1}^{10} a_k = 50$  and  $\\sum_{\\forall k < j} a_k \\cdot a_j = 1100$ . Then the standard deviation of  $a_1, a_2, \\dots, a_{10}$  is equal to :",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": "5"
+            },
+            "B": {
+                "text": " $\\sqrt{5}$ "
+            },
+            "C": {
+                "text": "10"
+            },
+            "D": {
+                "text": " $\\sqrt{115}$ "
+            }
+        },
+        "correct_answer": "B",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.216475+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "e67fec3b-c013-4b97-8adb-4a3fa9236c22",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "Let  $S = \\{1, 2, 3, \\dots, 10\\}$ . Suppose  $M$  is the set of all the subsets of  $S$ , then the relation  $R = \\{(A, B) : A \\cap B \\neq \\emptyset; A, B \\in M\\}$  is :",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": "symmetric and reflexive only"
+            },
+            "B": {
+                "text": "reflexive only"
+            },
+            "C": {
+                "text": "symmetric and transitive only"
+            },
+            "D": {
+                "text": "symmetric only"
+            }
+        },
+        "correct_answer": "D",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.216475+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "2ea2f479-2fc3-4f5a-8aef-a068f70a3aef",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "Consider the matrix  $f(x) = \\begin{bmatrix} \\cos x & -\\sin x & 0 \\\\ \\sin x & \\cos x & 0 \\\\ 0 & 0 & 1 \\end{bmatrix}$ . Given below are two statements :\n\nStatement I:  $f(-x)$  is the inverse of the matrix  $f(x)$ .\n\nStatement II:  $f(x) f(y) = f(x + y)$ .\n\nIn the light of the above statements, choose the correct answer from the options given below",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": "Statement I is false but Statement II is true"
+            },
+            "B": {
+                "text": "Both Statement I and Statement II are false"
+            },
+            "C": {
+                "text": "Statement I is true but Statement II is false"
+            },
+            "D": {
+                "text": "Both Statement I and Statement II are true"
+            }
+        },
+        "correct_answer": "D",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.216475+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "f37d9cca-1fcc-4737-abfb-14cf07ea3e46",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "The function  $f: N - \\{1\\} \\to N$ ; defined by  $f(n)$  = the highest prime factor of  $n$ , is :",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": "both one-one and onto"
+            },
+            "B": {
+                "text": "one-one only"
+            },
+            "C": {
+                "text": "onto only"
+            },
+            "D": {
+                "text": "neither one-one nor onto"
+            }
+        },
+        "correct_answer": "D",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.216475+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "ed87ce95-254d-41a5-8eb4-4111f79a8f6c",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "Consider the function  $f(x) = \\begin{cases} \\frac{a(7x-12-x^2)}{b|x^2-7x+12|}, & x < 3 \\\\ \\frac{\\sin(x-3)}{b}, & x > 3 \\\\ x = 3 \\end{cases}$ , where  $[x]$  denotes the greatest integer less than or equal to  $x$ . If  $S$  denotes the set of all ordered pairs  $(a, b)$  such that  $f(x)$  is continuous at  $x = 3$ , then the number of elements in  $S$  is :",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": "2"
+            },
+            "B": {
+                "text": "Infinitely many"
+            },
+            "C": {
+                "text": "4"
+            },
+            "D": {
+                "text": "1"
+            }
+        },
+        "correct_answer": "D",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.216475+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "343eaaaf-0a72-4e23-8ce4-5e87e5f52e3d",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "If  $\\int_0^1 \\frac{1}{\\sqrt{3+x+\\sqrt{1+x}}} dx = a + b\\sqrt{2} + c\\sqrt{3}$ , where  $a, b, c$  are rational numbers, then  $2a + 3b - 4c$  is equal to :",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": "4"
+            },
+            "B": {
+                "text": "10"
+            },
+            "C": {
+                "text": "7"
+            },
+            "D": {
+                "text": "8"
+            }
+        },
+        "correct_answer": "D",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.216475+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "e949bfe9-e4ca-4860-85ad-246126a7778e",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "If  $(a, b)$  be the orthocentre of the triangle whose vertices are  $(1, 2)$ ,  $(2, 3)$  and  $(3, 1)$ , and\n\n$I_1 = \\int_a^b x \\sin(4x - x^2) dx$ ,  $I_2 = \\int_a^b \\sin(4x - x^2) dx$ , then  $36 \\frac{I_1}{I_2}$  is equal to :",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": "72"
+            },
+            "B": {
+                "text": "88"
+            },
+            "C": {
+                "text": "80"
+            },
+            "D": {
+                "text": "66"
+            }
+        },
+        "correct_answer": "A",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.216475+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "0b052d2c-d5dc-46a3-b36c-2a993716d7a5",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "Let  $x = x(t)$  and  $y = y(t)$  be solutions of the differential equations  $\\frac{dx}{dt} + ax = 0$  and  $\\frac{dy}{dt} + by = 0$  respectively,  $a, b \\in \\mathbb{R}$ . Given that  $x(0) = 2$ ;  $y(0) = 1$  and  $3y(1) = 2x(1)$ , the value of  $t$ , for which\n\n$x(t) = y(t)$ , is :",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": " $\\log_{\\frac{2}{3}} 2$ "
+            },
+            "B": {
+                "text": " $\\log_4 3$ "
+            },
+            "C": {
+                "text": " $\\log_3 4$ "
+            },
+            "D": {
+                "text": " $\\log_{\\frac{4}{3}} 2$ "
+            }
+        },
+        "correct_answer": "D",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.216475+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "16aa94ee-0596-422a-956b-bb4bb30ecf60",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "If  $\\vec{a} = \\hat{i} + 2\\hat{j} + \\hat{k}$ ,  $\\vec{b} = 3(\\hat{i} - \\hat{j} + \\hat{k})$  and  $\\vec{c}$  be the vector such that  $\\vec{a} \\times \\vec{c} = \\vec{b}$  and  $\\vec{a} \\cdot \\vec{c} = 3$ , then\n\n$\\vec{a} \\cdot \\left( \\left( \\vec{c} \\times \\vec{b} \\right) - \\vec{b} - \\vec{c} \\right)$  is equal to",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": "32"
+            },
+            "B": {
+                "text": "24"
+            },
+            "C": {
+                "text": "20"
+            },
+            "D": {
+                "text": "36"
+            }
+        },
+        "correct_answer": "B",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.216475+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "91994305-2368-4dd2-97c5-d18cd95c7841",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "The distance, of the point  $(7, -2, 11)$  from the line  $\\frac{x-6}{1} = \\frac{y-4}{0} = \\frac{z-8}{3}$  along the line  $\\frac{x-6}{2} = \\frac{y-1}{-3} = \\frac{z-5}{6}$ , is :",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": "12"
+            },
+            "B": {
+                "text": "14"
+            },
+            "C": {
+                "text": "18"
+            },
+            "D": {
+                "text": "21"
+            }
+        },
+        "correct_answer": "B",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.216475+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "737c163b-d95b-460c-a705-206e47d1896e",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "If the shortest distance between the lines  $\\frac{x-4}{1} = \\frac{y-1}{2} = \\frac{z}{-3}$  and  $\\frac{x-\\lambda}{2} = \\frac{y+1}{4} = \\frac{z-2}{-5}$  is  $\\frac{6}{\\sqrt{5}}$ , then the sum of all possible values of  $\\lambda$  is :",
+        "question_type": "mcq",
+        "options": {
+            "A": {
+                "text": "5"
+            },
+            "B": {
+                "text": "8"
+            },
+            "C": {
+                "text": "7"
+            },
+            "D": {
+                "text": "10"
+            }
+        },
+        "correct_answer": "B",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.216475+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "0c1cbef8-cb2a-402a-8e91-82991ce49645",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "If  $\\alpha$  satisfies the equation  $x^2 + x + 1 = 0$  and  $(1 + \\alpha)^7 = A + B\\alpha + C\\alpha^2$ ,  $A, B, C \\ge 0$ , then  $5(3A - 2B - C)$  is equal to",
+        "question_type": "integer",
+        "options": {
+            "A": {
+                "text": ""
+            },
+            "B": {
+                "text": ""
+            },
+            "C": {
+                "text": ""
+            },
+            "D": {
+                "text": ""
+            }
+        },
+        "correct_answer": "5",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.216475+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "bb7ce8d3-35a5-4394-b32a-7c8180b6a6d3",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "If  $8 = 3 + \\frac{1}{4}(3+p) + \\frac{1}{4^2}(3+2p) + \\frac{1}{4^3}(3+3p) + \\dots \\infty$ , then the value of  $p$  is",
+        "question_type": "integer",
+        "options": {
+            "A": {
+                "text": ""
+            },
+            "B": {
+                "text": ""
+            },
+            "C": {
+                "text": ""
+            },
+            "D": {
+                "text": ""
+            }
+        },
+        "correct_answer": "9",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.216475+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "57c768a5-450c-498b-953f-8aeba2af30ef",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "Let the set of all  $a \\in R$  such that the equation  $\\cos 2x + a \\sin x = 2a - 7$  has a solution be  $[p, q]$  and  $r = \\tan 9^\\circ - \\tan 27^\\circ - \\frac{1}{\\cot 63^\\circ} + \\tan 81^\\circ$ , then  $pqr$  is equal to _____.",
+        "question_type": "integer",
+        "options": {
+            "A": {
+                "text": ""
+            },
+            "B": {
+                "text": ""
+            },
+            "C": {
+                "text": ""
+            },
+            "D": {
+                "text": ""
+            }
+        },
+        "correct_answer": "48",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.216475+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "6383a692-63e2-45ef-b330-310a30fa3072",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "Let  $A = \\begin{bmatrix} 2 & 0 & 1 \\\\ 1 & 1 & 0 \\\\ 1 & 0 & 1 \\end{bmatrix}$ ,  $B = [B_1 \\ B_2 \\ B_3]$ , where  $B_1, B_2, B_3$  are column matrices, and  $AB_1 = \\begin{bmatrix} 1 \\\\ 0 \\\\ 0 \\end{bmatrix}$ ,  $AB_2 = \\begin{bmatrix} 2 \\\\ 3 \\\\ 0 \\end{bmatrix}$ ,  $AB_3 = \\begin{bmatrix} 3 \\\\ 2 \\\\ 1 \\end{bmatrix}$ . If  $\\alpha = |B|$  and  $\\beta$  is the sum of all the diagonal elements of  $B$ , then  $\\alpha^3 + \\beta^3$  is equal to _____.",
+        "question_type": "integer",
+        "options": {
+            "A": {
+                "text": ""
+            },
+            "B": {
+                "text": ""
+            },
+            "C": {
+                "text": ""
+            },
+            "D": {
+                "text": ""
+            }
+        },
+        "correct_answer": "28",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.216475+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "e4255565-e3f6-4d1f-9fac-228f4e041992",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "Let  $f(x) = x^3 + x^2 f'(1) + x f''(2) + f'''(3)$ ,  $x \\in R$ . Then  $f'(10)$  is equal to _____.",
+        "question_type": "integer",
+        "options": {
+            "A": {
+                "text": ""
+            },
+            "B": {
+                "text": ""
+            },
+            "C": {
+                "text": ""
+            },
+            "D": {
+                "text": ""
+            }
+        },
+        "correct_answer": "202",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.216475+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    },
+    {
+        "id": "768c093d-d70e-43d5-a40c-af0ef65a0dc0",
+        "topic_id": "616b36c6-5820-4c1d-8110-ec899a5d232d",
+        "question_text": "Let for a differentiable function  $f: (0, \\infty) \\to R$ ,  $f(x) - f(y) \\ge \\log_e\\left(\\frac{x}{y}\\right) + x - y$ ,  $\\forall x, y \\in (0, \\infty)$ . Then  $\\sum_{n=1}^{20} f'\\left(\\frac{1}{n^2}\\right)$  is equal to _____.",
+        "question_type": "integer",
+        "options": {
+            "A": {
+                "text": ""
+            },
+            "B": {
+                "text": ""
+            },
+            "C": {
+                "text": ""
+            },
+            "D": {
+                "text": ""
+            }
+        },
+        "correct_answer": "2890",
+        "explanation": null,
+        "difficulty": "Medium",
+        "marks": 4,
+        "created_at": "2025-12-25T07:18:41.216475+00:00",
+        "subtopic_id": null,
+        "is_ai_generated": true,
+        "is_verified": false,
+        "verified_by": null,
+        "question_format": null,
+        "question_image_url": null,
+        "option_images": {},
+        "contains_formula": false,
+        "formula_type": null,
+        "previous_year_paper_id": "20d49847-b722-4ddb-a923-5a05a49f661c",
+        "content_hash": null,
+        "source_document_id": null
+    }
+]

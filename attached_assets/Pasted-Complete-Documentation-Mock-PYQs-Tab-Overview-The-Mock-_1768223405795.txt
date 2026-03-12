@@ -1,0 +1,323 @@
+Complete Documentation: Mock & PYQs Tab
+Overview
+The Mock & PYQs Tab is a comprehensive test-taking system that allows students to practice with:
+
+Previous Year Questions (PYQs) - Past exam papers
+Proficiency Tests - Skill assessment tests
+Mock Exams - Full-length practice exams
+1. Database Tables
+Table: subject_previous_year_papers
+Stores paper/test metadata.
+
+Column	Type	Nullable	Description
+id	uuid	NO	Primary key
+subject_id	uuid	NO	Foreign key to subjects
+year	integer	NO	Year of the paper (e.g., 2024)
+exam_name	text	NO	Name like "JEE Main", "NEET"
+paper_type	text	YES	"Shift 1", "Morning", etc.
+pdf_url	text	YES	Link to download PDF
+total_questions	integer	YES	Number of questions
+chapter_id	uuid	YES	Optional chapter filter
+topic_id	uuid	YES	Optional topic filter
+document_type	text	YES	mcq, practice, proficiency
+paper_category	text	YES	previous_year, proficiency, exam
+created_at	timestamp	YES	Creation timestamp
+Table: questions (for paper questions)
+Questions linked to papers via previous_year_paper_id.
+
+Column	Type	Description
+id	uuid	Primary key
+previous_year_paper_id	uuid	Links to paper
+question_text	text	Question content (supports LaTeX)
+question_type	text	mcq, subjective, true_false, integer
+question_format	text	single_choice, multiple_choice, subjective, integer
+options	jsonb	{"A": {"text": "..."}, "B": {"text": "..."}}
+correct_answer	text	The correct answer
+explanation	text	Solution explanation
+difficulty	text	Easy, Medium, Hard
+marks	integer	Marks for the question
+is_important	boolean	Mark for important questions
+Table: paper_test_results
+Stores student test submissions.
+
+Column	Type	Description
+id	uuid	Primary key
+student_id	uuid	User ID
+paper_id	uuid	Paper ID
+subject_id	uuid	Subject ID
+paper_category	text	previous_year, proficiency, exam
+score	integer	Correct answers count
+total_questions	integer	Total questions attempted
+percentage	numeric	Score percentage
+time_taken_seconds	integer	Duration in seconds
+answers	jsonb	{"question_id": "user_answer", ...}
+grading_status	text	pending, graded, ai_graded
+submitted_at	timestamp	Submission time
+graded_at	timestamp	When AI grading completed
+Table: student_answers
+Stores individual written answers with images.
+
+Column	Type	Description
+id	uuid	Primary key
+user_id	uuid	Student ID
+question_id	uuid	Question ID
+paper_id	uuid	Paper ID
+answer_text	text	Text answer
+answer_image_url	text	Uploaded image URL
+extracted_answer_text	text	AI-extracted text from image
+extraction_confidence	text	high, medium, low
+submitted_at	timestamp	Submission time
+2. API Endpoints (Supabase REST)
+Get Papers for a Subject
+
+GET /rest/v1/subject_previous_year_papers?subject_id=eq.{subject_id}&order=year.desc
+Query Parameters:
+
+subject_id=eq.{uuid} - Filter by subject (required)
+chapter_id=eq.{uuid} - Filter by chapter (optional)
+topic_id=eq.{uuid} - Filter by topic (optional)
+topic_id=is.null - Get chapter-level papers only
+Response:
+
+
+[
+  {
+    "id": "paper-uuid",
+    "subject_id": "subject-uuid",
+    "year": 2024,
+    "exam_name": "JEE Main",
+    "paper_type": "Shift 1",
+    "pdf_url": "https://storage.url/paper.pdf",
+    "total_questions": 75,
+    "document_type": "mcq",
+    "paper_category": "previous_year",
+    "chapter_id": null,
+    "topic_id": null,
+    "created_at": "2024-01-15T10:00:00Z"
+  }
+]
+Get Questions for a Paper
+
+GET /rest/v1/questions?previous_year_paper_id=eq.{paper_id}&order=created_at.asc
+Response:
+
+
+[
+  {
+    "id": "question-uuid",
+    "previous_year_paper_id": "paper-uuid",
+    "question_text": "What is the value of $\\int_0^\\pi \\sin x \\, dx$?",
+    "question_type": "mcq",
+    "question_format": "single_choice",
+    "options": {
+      "A": { "text": "0" },
+      "B": { "text": "1" },
+      "C": { "text": "2" },
+      "D": { "text": "-1" }
+    },
+    "correct_answer": "C",
+    "explanation": "Using integration by parts...",
+    "difficulty": "Medium",
+    "marks": 4,
+    "is_important": true,
+    "is_verified": true
+  }
+]
+Get Student's Test Results
+
+GET /rest/v1/paper_test_results?student_id=eq.{user_id}&order=submitted_at.desc
+With Paper Details:
+
+
+GET /rest/v1/paper_test_results?select=*,paper:subject_previous_year_papers(exam_name,year,paper_type)&student_id=eq.{user_id}
+Response:
+
+
+[
+  {
+    "id": "result-uuid",
+    "student_id": "user-uuid",
+    "paper_id": "paper-uuid",
+    "subject_id": "subject-uuid",
+    "paper_category": "previous_year",
+    "score": 18,
+    "total_questions": 25,
+    "percentage": 72,
+    "time_taken_seconds": 1800,
+    "answers": {
+      "q1-uuid": "C",
+      "q2-uuid": "A",
+      "q3-uuid": "25"
+    },
+    "grading_status": "ai_graded",
+    "submitted_at": "2024-01-15T14:30:00Z",
+    "graded_at": "2024-01-15T14:30:05Z",
+    "paper": {
+      "exam_name": "JEE Main",
+      "year": 2024,
+      "paper_type": "Shift 1"
+    }
+  }
+]
+Submit Test Result
+
+POST /rest/v1/paper_test_results
+Request:
+
+
+{
+  "student_id": "user-uuid",
+  "paper_id": "paper-uuid",
+  "subject_id": "subject-uuid",
+  "paper_category": "previous_year",
+  "score": 18,
+  "total_questions": 25,
+  "percentage": 72,
+  "time_taken_seconds": 1800,
+  "answers": {
+    "q1-uuid": "C",
+    "q2-uuid": "A",
+    "q3-uuid": "25"
+  },
+  "grading_status": "pending"
+}
+Upload Answer Image
+
+POST /storage/v1/object/student-answers/{user_id}/{question_id}_{timestamp}.{ext}
+Response:
+
+
+{
+  "Key": "student-answers/user-uuid/q1_1705234567890.jpg"
+}
+Get Public URL:
+
+
+GET /storage/v1/object/public/student-answers/{path}
+Submit Written Answer (with Image)
+
+POST /rest/v1/student_answers
+Request (Upsert):
+
+
+{
+  "user_id": "user-uuid",
+  "question_id": "question-uuid",
+  "paper_id": "paper-uuid",
+  "answer_text": "The answer is 25",
+  "answer_image_url": "https://storage.url/image.jpg",
+  "submitted_at": "2024-01-15T14:30:00Z"
+}
+3. Edge Functions (AI-Powered)
+Extract Answer from Image
+
+POST /functions/v1/extract-answer-from-image
+Request:
+
+
+{
+  "image_url": "https://storage.url/answer.jpg",
+  "question_context": "What is the integral of sin(x)?"
+}
+Response:
+
+
+{
+  "extracted_text": "2",
+  "confidence": "high"
+}
+Confidence Levels:
+
+high - Clear, short answer extracted
+medium - Answer extracted with some uncertainty
+low - Image unreadable or no text found
+AI Compare Math Answers
+
+POST /functions/v1/ai-compare-math-answers
+Used for grading integer/numerical answers where notation may vary.
+
+Request:
+
+
+{
+  "items": [
+    {
+      "id": "q1-uuid",
+      "user_answer": "5^2",
+      "correct_answer": "25"
+    },
+    {
+      "id": "q2-uuid",
+      "user_answer": "\\frac{1}{2}",
+      "correct_answer": "0.5"
+    }
+  ]
+}
+Response:
+
+
+{
+  "results": [
+    { "id": "q1-uuid", "is_equivalent": true },
+    { "id": "q2-uuid", "is_equivalent": true }
+  ]
+}
+4. Question Types Supported
+Type	Format	Answer Method	Grading
+mcq	single_choice	RadioGroup (A/B/C/D)	Automatic
+mcq	multiple_choice	Checkbox (multiple)	Automatic
+true_false	-	RadioGroup (True/False)	Automatic
+integer	integer	Text input (number)	Automatic + AI fallback
+subjective	subjective	Textarea + image upload	AI extraction from image
+5. Test Flow States
+papers → setup → testing → results
+   ↑         ↑         ↓
+   └─────────┴─────────┘
+State	Description
+papers	Paper selection grid with categories
+setup	Configure question count and time limit
+testing	Active test with timer and navigation
+results	Score display and review (saved to DB)
+6. UI Components Used
+Component	Purpose
+Tabs	Switch between Previous Year / Proficiency / Test
+Card	Paper cards in grid layout
+Badge	Year badge, question count, written indicator
+RadioGroup	MCQ and True/False options
+Input	Integer answer input
+Textarea	Subjective answer input
+Button	Start, Submit, Next, Previous, Flag
+Progress	Question progress bar
+Dialog	Confirmation dialogs
+Skeleton	Loading states
+MathpixRenderer	LaTeX math rendering
+7. React Hooks Summary
+Hook	File	Purpose
+usePreviousYearPapersForSubject	usePreviousYearPaperQuestions.ts	Fetch papers for subject/chapter/topic
+usePreviousYearPaperQuestions	usePreviousYearPaperQuestions.ts	Fetch questions for a paper
+usePreviousYearPapers	usePreviousYearPapers.ts	Admin: fetch all papers
+useCreatePreviousYearPaper	usePreviousYearPapers.ts	Admin: create paper
+useDeletePreviousYearPaper	usePreviousYearPapers.ts	Admin: delete paper
+useUploadPaperPDF	usePreviousYearPapers.ts	Upload PDF to storage
+useSubmitPaperTestResult	usePaperTestResults.ts	Save test submission
+useUpdatePaperTestResult	usePaperTestResults.ts	Update after AI grading
+usePaperTestResults	usePaperTestResults.ts	Fetch student's results
+useStudentAnswers	useStudentAnswers.ts	Fetch written answers
+useSubmitWrittenAnswer	useStudentAnswers.ts	Save text/image answer
+useUploadAnswerImage	useStudentAnswers.ts	Upload image to storage
+useExtractImageAnswer	useExtractImageAnswer.ts	AI extract text from image
+8. Answer Normalization
+The system includes sophisticated answer normalization for mathematical equivalence:
+
+Handles:
+
+LaTeX delimiters: $...$, $$...$$, \(...\), \[...\]
+Superscripts: ² ↔ ^2
+Subscripts: ₁ ↔ _1
+Unicode math: × ↔ *, ÷ ↔ /, − ↔ -
+Fractions: \frac{1}{2} ↔ (1)/(2)
+Greek letters: π ↔ PI
+9. Storage Buckets
+Bucket	Purpose
+previous-year-papers	Store paper PDFs
+student-answers	Store student answer images

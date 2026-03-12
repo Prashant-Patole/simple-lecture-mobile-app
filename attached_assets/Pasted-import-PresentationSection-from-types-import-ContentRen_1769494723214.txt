@@ -1,0 +1,90 @@
+import { PresentationSection } from '../types';
+import { ContentRenderer } from '../ContentRenderer';
+import { CheckCircle2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+interface RecapSectionProps {
+  section: PresentationSection;
+  revealedIndices: number[];
+}
+
+// Helper to normalize display_text from various formats
+const normalizeDisplayText = (displayText: string | string[] | { text: string }[] | undefined): string => {
+  if (!displayText) return '';
+  if (typeof displayText === 'string') return displayText;
+  if (Array.isArray(displayText)) {
+    return displayText.map(item => 
+      typeof item === 'string' ? item : item.text
+    ).join('\n');
+  }
+  return '';
+};
+
+export const RecapSection = ({
+  section,
+  revealedIndices,
+}: RecapSectionProps) => {
+  // Extract key points from visual_beats
+  const keyPoints = section.visual_beats?.filter(
+    b => b.visual_type === 'bullet_list' || b.visual_type === 'text'
+  ) || [];
+
+  // Get the most recently revealed index for active highlighting
+  const activeIndex = revealedIndices.length > 0 
+    ? revealedIndices[revealedIndices.length - 1] 
+    : -1;
+
+  return (
+    <div className="h-full flex flex-col p-6 overflow-y-auto">
+      {/* Section Title */}
+      <div className="text-center mb-8">
+        <h2 className="section-title justify-center">
+          {section.title}
+        </h2>
+        <p className="text-muted-foreground mt-2">
+          Let's review what we've learned
+        </p>
+      </div>
+
+      {/* Key Points with V2.6 styling */}
+      <div className="flex-1 space-y-4 max-w-2xl mx-auto w-full">
+        {keyPoints.map((beat, index) => {
+          const isRevealed = revealedIndices.includes(index);
+          const isActive = index === activeIndex;
+          
+          return (
+            <div
+              key={beat.beat_id}
+              className={cn(
+                "summary-item",
+                isRevealed ? "reveal-visible" : "reveal-hidden",
+                isActive && "beat-active"
+              )}
+            >
+              <CheckCircle2 className={cn(
+                "h-6 w-6 flex-shrink-0 transition-colors duration-300 mr-3",
+                isRevealed ? "[color:var(--player-success)]" : "text-muted-foreground"
+              )} />
+              <div className="summary-text">
+                <ContentRenderer 
+                  content={normalizeDisplayText(beat.display_text)} 
+                  type="markdown"
+                  isRevealed={isRevealed}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Summary Text */}
+      {section.narration?.full_text && (
+        <div className="mt-8 p-4 rounded-lg bg-card/50 border border-player-border">
+          <p className="text-sm text-muted-foreground italic">
+            "{section.narration.full_text.slice(0, 300)}{section.narration.full_text.length > 300 ? '...' : ''}"
+          </p>
+        </div>
+      )}
+    </div>
+  );
+};

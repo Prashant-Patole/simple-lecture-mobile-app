@@ -1,0 +1,553 @@
+Complete Assignment Fetching Process
+The Issue with Due Dates
+Looking at the database, I found an important distinction between date fields:
+
+Column	Data Type	Current Data
+due_date	timestamp without time zone	All values are NULL
+valid_until	timestamp with time zone	Has actual dates like 2026-01-13 17:29:00+00
+homework_date	date	Exists but not used in fetching
+submission_date	date	Exists but not used in fetching
+The Problem: The current implementation fetches due_date but all assignments have due_date = NULL and use valid_until instead for the deadline.
+
+Current API Queries (Direct Supabase - NOT Edge Function)
+Currently, assignments are fetched using Direct Supabase Queries (not a REST API endpoint):
+
+1. Fetch Assignments List (For Students)
+Hook: useSubjectAssignmentsForStudent
+
+
+// Query Parameters (Not HTTP - Direct Supabase SDK)
+subjectId: string     // Required - The subject UUID
+chapterId?: string    // Optional - Filter by chapter
+topicId?: string      // Optional - Filter by topic
+userId: string        // Auto-extracted from auth session
+
+// Supabase Query
+const { data, error } = await supabase
+  .from('assignments')
+  .select(`
+    id,
+    title,
+    description,
+    due_date,           // ⚠️ Currently fetched but always NULL
+    total_marks,
+    passing_marks,
+    duration_minutes,
+    chapter_id,
+    topic_id
+  `)
+  .eq('subject_id', subjectId)
+  .eq('is_active', true)
+  .order('created_at', { ascending: false });
+
+// Optional filters
+if (chapterId) query = query.eq('chapter_id', chapterId);
+if (topicId) query = query.eq('topic_id', topicId);
+Response Shape:
+
+
+interface StudentAssignment {
+  id: string;
+  title: string;
+  description: string | null;
+  due_date: string | null;       // ⚠️ Always NULL currently
+  total_marks: number;
+  passing_marks: number;
+  duration_minutes: number | null;
+  chapter_id: string | null;
+  topic_id: string | null;
+  status: 'pending' | 'submitted' | 'graded';
+  score: number | null;
+  percentage: number | null;
+  submitted_at: string | null;
+  graded_at: string | null;
+}
+2. Fetch Assignment Details (Single Assignment)
+Hook: useAssignmentQuestions
+
+
+// Query Parameter
+assignmentId: string   // Required - The assignment UUID
+
+// Supabase Query
+const { data, error } = await supabase
+  .from('assignments')
+  .select('*')
+  .eq('id', assignmentId)
+  .single();
+
+// Response includes ALL columns including:
+// - due_date (NULL)
+// - valid_until (actual deadline)
+// - questions (JSONB array)
+Response Shape:
+
+
+interface AssignmentDetails {
+  id: string;
+  title: string;
+  description: string | null;
+  instructions: string | null;
+  total_marks: number;
+  passing_marks: number;
+  duration_minutes: number | null;
+  due_date: string | null;      // ⚠️ NULL - not being used
+  questions: AssignmentQuestion[];
+  chapter_id: string | null;
+  topic_id: string | null;
+  subject_id: string | null;
+}
+3. Fetch Submission Status
+Hook: useAssignmentSubmission
+
+
+// Query Parameters
+assignmentId: string   // Required
+studentId: string      // Auto-extracted from auth
+
+// Supabase Query
+const { data, error } = await supabase
+  .from('assignment_submissions')
+  .select('assignment_id, score, percentage, submitted_at, graded_at, answers')
+  .eq('assignment_id', assignmentId)
+  .eq('student_id', studentId)
+  .single();
+Flow Diagram
+┌─────────────────────────────────────────────────────────────────────┐
+│                     ASSIGNMENT FETCHING FLOW                        │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌──────────────┐     ┌─────────────────────────────────────────────┐
+│ AssignmentViewer │────▶│ useSubjectAssignmentsForStudent(          │
+│  Component   │     │   subjectId, chapterId, topicId)            │
+└──────────────┘     └─────────────────────────────────────────────┘
+                                         │
+                                         ▼
+                     ┌─────────────────────────────────────────────┐
+                     │         QUERY 1: Fetch Assignments          │
+                     │  SELECT id, title, due_date, ...            │
+                     │  FROM assignments                            │
+                     │  WHERE subject_id = ? AND is_active = true   │
+                     │  [+ chapter_id filter] [+ topic_id filter]   │
+                     └─────────────────────────────────────────────┘
+                                         │
+                                         ▼
+                     ┌─────────────────────────────────────────────┐
+                     │      QUERY 2: Fetch Submissions Status      │
+                     │  SELECT assignment_id, score, percentage,   │
+                     │         submitted_at, graded_at             │
+                     │  FROM assignment_submissions                 │
+                     │  WHERE student_id = ? AND assignment_id IN (?)│
+                     └─────────────────────────────────────────────┘
+                                         │
+                                         ▼
+                     ┌─────────────────────────────────────────────┐
+                     │         MERGE: Combine Data                  │
+                     │  - Assign status: pending/submitted/graded  │
+                     │  - Attach score & percentage                │
+                     │  - Return StudentAssignment[]               │
+                     └─────────────────────────────────────────────┘
+                                         │
+                                         ▼
+┌──────────────┐     ┌─────────────────────────────────────────────┐
+│   User Clicks   │────▶│ useAssignmentQuestions(assignmentId)      │
+│  "Start Test"  │     │                                           │
+└──────────────┘     └─────────────────────────────────────────────┘
+                                         │
+                                         ▼
+                     ┌─────────────────────────────────────────────┐
+                     │      QUERY 3: Fetch Full Assignment         │
+                     │  SELECT * FROM assignments                   │
+                     │  WHERE id = ?                                │
+                     │  (includes questions JSONB)                  │
+                     └─────────────────────────────────────────────┘
+The Fix Needed for Due Date
+The UI displays due_date but should display valid_until:
+
+Current Code (Line 409-411 in AssignmentViewer.tsx):
+
+
+{assignment.due_date && (
+  <span className="text-muted-foreground">
+    Due: {new Date(assignment.due_date).toLocaleDateString()}
+  </span>
+)}
+Should Be:
+
+
+{assignment.valid_until && (
+  <span className="text-muted-foreground">
+    Due: {new Date(assignment.valid_until).toLocaleDateString()}
+  </span>
+)}
+AND the query needs to fetch valid_until:
+
+
+.select(`
+  id,
+  title,
+  description,
+  due_date,
+  valid_until,  // ✅ ADD THIS
+  total_marks,
+  ...
+`)
+Mobile API Implementation (Proposed)
+Since there's no REST API endpoint for assignments yet, here's how you'd implement it for mobile:
+
+Option 1: Use Supabase Client Directly (Same as Web)
+
+// Mobile SDK - Same queries
+const fetchAssignments = async (
+  supabase: SupabaseClient,
+  subjectId: string,
+  chapterId?: string,
+  topicId?: string
+) => {
+  let query = supabase
+    .from('assignments')
+    .select(`
+      id,
+      title,
+      description,
+      due_date,
+      valid_until,
+      total_marks,
+      passing_marks,
+      duration_minutes,
+      chapter_id,
+      topic_id
+    `)
+    .eq('subject_id', subjectId)
+    .eq('is_active', true)
+    .order('created_at', { ascending: false });
+
+  if (chapterId) query = query.eq('chapter_id', chapterId);
+  if (topicId) query = query.eq('topic_id', topicId);
+
+  const { data, error } = await query;
+  return { data, error };
+};
+Option 2: Create REST API Endpoint (Recommended)
+Endpoint: POST /functions/v1/api/v1/assignments
+
+Request:
+
+
+{
+  "subject_id": "uuid",
+  "chapter_id": "uuid (optional)",
+  "topic_id": "uuid (optional)"
+}
+Response:
+
+
+{
+  "success": true,
+  "data": [
+    {
+      "id": "uuid",
+      "title": "Chapter Assignment",
+      "description": "...",
+      "due_date": null,
+      "valid_until": "2026-01-13T17:29:00+00:00",
+      "total_marks": 100,
+      "passing_marks": 40,
+      "duration_minutes": 60,
+      "chapter_id": "uuid",
+      "topic_id": null,
+      "status": "pending",
+      "score": null,
+      "percentage": null
+    }
+  ]
+}
+Summary of Issues Found
+Issue	Current State	Should Be
+Date Field	Uses due_date (always NULL)	Use valid_until (has actual dates)
+Query	Doesn't select valid_until	Add valid_until to select
+Interface	due_date: string	Add valid_until: string
+Display	Shows nothing (due_date is null)	Show valid_until date
+No REST API	Only Supabase SDK queries	Create /api/v1/assignments endpoint
+Would you like me to create a plan to fix the due date issue and optionally create a REST API endpoint for mobile integration?
+
+Now I have a complete picture. Let me explain the entire assignment fetching process with the due date issue I found:
+
+Complete Assignment Fetching Process
+The Issue with Due Dates
+Looking at the database, I found an important distinction between date fields:
+
+Column	Data Type	Current Data
+due_date	timestamp without time zone	All values are NULL
+valid_until	timestamp with time zone	Has actual dates like 2026-01-13 17:29:00+00
+homework_date	date	Exists but not used in fetching
+submission_date	date	Exists but not used in fetching
+The Problem: The current implementation fetches due_date but all assignments have due_date = NULL and use valid_until instead for the deadline.
+
+Current API Queries (Direct Supabase - NOT Edge Function)
+Currently, assignments are fetched using Direct Supabase Queries (not a REST API endpoint):
+
+1. Fetch Assignments List (For Students)
+Hook: useSubjectAssignmentsForStudent
+
+
+// Query Parameters (Not HTTP - Direct Supabase SDK)
+subjectId: string     // Required - The subject UUID
+chapterId?: string    // Optional - Filter by chapter
+topicId?: string      // Optional - Filter by topic
+userId: string        // Auto-extracted from auth session
+
+// Supabase Query
+const { data, error } = await supabase
+  .from('assignments')
+  .select(`
+    id,
+    title,
+    description,
+    due_date,           // ⚠️ Currently fetched but always NULL
+    total_marks,
+    passing_marks,
+    duration_minutes,
+    chapter_id,
+    topic_id
+  `)
+  .eq('subject_id', subjectId)
+  .eq('is_active', true)
+  .order('created_at', { ascending: false });
+
+// Optional filters
+if (chapterId) query = query.eq('chapter_id', chapterId);
+if (topicId) query = query.eq('topic_id', topicId);
+Response Shape:
+
+
+interface StudentAssignment {
+  id: string;
+  title: string;
+  description: string | null;
+  due_date: string | null;       // ⚠️ Always NULL currently
+  total_marks: number;
+  passing_marks: number;
+  duration_minutes: number | null;
+  chapter_id: string | null;
+  topic_id: string | null;
+  status: 'pending' | 'submitted' | 'graded';
+  score: number | null;
+  percentage: number | null;
+  submitted_at: string | null;
+  graded_at: string | null;
+}
+2. Fetch Assignment Details (Single Assignment)
+Hook: useAssignmentQuestions
+
+
+// Query Parameter
+assignmentId: string   // Required - The assignment UUID
+
+// Supabase Query
+const { data, error } = await supabase
+  .from('assignments')
+  .select('*')
+  .eq('id', assignmentId)
+  .single();
+
+// Response includes ALL columns including:
+// - due_date (NULL)
+// - valid_until (actual deadline)
+// - questions (JSONB array)
+Response Shape:
+
+
+interface AssignmentDetails {
+  id: string;
+  title: string;
+  description: string | null;
+  instructions: string | null;
+  total_marks: number;
+  passing_marks: number;
+  duration_minutes: number | null;
+  due_date: string | null;      // ⚠️ NULL - not being used
+  questions: AssignmentQuestion[];
+  chapter_id: string | null;
+  topic_id: string | null;
+  subject_id: string | null;
+}
+3. Fetch Submission Status
+Hook: useAssignmentSubmission
+
+
+// Query Parameters
+assignmentId: string   // Required
+studentId: string      // Auto-extracted from auth
+
+// Supabase Query
+const { data, error } = await supabase
+  .from('assignment_submissions')
+  .select('assignment_id, score, percentage, submitted_at, graded_at, answers')
+  .eq('assignment_id', assignmentId)
+  .eq('student_id', studentId)
+  .single();
+Flow Diagram
+┌─────────────────────────────────────────────────────────────────────┐
+│                     ASSIGNMENT FETCHING FLOW                        │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌──────────────┐     ┌─────────────────────────────────────────────┐
+│ AssignmentViewer │────▶│ useSubjectAssignmentsForStudent(          │
+│  Component   │     │   subjectId, chapterId, topicId)            │
+└──────────────┘     └─────────────────────────────────────────────┘
+                                         │
+                                         ▼
+                     ┌─────────────────────────────────────────────┐
+                     │         QUERY 1: Fetch Assignments          │
+                     │  SELECT id, title, due_date, ...            │
+                     │  FROM assignments                            │
+                     │  WHERE subject_id = ? AND is_active = true   │
+                     │  [+ chapter_id filter] [+ topic_id filter]   │
+                     └─────────────────────────────────────────────┘
+                                         │
+                                         ▼
+                     ┌─────────────────────────────────────────────┐
+                     │      QUERY 2: Fetch Submissions Status      │
+                     │  SELECT assignment_id, score, percentage,   │
+                     │         submitted_at, graded_at             │
+                     │  FROM assignment_submissions                 │
+                     │  WHERE student_id = ? AND assignment_id IN (?)│
+                     └─────────────────────────────────────────────┘
+                                         │
+                                         ▼
+                     ┌─────────────────────────────────────────────┐
+                     │         MERGE: Combine Data                  │
+                     │  - Assign status: pending/submitted/graded  │
+                     │  - Attach score & percentage                │
+                     │  - Return StudentAssignment[]               │
+                     └─────────────────────────────────────────────┘
+                                         │
+                                         ▼
+┌──────────────┐     ┌─────────────────────────────────────────────┐
+│   User Clicks   │────▶│ useAssignmentQuestions(assignmentId)      │
+│  "Start Test"  │     │                                           │
+└──────────────┘     └─────────────────────────────────────────────┘
+                                         │
+                                         ▼
+                     ┌─────────────────────────────────────────────┐
+                     │      QUERY 3: Fetch Full Assignment         │
+                     │  SELECT * FROM assignments                   │
+                     │  WHERE id = ?                                │
+                     │  (includes questions JSONB)                  │
+                     └─────────────────────────────────────────────┘
+The Fix Needed for Due Date
+The UI displays due_date but should display valid_until:
+
+Current Code (Line 409-411 in AssignmentViewer.tsx):
+
+
+{assignment.due_date && (
+  <span className="text-muted-foreground">
+    Due: {new Date(assignment.due_date).toLocaleDateString()}
+  </span>
+)}
+Should Be:
+
+
+{assignment.valid_until && (
+  <span className="text-muted-foreground">
+    Due: {new Date(assignment.valid_until).toLocaleDateString()}
+  </span>
+)}
+AND the query needs to fetch valid_until:
+
+
+.select(`
+  id,
+  title,
+  description,
+  due_date,
+  valid_until,  // ✅ ADD THIS
+  total_marks,
+  ...
+`)
+Mobile API Implementation (Proposed)
+Since there's no REST API endpoint for assignments yet, here's how you'd implement it for mobile:
+
+Option 1: Use Supabase Client Directly (Same as Web)
+
+// Mobile SDK - Same queries
+const fetchAssignments = async (
+  supabase: SupabaseClient,
+  subjectId: string,
+  chapterId?: string,
+  topicId?: string
+) => {
+  let query = supabase
+    .from('assignments')
+    .select(`
+      id,
+      title,
+      description,
+      due_date,
+      valid_until,
+      total_marks,
+      passing_marks,
+      duration_minutes,
+      chapter_id,
+      topic_id
+    `)
+    .eq('subject_id', subjectId)
+    .eq('is_active', true)
+    .order('created_at', { ascending: false });
+
+  if (chapterId) query = query.eq('chapter_id', chapterId);
+  if (topicId) query = query.eq('topic_id', topicId);
+
+  const { data, error } = await query;
+  return { data, error };
+};
+Option 2: Create REST API Endpoint (Recommended)
+Endpoint: POST /functions/v1/api/v1/assignments
+
+Request:
+
+
+{
+  "subject_id": "uuid",
+  "chapter_id": "uuid (optional)",
+  "topic_id": "uuid (optional)"
+}
+Response:
+
+
+{
+  "success": true,
+  "data": [
+    {
+      "id": "uuid",
+      "title": "Chapter Assignment",
+      "description": "...",
+      "due_date": null,
+      "valid_until": "2026-01-13T17:29:00+00:00",
+      "total_marks": 100,
+      "passing_marks": 40,
+      "duration_minutes": 60,
+      "chapter_id": "uuid",
+      "topic_id": null,
+      "status": "pending",
+      "score": null,
+      "percentage": null
+    }
+  ]
+}
+Summary of Issues Found
+Issue	Current State	Should Be
+Date Field	Uses due_date (always NULL)	Use valid_until (has actual dates)
+Query	Doesn't select valid_until	Add valid_until to select
+Interface	due_date: string	Add valid_until: string
+Display	Shows nothing (due_date is null)	Show valid_until date
+No REST API	Only Supabase SDK queries	Create /api/v1/assignments endpoint
+Would you like me to create a plan to fix the due date issue and optionally create a REST API endpoint for mobile integration?
+
+
+
+
+
+

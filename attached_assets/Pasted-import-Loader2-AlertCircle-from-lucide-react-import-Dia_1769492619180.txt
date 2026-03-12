@@ -1,0 +1,86 @@
+import { Loader2, AlertCircle } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+} from '@/components/ui/dialog';
+import { EducationalVideoPlayer } from './EducationalVideoPlayer';
+import { usePresentationReview } from '@/hooks/useVideoGenerationJobs';
+import { getAdminMediaUrl } from './utils/mediaResolver';
+import type { PresentationReview } from '@/hooks/useVideoGenerationJobs';
+
+interface EducationalVideoPlayerDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  // Admin mode: fetch from proxy using job ID
+  externalJobId?: string;
+  // Student mode: use pre-fetched JSON data
+  presentationData?: PresentationReview | null;
+  documentName: string;
+}
+
+export const EducationalVideoPlayerDialog = ({
+  open,
+  onOpenChange,
+  externalJobId,
+  presentationData: directPresentationData,
+  documentName,
+}: EducationalVideoPlayerDialogProps) => {
+  // Only fetch if we don't have direct presentation data and have an externalJobId
+  const shouldFetch = !directPresentationData && !!externalJobId;
+  
+  const { 
+    data: fetchedPresentationData, 
+    isLoading, 
+    isError, 
+    error 
+  } = usePresentationReview(shouldFetch ? externalJobId : null);
+
+  // Use direct data if provided, otherwise use fetched data
+  const presentationData = directPresentationData || fetchedPresentationData;
+  
+  // Determine loading/error states based on mode
+  const showLoading = shouldFetch && isLoading;
+  const showError = shouldFetch && isError;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-[95vw] h-[95vh] p-0 overflow-hidden bg-background">
+        <div className="h-full overflow-hidden relative">
+          {showLoading ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">Loading presentation...</p>
+              </div>
+            </div>
+          ) : showError ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center text-destructive">
+                <AlertCircle className="h-8 w-8 mx-auto mb-2" />
+                <p className="text-sm">Failed to load presentation</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {error instanceof Error ? error.message : 'Unknown error'}
+                </p>
+              </div>
+            </div>
+          ) : !presentationData?.sections?.length ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center text-muted-foreground">
+                <AlertCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">No sections found in this presentation</p>
+              </div>
+            </div>
+          ) : (
+            <EducationalVideoPlayer
+              presentationData={presentationData}
+              jobId={externalJobId}
+              getMediaUrl={getAdminMediaUrl}
+              onClose={() => onOpenChange(false)}
+              className="h-full"
+            />
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};

@@ -1,0 +1,516 @@
+Complete Technical Documentation: /dashboard Page
+1. Overview
+The /dashboard page is the main student dashboard that displays:
+
+Student profile with ID card
+Daily Practice Test (DPT) progress
+Enrolled courses with subject details
+Upcoming classes from timetable
+Instructors list
+Batch information
+Notifications
+2. Database Schema
+The dashboard uses these 18 database tables:
+
+Table	Purpose
+profiles	Student profile data (name, avatar, email)
+enrollments	Student-course enrollment links
+courses	Course metadata (name, thumbnail)
+course_subjects	Course-to-subject mapping
+popular_subjects	Subject details (name, description)
+subject_chapters	Chapters within subjects
+student_progress	Chapter completion tracking
+scheduled_classes	Scheduled live classes
+class_attendance	Student attendance records
+dpp_topic_submissions	Daily Practice Test submissions
+notices	System notices/announcements
+notice_reads	Track read status of notices
+course_timetables	Weekly class timetable
+teacher_profiles	Instructor profiles
+instructor_subjects	Instructor-subject assignments
+batches	Course batch information
+assignments	Course assignments
+assignment_submissions	Student assignment submissions
+3. API Endpoints Used
+Authentication
+
+supabase.auth.getSession()  // Check if user is logged in
+supabase.auth.getUser()     // Get current user
+supabase.auth.signOut()     // Logout functionality
+Profile Data
+
+GET /rest/v1/profiles
+  ?select=*
+  &id=eq.{user_id}
+Enrollments & Courses
+
+GET /rest/v1/enrollments
+  ?select=course_id
+  &student_id=eq.{user_id}
+  &is_active=eq.true
+
+GET /rest/v1/courses
+  ?select=id,name,slug,thumbnail_url
+  &id=in.({course_ids})
+Course Subjects & Progress
+
+GET /rest/v1/course_subjects
+  ?select=course_id,subject_id,display_order,popular_subjects:subject_id(id,name,description,thumbnail_url)
+  &course_id=in.({course_ids})
+  &order=display_order
+
+GET /rest/v1/subject_chapters
+  ?select=id,subject_id
+  &subject_id=in.({subject_ids})
+
+GET /rest/v1/student_progress
+  ?select=chapter_id
+  &student_id=eq.{user_id}
+  &is_completed=eq.true
+  &chapter_id=in.({chapter_ids})
+Assignments
+
+GET /rest/v1/assignments
+  ?select=id,chapter_id,course_id
+  &course_id=in.({course_ids})
+  &is_active=eq.true
+
+GET /rest/v1/assignment_submissions
+  ?select=assignment_id
+  &student_id=eq.{user_id}
+  &assignment_id=in.({assignment_ids})
+Attendance
+
+GET /rest/v1/scheduled_classes
+  ?select=id,scheduled_at
+  &course_id=in.({course_ids})
+  &scheduled_at=gte.{30_days_ago}
+  &scheduled_at=lte.{now}
+  &is_cancelled=eq.false
+
+GET /rest/v1/class_attendance
+  ?select=*,scheduled_class:scheduled_classes(scheduled_at,subject)
+  &student_id=eq.{user_id}
+  &scheduled_class_id=in.({class_ids})
+DPT (Daily Practice Test)
+
+GET /rest/v1/dpp_topic_submissions
+  ?select=*
+  &student_id=eq.{user_id}
+  &order=test_date.desc
+Timetable & Upcoming Classes
+
+GET /rest/v1/course_timetables
+  ?select=*,subject:popular_subjects(id,name),instructor:teacher_profiles(id,full_name,avatar_url),course:courses(id,name)
+  &course_id=in.({course_ids})
+  &is_active=eq.true
+  &order=day_of_week,start_time
+Teachers/Instructors
+
+GET /rest/v1/course_subjects
+  ?select=subject_id
+  &course_id=in.({course_ids})
+
+GET /rest/v1/instructor_subjects
+  ?select=instructor_id,subject_id,popular_subjects!inner(name)
+  &subject_id=in.({subject_ids})
+
+GET /rest/v1/teacher_profiles
+  ?select=*
+  &id=in.({instructor_ids})
+Batches
+
+GET /rest/v1/enrollments
+  ?select=id,course_id,batch_id,enrolled_at,courses:course_id(id,name,thumbnail_url),batches:batch_id(id,name,start_date,end_date,current_students,max_students)
+  &student_id=eq.{user_id}
+  &is_active=eq.true
+Notices/Notifications
+
+GET /rest/v1/notices
+  ?select=*
+  &is_active=eq.true
+  &order=created_at.desc
+
+GET /rest/v1/notice_reads
+  ?select=notice_id
+  &user_id=eq.{user_id}
+
+POST /rest/v1/notice_reads  // Mark as read
+  { notice_id, user_id }
+4. React Hooks Used
+Hook	File	Purpose
+useQuery	TanStack React Query	Data fetching & caching
+useCurrentAuthUser	useCurrentAuthUser.ts	Get authenticated user
+useStudentCourseIds	useStudentEnrollments.ts	Get enrolled course IDs
+useDashboardCourseDetails	useDashboardCourseDetails.ts	Fetch courses with subjects & progress
+useAttendance	useAttendance.ts	Calculate attendance percentage
+useDPT	useDPT.ts	Daily Practice Test stats & streak
+useTeachers	useTeachers.ts	Fetch assigned instructors
+useStudentBatchInfo	useBatchStudents.ts	Batch enrollment info
+useUpcomingClassesFromTimetable	useUpcomingClassesFromTimetable.ts	Next 7 days classes
+useNotices	useNotices.ts	Notices with read status
+5. UI Components Used
+From shadcn/ui:
+Card, CardContent, CardHeader, CardTitle, CardDescription
+Button
+Badge
+Progress
+Avatar, AvatarImage, AvatarFallback
+Tabs, TabsList, TabsTrigger, TabsContent
+Dialog, DialogContent, DialogHeader, DialogTitle
+ScrollArea
+Input
+Skeleton
+From Lucide React Icons:
+ArrowRight, BookOpen, GraduationCap, Search
+Bell, Megaphone, Calendar, AlertCircle
+Clock, Video, Users, Flame
+ChevronLeft, ChevronRight, MessageCircle
+Bot, ClipboardList
+6. Page Component Structure
+Dashboard.tsx
+├── SEOHead
+├── DashboardHeader
+│   ├── Logo
+│   ├── MegaMenu
+│   ├── Search Input
+│   ├── Notification Button (with Badge)
+│   ├── User Profile Avatar
+│   ├── DashboardMenu
+│   └── NotificationModal
+│       └── Notice list with read/unread status
+│
+├── "View My Detailed Progress" Button → /student-dashboard
+│
+├── StudentIDCard
+│   ├── Avatar + Name + Email
+│   ├── Attendance Percentage
+│   ├── Student ID
+│   └── DPT Section
+│       ├── Weekly Grid (7 days)
+│       ├── Streak Counter
+│       └── Average Score
+│
+├── EnrolledCoursesSection
+│   ├── Course Tabs
+│   └── CourseTabContent
+│       └── CourseSubjectCard (grid)
+│           ├── Subject thumbnail
+│           ├── Chapter count
+│           ├── Progress bar
+│           ├── Pending assignments badge
+│           ├── "Study" button
+│           └── "Ask AI Teacher" button
+│
+├── UpcomingClasses
+│   └── Class cards (next 5)
+│       ├── Subject + notes
+│       ├── Date + time + duration
+│       ├── Teacher name
+│       └── "Join Class" button
+│
+├── InstructorsList
+│   └── Horizontal scrollable cards
+│       ├── Avatar
+│       ├── Name + subjects
+│       ├── Specialization
+│       └── Contact button
+│
+├── BatchInfoCard
+│   └── Batch cards
+│       ├── Course name
+│       ├── Batch name
+│       ├── Start/end dates
+│       └── Student capacity progress bar
+│
+└── Footer
+7. Data Flow Diagram
+Now I have a complete understanding of the /dashboard page. Let me provide you with a comprehensive explanation:
+
+Complete Technical Documentation: /dashboard Page
+1. Overview
+The /dashboard page is the main student dashboard that displays:
+
+Student profile with ID card
+Daily Practice Test (DPT) progress
+Enrolled courses with subject details
+Upcoming classes from timetable
+Instructors list
+Batch information
+Notifications
+2. Database Schema
+The dashboard uses these 18 database tables:
+
+Table	Purpose
+profiles	Student profile data (name, avatar, email)
+enrollments	Student-course enrollment links
+courses	Course metadata (name, thumbnail)
+course_subjects	Course-to-subject mapping
+popular_subjects	Subject details (name, description)
+subject_chapters	Chapters within subjects
+student_progress	Chapter completion tracking
+scheduled_classes	Scheduled live classes
+class_attendance	Student attendance records
+dpp_topic_submissions	Daily Practice Test submissions
+notices	System notices/announcements
+notice_reads	Track read status of notices
+course_timetables	Weekly class timetable
+teacher_profiles	Instructor profiles
+instructor_subjects	Instructor-subject assignments
+batches	Course batch information
+assignments	Course assignments
+assignment_submissions	Student assignment submissions
+3. API Endpoints Used
+Authentication
+
+supabase.auth.getSession()  // Check if user is logged in
+supabase.auth.getUser()     // Get current user
+supabase.auth.signOut()     // Logout functionality
+Profile Data
+
+GET /rest/v1/profiles
+  ?select=*
+  &id=eq.{user_id}
+Enrollments & Courses
+
+GET /rest/v1/enrollments
+  ?select=course_id
+  &student_id=eq.{user_id}
+  &is_active=eq.true
+
+GET /rest/v1/courses
+  ?select=id,name,slug,thumbnail_url
+  &id=in.({course_ids})
+Course Subjects & Progress
+
+GET /rest/v1/course_subjects
+  ?select=course_id,subject_id,display_order,popular_subjects:subject_id(id,name,description,thumbnail_url)
+  &course_id=in.({course_ids})
+  &order=display_order
+
+GET /rest/v1/subject_chapters
+  ?select=id,subject_id
+  &subject_id=in.({subject_ids})
+
+GET /rest/v1/student_progress
+  ?select=chapter_id
+  &student_id=eq.{user_id}
+  &is_completed=eq.true
+  &chapter_id=in.({chapter_ids})
+Assignments
+
+GET /rest/v1/assignments
+  ?select=id,chapter_id,course_id
+  &course_id=in.({course_ids})
+  &is_active=eq.true
+
+GET /rest/v1/assignment_submissions
+  ?select=assignment_id
+  &student_id=eq.{user_id}
+  &assignment_id=in.({assignment_ids})
+Attendance
+
+GET /rest/v1/scheduled_classes
+  ?select=id,scheduled_at
+  &course_id=in.({course_ids})
+  &scheduled_at=gte.{30_days_ago}
+  &scheduled_at=lte.{now}
+  &is_cancelled=eq.false
+
+GET /rest/v1/class_attendance
+  ?select=*,scheduled_class:scheduled_classes(scheduled_at,subject)
+  &student_id=eq.{user_id}
+  &scheduled_class_id=in.({class_ids})
+DPT (Daily Practice Test)
+
+GET /rest/v1/dpp_topic_submissions
+  ?select=*
+  &student_id=eq.{user_id}
+  &order=test_date.desc
+Timetable & Upcoming Classes
+
+GET /rest/v1/course_timetables
+  ?select=*,subject:popular_subjects(id,name),instructor:teacher_profiles(id,full_name,avatar_url),course:courses(id,name)
+  &course_id=in.({course_ids})
+  &is_active=eq.true
+  &order=day_of_week,start_time
+Teachers/Instructors
+
+GET /rest/v1/course_subjects
+  ?select=subject_id
+  &course_id=in.({course_ids})
+
+GET /rest/v1/instructor_subjects
+  ?select=instructor_id,subject_id,popular_subjects!inner(name)
+  &subject_id=in.({subject_ids})
+
+GET /rest/v1/teacher_profiles
+  ?select=*
+  &id=in.({instructor_ids})
+Batches
+
+GET /rest/v1/enrollments
+  ?select=id,course_id,batch_id,enrolled_at,courses:course_id(id,name,thumbnail_url),batches:batch_id(id,name,start_date,end_date,current_students,max_students)
+  &student_id=eq.{user_id}
+  &is_active=eq.true
+Notices/Notifications
+
+GET /rest/v1/notices
+  ?select=*
+  &is_active=eq.true
+  &order=created_at.desc
+
+GET /rest/v1/notice_reads
+  ?select=notice_id
+  &user_id=eq.{user_id}
+
+POST /rest/v1/notice_reads  // Mark as read
+  { notice_id, user_id }
+4. React Hooks Used
+Hook	File	Purpose
+useQuery	TanStack React Query	Data fetching & caching
+useCurrentAuthUser	useCurrentAuthUser.ts	Get authenticated user
+useStudentCourseIds	useStudentEnrollments.ts	Get enrolled course IDs
+useDashboardCourseDetails	useDashboardCourseDetails.ts	Fetch courses with subjects & progress
+useAttendance	useAttendance.ts	Calculate attendance percentage
+useDPT	useDPT.ts	Daily Practice Test stats & streak
+useTeachers	useTeachers.ts	Fetch assigned instructors
+useStudentBatchInfo	useBatchStudents.ts	Batch enrollment info
+useUpcomingClassesFromTimetable	useUpcomingClassesFromTimetable.ts	Next 7 days classes
+useNotices	useNotices.ts	Notices with read status
+5. UI Components Used
+From shadcn/ui:
+Card, CardContent, CardHeader, CardTitle, CardDescription
+Button
+Badge
+Progress
+Avatar, AvatarImage, AvatarFallback
+Tabs, TabsList, TabsTrigger, TabsContent
+Dialog, DialogContent, DialogHeader, DialogTitle
+ScrollArea
+Input
+Skeleton
+From Lucide React Icons:
+ArrowRight, BookOpen, GraduationCap, Search
+Bell, Megaphone, Calendar, AlertCircle
+Clock, Video, Users, Flame
+ChevronLeft, ChevronRight, MessageCircle
+Bot, ClipboardList
+6. Page Component Structure
+Dashboard.tsx
+├── SEOHead
+├── DashboardHeader
+│   ├── Logo
+│   ├── MegaMenu
+│   ├── Search Input
+│   ├── Notification Button (with Badge)
+│   ├── User Profile Avatar
+│   ├── DashboardMenu
+│   └── NotificationModal
+│       └── Notice list with read/unread status
+│
+├── "View My Detailed Progress" Button → /student-dashboard
+│
+├── StudentIDCard
+│   ├── Avatar + Name + Email
+│   ├── Attendance Percentage
+│   ├── Student ID
+│   └── DPT Section
+│       ├── Weekly Grid (7 days)
+│       ├── Streak Counter
+│       └── Average Score
+│
+├── EnrolledCoursesSection
+│   ├── Course Tabs
+│   └── CourseTabContent
+│       └── CourseSubjectCard (grid)
+│           ├── Subject thumbnail
+│           ├── Chapter count
+│           ├── Progress bar
+│           ├── Pending assignments badge
+│           ├── "Study" button
+│           └── "Ask AI Teacher" button
+│
+├── UpcomingClasses
+│   └── Class cards (next 5)
+│       ├── Subject + notes
+│       ├── Date + time + duration
+│       ├── Teacher name
+│       └── "Join Class" button
+│
+├── InstructorsList
+│   └── Horizontal scrollable cards
+│       ├── Avatar
+│       ├── Name + subjects
+│       ├── Specialization
+│       └── Contact button
+│
+├── BatchInfoCard
+│   └── Batch cards
+│       ├── Course name
+│       ├── Batch name
+│       ├── Start/end dates
+│       └── Student capacity progress bar
+│
+└── Footer
+7. Data Flow Diagram
+
+Diagram
+8. Key Features & Implementation Details
+Authentication Check
+
+useEffect(() => {
+  checkAuth();
+}, []);
+
+const checkAuth = async () => {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) {
+    navigate('/auth');
+  }
+};
+DPT Streak Calculation
+
+let streak = 0;
+const submissionDates = new Set(submissions.map(s => s.test_date));
+let checkDate = new Date();
+while (submissionDates.has(format(checkDate, 'yyyy-MM-dd'))) {
+  streak++;
+  checkDate = subDays(checkDate, 1);
+}
+Attendance Calculation
+
+const total = classIds.length;
+const present = attendance?.filter(a => a.status === 'present').length || 0;
+const percentage = total > 0 ? Math.round((present / total) * 100) : 0;
+Progress Calculation
+
+const progressPercent = subject.chaptersTotal > 0 
+  ? Math.round((subject.chaptersCompleted / subject.chaptersTotal) * 100) 
+  : 0;
+Timetable to Upcoming Classes
+
+// Look 7 days ahead
+for (let i = 0; i < 7; i++) {
+  const checkDate = addDays(startOfDay(now), i);
+  const dayOfWeek = checkDate.getDay();
+  const dayEntries = timetableEntries.filter(e => e.day_of_week === dayOfWeek);
+  // Convert time strings to actual dates
+  // Filter only future classes
+}
+9. Caching Strategy
+Hook	Stale Time	Refetch on Focus
+dashboard-header-profile	5 minutes	Yes
+dashboard-course-details	5 minutes	No
+student-attendance	Default	Yes
+dpp-submissions	Default	Yes
+upcoming-classes-timetable	Default	Yes
+10. Navigation Actions
+Action	Destination
+"View My Detailed Progress" button	/student-dashboard
+Course tab "Study" button	/learning/{courseId}?subject={subjectId}
+Course tab "Ask AI Teacher" button	/learning/{courseId}?subject={subjectId}&tab=ai-assistant
+"Join Class" button	External meeting link
+Instructor "Contact" button	mailto:{instructor.email}
+Profile avatar click	/profile
+"Browse Courses" / "Browse More"

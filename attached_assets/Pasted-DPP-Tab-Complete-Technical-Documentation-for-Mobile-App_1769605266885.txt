@@ -1,0 +1,474 @@
+DPP Tab - Complete Technical Documentation for Mobile App Implementation
+1. Overview
+The DPP (Daily Practice Problems) tab is a test-taking module that allows students to practice topic-specific questions. It has two different implementations in the system:
+
+Implementation	Component	Data Source	Submission Table
+Method 1 (Active)	DPPTab.tsx	tests table (with test_type = "practice" + "DPP" in title)	test_results
+Method 2 (Legacy)	useTopicDPP.ts	dpp_questions table	dpp_topic_submissions
+The current active implementation uses Method 1 - DPPs are created as regular tests with "DPP" in their title/description.
+
+2. Architecture Diagram
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              DPP TAB SYSTEM                                 │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────────┐    │
+│  │   DPPTab.tsx    │───▶│  useStudentTests │───▶│   tests table       │    │
+│  │  (Component)    │    │      (Hook)      │    │   test_questions    │    │
+│  └─────────────────┘    └──────────────────┘    │   questions         │    │
+│          │                                       └─────────────────────┘    │
+│          │                                                                  │
+│          │  ┌──────────────────────┐    ┌─────────────────────────────┐    │
+│          └─▶│  useSubmitTestResult │───▶│    test_results table       │    │
+│             │       (Hook)         │    │  (stores student answers)   │    │
+│             └──────────────────────┘    └─────────────────────────────┘    │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │                    LEGACY (Topic-based DPP)                         │   │
+│  │  useTopicDPP.ts → dpp_questions → dpp_topic_submissions             │   │
+│  │  (Still available but not used by DPPTab.tsx)                       │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+3. Database Schema
+3.1 Core Tables
+tests (DPP Test Definition)
+
+CREATE TABLE tests (
+  id UUID PRIMARY KEY,
+  title TEXT NOT NULL,                    -- Contains "DPP" for DPP tests
+  description TEXT,
+  subject_id UUID REFERENCES subjects(id),
+  chapter_id UUID REFERENCES chapters(id),
+  topic_id UUID REFERENCES subject_topics(id),
+  duration_minutes INTEGER DEFAULT 30,
+  total_marks INTEGER DEFAULT 0,
+  test_type TEXT NOT NULL,                -- "practice" for DPP
+  is_active BOOLEAN DEFAULT true,
+  created_by UUID,
+  created_at TIMESTAMPTZ,
+  updated_at TIMESTAMPTZ
+);
+test_questions (Links Tests to Questions)
+
+CREATE TABLE test_questions (
+  id UUID PRIMARY KEY,
+  test_id UUID NOT NULL REFERENCES tests(id),
+  question_id UUID NOT NULL REFERENCES questions(id),
+  order_number INTEGER NOT NULL,
+  marks INTEGER DEFAULT 1,
+  created_at TIMESTAMPTZ
+);
+questions (Question Bank)
+
+CREATE TABLE questions (
+  id UUID PRIMARY KEY,
+  topic_id UUID,
+  chapter_id UUID,
+  question_text TEXT NOT NULL,
+  question_type TEXT NOT NULL,            -- "mcq", "single_choice", etc.
+  question_format TEXT,                   -- "single_choice", "multiple_choice", "integer"
+  options JSONB,                          -- {"A": {"text": "..."}, "B": {...}}
+  correct_answer TEXT NOT NULL,           -- "a", "b", "c", "d" or integer value
+  explanation TEXT,
+  difficulty TEXT,                        -- "Low", "Medium", "Intermediate", "Advanced"
+  marks INTEGER DEFAULT 1,
+  is_important BOOLEAN DEFAULT false,
+  solution TEXT,                          -- Detailed solution
+  source_document_id UUID,
+  created_at TIMESTAMPTZ
+);
+test_results (Student Submissions)
+
+CREATE TABLE test_results (
+  id UUID PRIMARY KEY,
+  student_id UUID NOT NULL,
+  test_id UUID NOT NULL REFERENCES tests(id),
+  subject_id UUID,
+  test_type TEXT NOT NULL,                -- "dpp" for DPP results
+  score INTEGER,
+  total_questions INTEGER NOT NULL,
+  percentage NUMERIC,
+  time_taken_seconds INTEGER,
+  answers JSONB,                          -- {"question_id": "selected_answer", ...}
+  grading_status TEXT DEFAULT 'graded',   -- "pending", "graded", "ai_graded"
+  submitted_at TIMESTAMPTZ,
+  graded_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ
+);
+4. Component Flow
+4.1 State Machine
+
+┌──────────────┐      handleStartTest()      ┌──────────────┐
+│              │────────────────────────────▶│              │
+│    papers    │                             │   testing    │
+│  (DPP List)  │◀────────────────────────────│  (Active)    │
+│              │      handleBackToPapers()   │              │
+└──────────────┘                             └──────────────┘
+                                                    │
+                                                    │ handleSubmit()
+                                                    ▼
+                                             ┌──────────────┐
+                                             │   results    │
+                                             │  (Summary)   │
+                                             └──────────────┘
+4.2 Component State
+
+type TestState = "papers" | "testing" | "results";
+
+// Component state variables:
+const [testState, setTestState] = useState<TestState>("papers");
+const [selectedTest, setSelectedTest] = useState<StudentTest | null>(null);
+const [testQuestions, setTestQuestions] = useState<TestQuestion[]>([]);
+const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+const [answers, setAnswers] = useState<Record<string, string>>({});
+const [flaggedQuestions, setFlaggedQuestions] = useState<Set<string>>(new Set());
+const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
+const [testStartTime, setTestStartTime] = useState<number | null>(null);
+const [showResults, setShowResults] = useState(false);
+5. API Endpoints (Supabase Queries)
+5.1 Fetch DPP Tests
+
+// GET all DPP tests for a subject
+const { data: practiceTests } = await supabase
+  .from("tests")
+  .select("*")
+  .eq("subject_id", subjectId)
+  .eq("is_active", true)
+  .eq("test_type", "practice")  // DPPs are stored as "practice" type
+  .order("created_at", { ascending: false });
+
+// Filter to only those with "DPP" in title/description
+const dppTests = practiceTests.filter(test => {
+  const searchText = `${test.title} ${test.description || ""}`.toLowerCase();
+  return searchText.includes("dpp");
+});
+Response Structure:
+
+
+{
+  "id": "uuid",
+  "title": "DPP - Day 1",
+  "description": "Practice problems for topic X",
+  "subject_id": "uuid",
+  "chapter_id": "uuid",
+  "topic_id": "uuid",
+  "duration_minutes": 30,
+  "total_marks": 10,
+  "test_type": "practice",
+  "is_active": true,
+  "question_count": 10
+}
+5.2 Fetch Questions for a DPP
+
+// GET questions linked to a test
+const { data: testQuestionData } = await supabase
+  .from("test_questions")
+  .select(`
+    *,
+    question:questions(*)
+  `)
+  .eq("test_id", testId)
+  .order("order_number", { ascending: true });
+Response Structure:
+
+
+{
+  "id": "uuid",
+  "test_id": "uuid",
+  "question_id": "uuid",
+  "order_number": 1,
+  "marks": 1,
+  "question": {
+    "id": "uuid",
+    "question_text": "What is 2+2?",
+    "options": {
+      "A": { "text": "3" },
+      "B": { "text": "4" },
+      "C": { "text": "5" },
+      "D": { "text": "6" }
+    },
+    "correct_answer": "b",
+    "difficulty": "Medium",
+    "explanation": "2+2 equals 4",
+    "solution": "Step 1: Add 2 and 2..."
+  }
+}
+5.3 Get User's Submitted DPPs (for status display)
+
+// GET all DPP submissions for current user
+const { data: submittedDpps } = await supabase
+  .from("test_results")
+  .select("test_id, submitted_at, score, percentage, grading_status, total_questions")
+  .eq("student_id", userId)
+  .order("submitted_at", { ascending: false });
+5.4 Submit DPP Result
+
+// POST submit test result
+const { data, error } = await supabase
+  .from("test_results")
+  .insert({
+    student_id: userId,
+    test_id: testId,
+    subject_id: subjectId,
+    test_type: "dpp",           // Important: Set as "dpp" for DPP results
+    score: correctCount,
+    total_questions: questions.length,
+    percentage: Math.round((correctCount / questions.length) * 100),
+    time_taken_seconds: timeTaken,
+    answers: answersMap,        // { "question_id": "a", ... }
+    grading_status: "graded"
+  })
+  .select()
+  .single();
+6. Key Functions
+6.1 Start Test (handleStartTest)
+
+const handleStartTest = async (test: StudentTest) => {
+  // 1. Fetch questions from test_questions + questions tables
+  const { data: testQuestionData } = await supabase
+    .from("test_questions")
+    .select(`*, question:questions(*)`)
+    .eq("test_id", test.id)
+    .order("order_number", { ascending: true });
+
+  // 2. Transform to TestQuestion format
+  const questions: TestQuestion[] = testQuestionData.map((tq) => ({
+    id: tq.question.id,
+    question_text: tq.question.question_text,
+    options: tq.question.options || {},
+    correct_answer: tq.question.correct_answer,
+    difficulty: tq.question.difficulty || "medium",
+    question_format: tq.question.question_format || "objective",
+    is_important: tq.question.is_important || false,
+    solution: tq.question.solution,
+    marks: tq.marks || 1,
+  }));
+
+  // 3. Initialize test state
+  setSelectedTest(test);
+  setTestQuestions(questions);
+  setAnswers({});
+  setFlaggedQuestions(new Set());
+  setCurrentQuestionIndex(0);
+  setTimeRemaining(test.duration_minutes > 0 ? test.duration_minutes * 60 : null);
+  setTestStartTime(Date.now());
+  setTestState("testing");
+};
+6.2 Answer Selection (handleAnswer)
+
+const handleAnswer = (questionId: string, answer: string) => {
+  setAnswers((prev) => ({ ...prev, [questionId]: answer }));
+};
+6.3 Flag Question (toggleFlag)
+
+const toggleFlag = (questionId: string) => {
+  setFlaggedQuestions((prev) => {
+    const newSet = new Set(prev);
+    if (newSet.has(questionId)) {
+      newSet.delete(questionId);
+    } else {
+      newSet.add(questionId);
+    }
+    return newSet;
+  });
+};
+6.4 Submit Test (handleSubmit)
+
+const handleSubmit = async () => {
+  const timeTakenSeconds = testStartTime 
+    ? Math.floor((Date.now() - testStartTime) / 1000) 
+    : null;
+
+  // Calculate score
+  let correct = 0;
+  testQuestions.forEach((q) => {
+    if (isCorrect(answers[q.id], q.correct_answer)) {
+      correct++;
+    }
+  });
+
+  const percentage = Math.round((correct / testQuestions.length) * 100);
+
+  // Submit to database
+  await submitTestResult.mutateAsync({
+    test_id: selectedTest.id,
+    subject_id: subjectId,
+    test_type: "dpp",
+    score: correct,
+    total_questions: testQuestions.length,
+    percentage,
+    time_taken_seconds: timeTakenSeconds,
+    answers,
+    grading_status: "graded",
+  });
+
+  setShowResults(true);
+  setTestState("results");
+};
+6.5 Check Answer Correctness (isCorrect)
+
+const isCorrect = (userAnswer: string | undefined, correctAnswer: string | undefined): boolean => {
+  if (!userAnswer || !correctAnswer) return false;
+  return userAnswer.trim().toLowerCase() === correctAnswer.trim().toLowerCase();
+};
+7. UI Components
+7.1 DPP List Card (papers state)
+
+┌─────────────────────────────────────┐
+│ 📄  DPP - Day 1                     │
+│     Description text here...        │
+│                                     │
+│ ┌─────────────┐  ┌────────────────┐ │
+│ │✓ Submitted  │  │ Jan 28         │ │
+│ │   - 85%     │  └────────────────┘ │
+│ └─────────────┘                     │
+│                                     │
+│ ┌──────────┐ ┌──────┐ ┌──────────┐ │
+│ │10 Ques   │ │30 min│ │10 marks  │ │
+│ └──────────┘ └──────┘ └──────────┘ │
+│                                     │
+│ ┌─────────────────────────────────┐ │
+│ │ ↻ Re-attempt                    │ │
+│ └─────────────────────────────────┘ │
+└─────────────────────────────────────┘
+7.2 Testing Interface (testing state)
+
+┌─────────────────────────────────────────────┐
+│ Question 1 of 10    Answered: 3/10    ⏱ 25:30│
+├─────────────────────────────────────────────┤
+│ ████████████░░░░░░░░░░░░░░░░░  (Progress)   │
+├─────────────────────────────────────────────┤
+│ [1][2][3][4][5][6][7][8][9][10] (Navigator) │
+├─────────────────────────────────────────────┤
+│                                             │
+│   What is the value of x if 2x + 3 = 7?     │
+│                                        [🚩] │
+│   ┌─────────────────────────────────────┐   │
+│   │ ○ A. 1                              │   │
+│   ├─────────────────────────────────────┤   │
+│   │ ● B. 2  ✓ (selected)                │   │
+│   ├─────────────────────────────────────┤   │
+│   │ ○ C. 3                              │   │
+│   ├─────────────────────────────────────┤   │
+│   │ ○ D. 4                              │   │
+│   └─────────────────────────────────────┘   │
+│                                             │
+├─────────────────────────────────────────────┤
+│ [← Previous]                      [Next →]  │
+│                            (or [Submit DPP])│
+└─────────────────────────────────────────────┘
+7.3 Results View (results state)
+
+┌─────────────────────────────────────────┐
+│              🏆 DPP Completed!          │
+│              DPP - Day 1                │
+├─────────────────────────────────────────┤
+│                  85%                    │
+│           8 out of 10 correct           │
+├─────────────────────────────────────────┤
+│ ┌──────────┐ ┌──────────┐ ┌──────────┐ │
+│ │ ✓ 8      │ │ ✗ 1      │ │ ⏱ 1      │ │
+│ │ Correct  │ │Incorrect │ │Unanswered│ │
+│ └──────────┘ └──────────┘ └──────────┘ │
+├─────────────────────────────────────────┤
+│ [Back to DPPs]     [Review Answers]     │
+└─────────────────────────────────────────┘
+8. Options Format
+The options field in questions uses JSONB format:
+
+
+// Format 1: Object with text property
+{
+  "A": { "text": "Option A text" },
+  "B": { "text": "Option B text" },
+  "C": { "text": "Option C text" },
+  "D": { "text": "Option D text" }
+}
+
+// Format 2: Simple string values
+{
+  "A": "Option A text",
+  "B": "Option B text",
+  "C": "Option C text",
+  "D": "Option D text"
+}
+Handling in code:
+
+
+const optionText = typeof value === "object" ? value.text : value;
+9. Timer Implementation
+
+// Timer countdown effect
+useEffect(() => {
+  if (testState !== "testing" || timeRemaining === null || timeRemaining === 0) return;
+
+  const timer = setInterval(() => {
+    setTimeRemaining((prev) => {
+      if (prev === null || prev <= 0) {
+        clearInterval(timer);
+        return 0;
+      }
+      if (prev === 1) {
+        handleSubmit();  // Auto-submit when time runs out
+      }
+      return prev - 1;
+    });
+  }, 1000);
+
+  return () => clearInterval(timer);
+}, [testState, timeRemaining]);
+
+// Format time display
+const formatTime = (seconds: number): string => {
+  const hrs = Math.floor(seconds / 3600);
+  const mins = Math.floor((seconds % 3600) / 60);
+  const secs = seconds % 60;
+  if (hrs > 0) {
+    return `${hrs}:${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  }
+  return `${mins}:${secs.toString().padStart(2, "0")}`;
+};
+10. Re-attempt Logic
+Students can take a DPP multiple times. The system tracks:
+
+
+// Fetch previous submissions
+const { data: submittedDpps } = await supabase
+  .from("test_results")
+  .select("test_id, submitted_at, score, percentage, grading_status")
+  .eq("student_id", userId)
+  .order("submitted_at", { ascending: false });
+
+// Create lookup map (latest submission per test)
+const submittedDppMap = new Map();
+submittedDpps.forEach((s) => {
+  if (!submittedDppMap.has(s.test_id)) {
+    submittedDppMap.set(s.test_id, s);  // Keep only latest
+  }
+});
+
+// Check if DPP was submitted
+const submission = submittedDppMap.get(test.id);
+const isSubmitted = !!submission;
+11. Mobile Implementation Checklist
+Feature	Implementation Notes
+DPP List	Grid cards with subject filter
+Submission Status	Green badge with percentage
+Start/Re-attempt Button	Different text based on isSubmitted
+Question Navigator	Horizontal scrollable pills
+Timer Display	Fixed header with countdown
+Auto-submit	When timer reaches 0
+Flag Questions	Toggle orange ring indicator
+Answer Selection	Radio group with highlight
+Results Summary	Score cards with correct/incorrect/unanswered
+Review Mode	Show correct answers with green/red highlighting
+Math Rendering	Use MathpixRenderer or KaTeX for formulas
+12. Related Files Summary
+File	Purpose
+src/components/learning/DPPTab.tsx	Main DPP component (677 lines)
+src/hooks/useStudentTests.ts	Fetches tests with question counts
+src/hooks/useTestResults.ts	Submits and updates test results
+src/hooks/useTopicDPP.ts	Legacy topic-based DPP (dpp_questions table)
+src/hooks/useDPPDocuments.ts	Admin DPP document upload

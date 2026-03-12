@@ -1,0 +1,217 @@
+Here's the complete explanation of how topic-level videos are fetched in the Classes tab:
+
+Topic-Level Video Fetching - Complete Documentation
+Overview
+When a user clicks on a Topic (not a Chapter), the Classes tab fetches videos from two sources:
+
+Direct Video → Stored in subject_topics table (single video per topic)
+Multi-Language Videos → Stored in topic_videos table (multiple videos per topic)
+Database Tables
+1. subject_topics (Direct Single Video)
+
+-- Relevant video columns in subject_topics:
+video_id           TEXT    -- YouTube/Vimeo video ID (e.g., "dQw4w9WgXcQ")
+video_platform     TEXT    -- "youtube" or "vimeo"
+video_url          TEXT    -- Optional direct URL
+ai_generated_video_url TEXT -- AI lecture URL (embedded player)
+2. topic_videos (Multi-Language Videos)
+
+CREATE TABLE topic_videos (
+  id             UUID PRIMARY KEY,
+  topic_id       UUID NOT NULL REFERENCES subject_topics(id),
+  video_name     TEXT NOT NULL,
+  language       TEXT NOT NULL,      -- "english", "hindi", "kannada", etc.
+  video_platform TEXT,               -- "youtube" or "vimeo"
+  video_id       TEXT NOT NULL,      -- Platform-specific video ID
+  description    TEXT,
+  display_order  INTEGER DEFAULT 0,
+  is_active      BOOLEAN DEFAULT true,
+  created_at     TIMESTAMPTZ,
+  updated_at     TIMESTAMPTZ
+);
+API / Data Fetching
+Supabase Query (useTopicVideos hook)
+File: src/hooks/useTopicVideos.ts
+
+
+// React Query hook to fetch multi-language videos
+export const useTopicVideos = (topicId?: string) => {
+  return useQuery({
+    queryKey: ['topic-videos', topicId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('topic_videos')
+        .select('*')
+        .eq('topic_id', topicId)
+        .order('language')
+        .order('display_order');
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!topicId,  // Only fetch if topicId exists
+  });
+};
+Equivalent REST API:
+
+GET https://[PROJECT_ID].supabase.co/rest/v1/topic_videos
+  ?topic_id=eq.[TOPIC_UUID]
+  &order=language,display_order
+
+Headers:
+  apikey: [SUPABASE_ANON_KEY]
+  Authorization: Bearer [SUPABASE_ANON_KEY]
+Data Flow in RecordedVideos Component
+File: src/components/learning/RecordedVideos.tsx
+
+
+// Props received from Learning.tsx
+interface RecordedVideosProps {
+  topicId?: string;           // Topic UUID
+  chapterId?: string;         // Chapter UUID (not used for topic-level)
+  topicVideoId?: string;      // Direct video ID from subject_topics
+  topicVideoPlatform?: string;// "youtube" or "vimeo"
+  topicTitle?: string;        // Topic name
+  aiGeneratedVideoUrl?: string; // AI lecture URL
+}
+
+// Inside component:
+const { data: additionalVideos, isLoading } = useTopicVideos(topicId);
+
+// Combine direct video + multi-language videos
+const allVideos = useMemo(() => {
+  const videos = [];
+  
+  // 1. Add direct video from subject_topics (if exists)
+  if (topicVideoId && topicVideoPlatform) {
+    videos.push({
+      id: `topic-direct-${topicId}`,
+      topic_id: topicId,
+      video_name: topicTitle || "Topic Video",
+      language: "en",
+      video_platform: topicVideoPlatform,
+      video_id: topicVideoId,
+      display_order: 0,
+    });
+  }
+  
+  // 2. Add multi-language videos from topic_videos
+  if (additionalVideos?.length) {
+    videos.push(...additionalVideos);
+  }
+  
+  return videos;
+}, [topicId, topicVideoId, topicVideoPlatform, topicTitle, additionalVideos]);
+Embed URL Generation
+
+const getEmbedUrl = (video) => {
+  if (video.video_platform === "youtube") {
+    return `https://www.youtube.com/embed/${video.video_id}?autoplay=1`;
+  } else if (video.video_platform === "vimeo") {
+    return `https://player.vimeo.com/video/${video.video_id}?autoplay=1`;
+  }
+  return "";
+};
+Mobile Implementation Code
+
+// For Replit/Mobile App
+
+// 1. Fetch topic details (with direct video)
+async function getTopicDetails(topicId: string) {
+  const { data, error } = await supabase
+    .from('subject_topics')
+    .select(`
+      id,
+      title,
+      video_id,
+      video_platform,
+      ai_generated_video_url
+    `)
+    .eq('id', topicId)
+    .single();
+  
+  return data;
+}
+
+// 2. Fetch multi-language videos for topic
+async function getTopicVideos(topicId: string) {
+  const { data, error } = await supabase
+    .from('topic_videos')
+    .select('*')
+    .eq('topic_id', topicId)
+    .eq('is_active', true)
+    .order('language')
+    .order('display_order');
+  
+  return data || [];
+}
+
+// 3. Combine all videos
+async function getAllTopicVideos(topicId: string) {
+  const [topic, multiLangVideos] = await Promise.all([
+    getTopicDetails(topicId),
+    getTopicVideos(topicId)
+  ]);
+  
+  const allVideos = [];
+  
+  // Direct video first
+  if (topic?.video_id && topic?.video_platform) {
+    allVideos.push({
+      id: `direct-${topicId}`,
+      video_name: topic.title,
+      language: 'english',
+      video_platform: topic.video_platform,
+      video_id: topic.video_id,
+    });
+  }
+  
+  // Multi-language videos
+  allVideos.push(...multiLangVideos);
+  
+  return {
+    videos: allVideos,
+    aiGeneratedVideoUrl: topic?.ai_generated_video_url
+  };
+}
+
+// 4. Get video thumbnail
+function getVideoThumbnail(video) {
+  if (video.video_platform === 'youtube') {
+    return `https://img.youtube.com/vi/${video.video_id}/hqdefault.jpg`;
+  }
+  return null; // Vimeo needs API call for thumbnail
+}
+
+// 5. Get embed URL for playback
+function getEmbedUrl(video) {
+  if (video.video_platform === 'youtube') {
+    return `https://www.youtube.com/embed/${video.video_id}?autoplay=1`;
+  }
+  if (video.video_platform === 'vimeo') {
+    return `https://player.vimeo.com/video/${video.video_id}?autoplay=1`;
+  }
+}
+Supported Languages
+
+const INDIAN_LANGUAGES = [
+  { value: 'english', label: 'English' },
+  { value: 'hindi', label: 'Hindi (हिन्दी)' },
+  { value: 'kannada', label: 'Kannada (ಕನ್ನಡ)' },
+  { value: 'tamil', label: 'Tamil (தமிழ்)' },
+  { value: 'telugu', label: 'Telugu (తెలుగు)' },
+  { value: 'malayalam', label: 'Malayalam (മലയാളം)' },
+  { value: 'marathi', label: 'Marathi (मराठी)' },
+  { value: 'bengali', label: 'Bengali (বাংলা)' },
+  { value: 'gujarati', label: 'Gujarati (ગુજરાતી)' },
+  { value: 'punjabi', label: 'Punjabi (ਪੰਜਾਬੀ)' },
+  { value: 'odia', label: 'Odia (ଓଡ଼ିଆ)' },
+  { value: 'assamese', label: 'Assamese (অসমীয়া)' },
+  { value: 'urdu', label: 'Urdu (اردو)' },
+];
+Summary Table
+Source	Table	What it stores	Query
+Direct Video	subject_topics	Single main video	Comes with topic details
+Multi-Language	topic_videos	Multiple videos in different languages	topic_videos.topic_id = topicId
+AI Lecture	subject_topics.ai_generated_video_url	AI-generated lecture embed URL	Comes with topic details
+This gives you everything you need to replicate the topic-level Classes tab in your mobile app!

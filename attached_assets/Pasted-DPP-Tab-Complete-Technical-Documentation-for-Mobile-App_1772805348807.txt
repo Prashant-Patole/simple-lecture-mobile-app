@@ -1,0 +1,360 @@
+DPP Tab — Complete Technical Documentation for Mobile App
+1. OVERVIEW
+DPP is a dynamically generated quiz — there are NO pre-created DPP tests in the database. Each session picks 5 random questions from the general question bank for the selected topic. It supports mixed question types: MCQ, True/False, Integer/Numerical, and Subjective (free-text, AI-graded).
+
+2. FLOW / STATES
+The DPP tab has 4 states managed locally (no routing):
+
+
+LANDING → TESTING → SUBMITTING → RESULTS
+   ↑                                  |
+   └──────────── Back ────────────────┘
+3. PROPS / INPUTS
+The DPP tab requires:
+
+subjectId (string, required) — current subject UUID
+topicId (string, required) — current topic UUID
+4. STATE: LANDING
+What it shows:
+
+A card with title "Daily Practice Problems" and description "5 random questions from this topic — mixed types"
+A "Start DPP" button
+A list of past attempts (up to 10)
+Past Attempts Query:
+
+GET from `test_results` table
+WHERE student_id = current_user_id
+  AND test_type = 'dpp'
+ORDER BY submitted_at DESC
+LIMIT 10
+Each attempt displays: percentage (color-coded green ≥60%, red <60%), score/total, date, grading status.
+
+5. STATE: TESTING — Starting a DPP
+Step 1: Fetch questions
+
+GET from `questions` table
+WHERE topic_id = {topicId}
+LIMIT 20
+Step 2: Shuffle & pick 5
+
+
+const shuffled = [...rawData].sort(() => Math.random() - 0.5);
+const fetchedQuestions = shuffled.slice(0, 5);
+If no questions exist for the topic, show toast error and stay on landing.
+
+Step 3: Map question data Each question object:
+
+
+{
+  "id": "uuid",
+  "question_text": "string (may contain LaTeX/Mathpix markdown)",
+  "options": { "a": "text or {text: string}", "b": "...", "c": "...", "d": "..." },
+  "correct_answer": "a",
+  "difficulty": "easy|medium|hard",
+  "question_type": "mcq|single_choice|multiple_choice|true_false|integer|numerical|subjective",
+  "question_format": "objective|subjective",
+  "solution": "string (optional, shown in review)",
+  "marks": 1
+}
+Step 4: Initialize state
+
+answers = {} (map of question_id → user answer string)
+flagged = Set() (flagged question IDs)
+currentIndex = 0
+startTime = Date.now()
+6. STATE: TESTING — UI Components
+Header bar: Shows "Q {n} of 5", "Answered: {x}/5", and question type badge.
+
+Progress bar: ((currentIndex + 1) / totalQuestions) * 100
+
+Navigation dots: Numbered buttons 1-5. Green fill = answered, orange ring = flagged, dark ring = current.
+
+Question card: Renders based on question type:
+
+Type Detection	Condition	Input UI
+MCQ	options object has keys OR question_type is mcq/single_choice/multiple_choice	RadioGroup with option cards
+True/False	question_type === "true_false"	RadioGroup with "True"/"False"
+Integer/Numerical	question_type === "integer" or "numerical"	Number input field
+Subjective	None of the above match	Textarea (4 rows)
+Option text extraction (options can be string or object):
+
+
+const getOptionText = (value) => {
+  if (typeof value === "object" && value !== null) return value.text || "";
+  return String(value || "");
+};
+Flag button: Toggle per question (visual only, for student's reference).
+
+Navigation buttons:
+
+"Previous" (disabled on first question)
+"Next" (if not last question)
+"Submit DPP" (only on last question)
+7. STATE: SUBMITTING — Grading Logic
+No timer/auto-submit — student submits manually.
+
+Grading is done client-side with AI fallback:
+
+
+for each question:
+  if no answer → unanswered++
+  
+  // MCQ / True-False (has options)
+  if (hasOptions || isMCQ || isTrueFalse):
+    compare: userAnswer.trim().toLowerCase() === correctAnswer.trim().toLowerCase()
+    → correct++ or incorrect++
+  
+  // Integer/Numerical
+  else if (isInteger):
+    parseFloat both, check Math.abs(student - correct) < 0.001
+    → correct++ or incorrect++
+  
+  // Subjective (free text)
+  else:
+    call Edge Function "ai-check-answer"
+    → correct++ or incorrect++
+AI Check Answer Edge Function:
+
+POST /functions/v1/ai-check-answer
+{
+  "question_id": "uuid",
+  "question_text": "string",
+  "question_type": "string",
+  "correct_answer": "string",
+  "student_answer": "string",
+  "max_marks": 1
+}
+
+Response: { "is_correct": boolean, "marks_awarded": number }
+If AI call fails, fallback to simple string comparison.
+
+8. SAVING RESULTS
+After grading, save to test_results table:
+
+POST to `test_results` table
+{
+  "student_id": current_user_id,
+  "test_id": null,           ← IMPORTANT: always null for DPP
+  "subject_id": subjectId,
+  "test_type": "dpp",        ← IMPORTANT: always "dpp"
+  "score": correct_count,
+  "total_questions": 5,
+  "percentage": Math.round((correct / total) * 100),
+  "time_taken_seconds": Math.floor((Date.now() - startTime) / 1000),
+  "answers": { "question_id_1": "a", "question_id_2": "42", ... },
+  "grading_status": "graded"
+}
+Key detail: test_id is null because DPPs are dynamically generated, not tied to a pre-defined test record.
+
+9. STATE: RESULTS — Display
+Score card:
+
+Large percentage number (e.g., "80%")
+"X out of Y correct"
+3 stat boxes: Correct (green), Incorrect (red), Unanswered (gray)
+Two buttons: "Back" (return to landing) and "Try Again" (start new DPP)
+Question Review section: For each question, show:
+
+Question number with colored left border (green = correct, red = incorrect, gray = unanswered)
+Question text (rendered with LaTeX/math support)
+Question type badge
+For MCQ: All options displayed, correct option highlighted green, wrong student pick highlighted red
+For non-MCQ: Show "Your answer" and "Correct answer" blocks
+If solution exists: Show solution in a blue info box
+10. API SUMMARY FOR MOBILE
+Action	Method	Table/Function	Key Params
+Fetch questions	GET	questions WHERE topic_id, LIMIT 20	topic_id
+Fetch past attempts	GET	test_results WHERE test_type='dpp'	student_id
+AI grade subjective	POST	Edge Function ai-check-answer	question_text, student_answer, correct_answer
+Save result	INSERT	test_results	test_id=null, test_type='dpp'
+11. IMPORTANT NOTES
+No countdown timer — DPP has no time limit (unlike assignments)
+test_id is always null for DPP submissions
+test_type is always "dpp" — this is how past attempts are filtered
+Questions come from the general questions table, not from a separate DPP table
+Question text may contain LaTeX/Mathpix markdown — render appropriately on mobile
+The options field in questions can have values that are either plain strings OR objects with a text property — handle both
+All API calls go through the Supabase proxy: https://supabase-proxy.utuberpraveen.workers.dev
+Here's the complete technical documentation for the DPP (Daily Practice Problems) Tab for your Replit mobile app implementation:
+
+DPP Tab — Complete Technical Documentation for Mobile App
+1. OVERVIEW
+DPP is a dynamically generated quiz — there are NO pre-created DPP tests in the database. Each session picks 5 random questions from the general question bank for the selected topic. It supports mixed question types: MCQ, True/False, Integer/Numerical, and Subjective (free-text, AI-graded).
+
+2. FLOW / STATES
+The DPP tab has 4 states managed locally (no routing):
+
+
+LANDING → TESTING → SUBMITTING → RESULTS
+   ↑                                  |
+   └──────────── Back ────────────────┘
+3. PROPS / INPUTS
+The DPP tab requires:
+
+subjectId (string, required) — current subject UUID
+topicId (string, required) — current topic UUID
+4. STATE: LANDING
+What it shows:
+
+A card with title "Daily Practice Problems" and description "5 random questions from this topic — mixed types"
+A "Start DPP" button
+A list of past attempts (up to 10)
+Past Attempts Query:
+
+GET from `test_results` table
+WHERE student_id = current_user_id
+  AND test_type = 'dpp'
+ORDER BY submitted_at DESC
+LIMIT 10
+Each attempt displays: percentage (color-coded green ≥60%, red <60%), score/total, date, grading status.
+
+5. STATE: TESTING — Starting a DPP
+Step 1: Fetch questions
+
+GET from `questions` table
+WHERE topic_id = {topicId}
+LIMIT 20
+Step 2: Shuffle & pick 5
+
+
+const shuffled = [...rawData].sort(() => Math.random() - 0.5);
+const fetchedQuestions = shuffled.slice(0, 5);
+If no questions exist for the topic, show toast error and stay on landing.
+
+Step 3: Map question data Each question object:
+
+
+{
+  "id": "uuid",
+  "question_text": "string (may contain LaTeX/Mathpix markdown)",
+  "options": { "a": "text or {text: string}", "b": "...", "c": "...", "d": "..." },
+  "correct_answer": "a",
+  "difficulty": "easy|medium|hard",
+  "question_type": "mcq|single_choice|multiple_choice|true_false|integer|numerical|subjective",
+  "question_format": "objective|subjective",
+  "solution": "string (optional, shown in review)",
+  "marks": 1
+}
+Step 4: Initialize state
+
+answers = {} (map of question_id → user answer string)
+flagged = Set() (flagged question IDs)
+currentIndex = 0
+startTime = Date.now()
+6. STATE: TESTING — UI Components
+Header bar: Shows "Q {n} of 5", "Answered: {x}/5", and question type badge.
+
+Progress bar: ((currentIndex + 1) / totalQuestions) * 100
+
+Navigation dots: Numbered buttons 1-5. Green fill = answered, orange ring = flagged, dark ring = current.
+
+Question card: Renders based on question type:
+
+Type Detection	Condition	Input UI
+MCQ	options object has keys OR question_type is mcq/single_choice/multiple_choice	RadioGroup with option cards
+True/False	question_type === "true_false"	RadioGroup with "True"/"False"
+Integer/Numerical	question_type === "integer" or "numerical"	Number input field
+Subjective	None of the above match	Textarea (4 rows)
+Option text extraction (options can be string or object):
+
+
+const getOptionText = (value) => {
+  if (typeof value === "object" && value !== null) return value.text || "";
+  return String(value || "");
+};
+Flag button: Toggle per question (visual only, for student's reference).
+
+Navigation buttons:
+
+"Previous" (disabled on first question)
+"Next" (if not last question)
+"Submit DPP" (only on last question)
+7. STATE: SUBMITTING — Grading Logic
+No timer/auto-submit — student submits manually.
+
+Grading is done client-side with AI fallback:
+
+
+for each question:
+  if no answer → unanswered++
+  
+  // MCQ / True-False (has options)
+  if (hasOptions || isMCQ || isTrueFalse):
+    compare: userAnswer.trim().toLowerCase() === correctAnswer.trim().toLowerCase()
+    → correct++ or incorrect++
+  
+  // Integer/Numerical
+  else if (isInteger):
+    parseFloat both, check Math.abs(student - correct) < 0.001
+    → correct++ or incorrect++
+  
+  // Subjective (free text)
+  else:
+    call Edge Function "ai-check-answer"
+    → correct++ or incorrect++
+AI Check Answer Edge Function:
+
+POST /functions/v1/ai-check-answer
+{
+  "question_id": "uuid",
+  "question_text": "string",
+  "question_type": "string",
+  "correct_answer": "string",
+  "student_answer": "string",
+  "max_marks": 1
+}
+
+Response: { "is_correct": boolean, "marks_awarded": number }
+If AI call fails, fallback to simple string comparison.
+
+8. SAVING RESULTS
+After grading, save to test_results table:
+
+POST to `test_results` table
+{
+  "student_id": current_user_id,
+  "test_id": null,           ← IMPORTANT: always null for DPP
+  "subject_id": subjectId,
+  "test_type": "dpp",        ← IMPORTANT: always "dpp"
+  "score": correct_count,
+  "total_questions": 5,
+  "percentage": Math.round((correct / total) * 100),
+  "time_taken_seconds": Math.floor((Date.now() - startTime) / 1000),
+  "answers": { "question_id_1": "a", "question_id_2": "42", ... },
+  "grading_status": "graded"
+}
+Key detail: test_id is null because DPPs are dynamically generated, not tied to a pre-defined test record.
+
+9. STATE: RESULTS — Display
+Score card:
+
+Large percentage number (e.g., "80%")
+"X out of Y correct"
+3 stat boxes: Correct (green), Incorrect (red), Unanswered (gray)
+Two buttons: "Back" (return to landing) and "Try Again" (start new DPP)
+Question Review section: For each question, show:
+
+Question number with colored left border (green = correct, red = incorrect, gray = unanswered)
+Question text (rendered with LaTeX/math support)
+Question type badge
+For MCQ: All options displayed, correct option highlighted green, wrong student pick highlighted red
+For non-MCQ: Show "Your answer" and "Correct answer" blocks
+If solution exists: Show solution in a blue info box
+10. API SUMMARY FOR MOBILE
+Action	Method	Table/Function	Key Params
+Fetch questions	GET	questions WHERE topic_id, LIMIT 20	topic_id
+Fetch past attempts	GET	test_results WHERE test_type='dpp'	student_id
+AI grade subjective	POST	Edge Function ai-check-answer	question_text, student_answer, correct_answer
+Save result	INSERT	test_results	test_id=null, test_type='dpp'
+11. IMPORTANT NOTES
+No countdown timer — DPP has no time limit (unlike assignments)
+test_id is always null for DPP submissions
+test_type is always "dpp" — this is how past attempts are filtered
+Questions come from the general questions table, not from a separate DPP table
+Question text may contain LaTeX/Mathpix markdown — render appropriately on mobile
+The options field in questions can have values that are either plain strings OR objects with a text property — handle both
+All API calls go through the Supabase proxy: https://supabase-proxy.utuberpraveen.workers.dev
+
+
+
+

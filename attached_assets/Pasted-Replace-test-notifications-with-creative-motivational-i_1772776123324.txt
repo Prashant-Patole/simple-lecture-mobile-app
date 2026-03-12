@@ -1,0 +1,27 @@
+Replace test notifications with creative, motivational, inspiring notifications sent every 5 hours. Also add 2 welcome notifications: one when the user first opens the app (instant), and one when they successfully log in or register.
+
+Tasks
+T001: Replace test notifications with creative motivational ones every 5 hours
+Blocked By: []
+Details:
+Remove the scheduleTestNotifications() function and its call from setupAndScheduleNotifications()
+Replace the 3 daily notifications (12 PM, 2 PM, 5 PM) with notifications every 5 hours using TIME_INTERVAL trigger (5 hours = 18000 seconds, repeating)
+Create a large pool (30+) of creative, motivational, inspiring messages with varied themes: discipline, curiosity, greatness, small steps, focus, dreaming big, etc.
+Each time the app opens, pick a fresh random message for the recurring notification
+Send a welcome notification immediately (5 seconds delay) when the app is opened for the first time or after reinstall, using AsyncStorage to track if it's been shown
+Files: mobile/src/services/scheduledNotifications.ts
+Acceptance: No more test notifications; user gets one motivational notification every 5 hours with a unique creative message each time
+T002: Send welcome notification on login/register
+Blocked By: []
+Details:
+Create a sendWelcomeLoginNotification() function in scheduledNotifications.ts that sends an instant local notification welcoming the user after successful login/signup
+Call this function from AuthContext.tsx after successful login(), signup(), loginWithOtp(), and loginWithGoogle() calls
+Use a warm, encouraging message like "Welcome to Simple Lecture! Your learning journey starts now."
+Files: mobile/src/services/scheduledNotifications.ts, mobile/src/context/AuthContext.tsx
+Acceptance: User gets a welcome notification immediately after logging in or registering
+T003: Build new APK with all fixes
+Blocked By: [T001, T002]
+Details:
+Build APK with fixed icon, Razorpay, error messages, mandatory fields, and new notification system
+Files: none (CLI operation)
+Acceptance: New APK built and download link provided

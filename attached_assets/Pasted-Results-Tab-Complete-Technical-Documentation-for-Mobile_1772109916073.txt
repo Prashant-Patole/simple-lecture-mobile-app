@@ -1,0 +1,390 @@
+Results Tab - Complete Technical Documentation for Mobile Implementation
+Overview
+The Results tab shows a unified chronological list of all test attempts from two separate database tables, merged and sorted by submission date. It also provides a detailed review dialog where students can see each question, their answer, the correct answer, and explanations.
+
+1. DATA SOURCES (Two Tables)
+The Results tab fetches from two tables and merges them:
+
+Table	What It Stores	Foreign Key
+paper_test_results	Previous year paper attempts	paper_id → subject_previous_year_papers.id
+test_results	Proficiency, Mock, Exam, DPP, Practice test attempts	test_id → tests.id
+2. FETCHING RESULTS
+Query 1: Paper Test Results
+
+FROM: paper_test_results
+SELECT: *, paper:subject_previous_year_papers(exam_name, year, paper_type)
+WHERE: student_id = current_user AND subject_id = {subjectId}
+ORDER BY: submitted_at DESC
+Query 2: Test Results
+
+FROM: test_results
+SELECT: *, test:tests(title, test_type, duration_minutes)
+WHERE: student_id = current_user AND subject_id = {subjectId}
+ORDER BY: submitted_at DESC
+Both queries require authentication - get current user via supabase.auth.getUser().
+
+3. UNIFIED RESULT FORMAT
+Both sources are normalized into this unified shape for display:
+
+
+{
+  "id": "uuid",
+  "paper_id": "uuid (paper_id or test_id)",
+  "paper_category": "previous_year | proficiency | mock | dpp | practice",
+  "score": 8,
+  "total_questions": 10,
+  "percentage": 80,
+  "time_taken_seconds": 1200,
+  "grading_status": "graded | pending | ai_graded",
+  "submitted_at": "2025-01-15T10:30:00Z",
+  "answers": {
+    "question_uuid_1": "A",
+    "question_uuid_2": "some text answer"
+  },
+  "paper": {
+    "exam_name": "JEE Main 2024" or "Proficiency Test - Physics",
+    "year": 2024 or null,
+    "paper_type": "Main" or null
+  },
+  "isFromTestsTable": true/false
+}
+Mapping from test_results:
+
+paper_id = test_id
+paper_category = test_type
+paper.exam_name = test.title
+paper.year = null
+paper.paper_type = test.test_type
+isFromTestsTable = true
+Mapping from paper_test_results:
+
+paper_id = paper_id
+paper_category = paper_category
+paper.exam_name = paper.exam_name
+paper.year = paper.year
+paper.paper_type = paper.paper_type
+isFromTestsTable = false
+Both arrays are merged and sorted by submitted_at DESC (newest first).
+
+4. RESULT CARD DISPLAY
+Each result card shows:
+
+Title: exam_name + year (e.g., "JEE Main 2024")
+Category Badge: paper_category with underscores replaced by spaces, capitalized
+Date: submitted_at formatted as "MMM d, yyyy h:mm a"
+Time Taken: Formatted from seconds → "Xh Ym" or "Xm Ys"
+Question Count: total_questions
+Score: percentage% with color coding:
+Green: >= 70%
+Yellow: >= 40%
+Red: < 40%
+Correct Count: score/total_questions
+Status Badge:
+pending (no score) → Yellow "Pending" with spinner
+ai_graded → Blue "AI Graded"
+graded → Green "Graded"
+Review Button: Opens detail dialog
+5. REVIEW DIALOG - FETCHING QUESTIONS
+When user taps "Review", fetch questions based on isFromTestsTable:
+
+If isFromTestsTable === false (paper result):
+
+Query 1 - Paper Questions:
+
+FROM: questions
+SELECT: *
+WHERE: previous_year_paper_id = {paper_id}
+ORDER BY: created_at ASC
+Query 2 - Student Answers (for image uploads):
+
+FROM: student_answers
+SELECT: *
+WHERE: paper_id = {paper_id} AND user_id = current_user
+If isFromTestsTable === true (test result):
+
+FROM: test_questions
+SELECT: id, test_id, question_id, order_number, marks,
+        question:questions(id, question_text, options, correct_answer, explanation, difficulty, question_format)
+WHERE: test_id = {paper_id}
+ORDER BY: order_number ASC
+6. REVIEW QUESTION DISPLAY
+For each question in the review:
+
+answer_text = result.answers[question.id]       // from JSONB answers map
+image_answer = student_answers[question.id]?.answer_image_url  // only for paper results
+is_correct = answer_text.toUpperCase() === question.correct_answer.toUpperCase()
+Each question card shows:
+
+Question number: Q1, Q2, etc.
+Difficulty badge: from question data
+Question text: Rendered with MathpixRenderer (supports LaTeX/math)
+Status: "Correct" (green), "Incorrect" (red), "Not Answered" (gray), "Image Submitted" (blue)
+Student's answer: Text or image
+Correct answer: Shown only if incorrect
+Explanation: If available from question data
+"Clear Doubt with AI" button: Shown only when:
+Answer is incorrect
+Student provided an answer
+Overall score <= 50%
+Sends: questionText, correctAnswer, studentAnswer, subjectName to AI tab
+7. COLOR-CODED LEFT BORDER
+Each question card has a left border:
+
+Green: Correct answer
+Red: Incorrect answer
+Gray: Not answered
+8. HOW RESULTS GET SAVED (Submission Flow)
+Results are NOT created in this tab - they're created during test-taking. Here's how:
+
+Paper Test Result Submission:
+
+POST to: paper_test_results
+INSERT: {
+  student_id: current_user,
+  paper_id: "uuid of the paper",
+  subject_id: "uuid or null",
+  paper_category: "previous_year",
+  score: 8,
+  total_questions: 10,
+  percentage: 80.0,
+  time_taken_seconds: 1200,
+  answers: { "q_id_1": "A", "q_id_2": "B" },
+  grading_status: "graded"
+}
+Test Result Submission:
+
+POST to: test_results
+INSERT: {
+  student_id: current_user,
+  test_id: "uuid of the test",
+  subject_id: "uuid or null",
+  test_type: "proficiency | mock | exam | practice | dpp",
+  score: 8,
+  total_questions: 10,
+  percentage: 80.0,
+  time_taken_seconds: 1200,
+  answers: { "q_id_1": "A", "q_id_2": "text answer" },
+  grading_status: "graded | pending | ai_graded"
+}
+9. DPP DETECTION
+A result is flagged as DPP if:
+
+isFromTestsTable === true AND (paper_category === "dpp" OR exam_name contains "dpp")
+10. MOBILE IMPLEMENTATION SUMMARY
+SCREEN 1: Results List
+├── Fetch paper_test_results (with paper join)
+├── Fetch test_results (with test join)
+├── Normalize both → unified format
+├── Merge + sort by submitted_at DESC
+└── Display cards with score, time, category badge
+
+SCREEN 2: Review Detail (on tap)
+├── Show score summary card
+├── If isFromTestsTable:
+│   └── Fetch test_questions with question join
+├── Else:
+│   ├── Fetch questions by previous_year_paper_id
+│   └── Fetch student_answers for image answers
+├── For each question:
+│   ├── Get student answer from answers JSONB map
+│   ├── Compare with correct_answer
+│   └── Show correct/incorrect with explanation
+└── "Clear Doubt" button → navigate to AI tab
+Now I have a complete picture of the Results tab. This is a research/documentation request, not an implementation task, so I'll provide the documentation directly without a plan.
+
+Results Tab - Complete Technical Documentation for Mobile Implementation
+Overview
+The Results tab shows a unified chronological list of all test attempts from two separate database tables, merged and sorted by submission date. It also provides a detailed review dialog where students can see each question, their answer, the correct answer, and explanations.
+
+1. DATA SOURCES (Two Tables)
+The Results tab fetches from two tables and merges them:
+
+Table	What It Stores	Foreign Key
+paper_test_results	Previous year paper attempts	paper_id → subject_previous_year_papers.id
+test_results	Proficiency, Mock, Exam, DPP, Practice test attempts	test_id → tests.id
+2. FETCHING RESULTS
+Query 1: Paper Test Results
+
+FROM: paper_test_results
+SELECT: *, paper:subject_previous_year_papers(exam_name, year, paper_type)
+WHERE: student_id = current_user AND subject_id = {subjectId}
+ORDER BY: submitted_at DESC
+Query 2: Test Results
+
+FROM: test_results
+SELECT: *, test:tests(title, test_type, duration_minutes)
+WHERE: student_id = current_user AND subject_id = {subjectId}
+ORDER BY: submitted_at DESC
+Both queries require authentication - get current user via supabase.auth.getUser().
+
+3. UNIFIED RESULT FORMAT
+Both sources are normalized into this unified shape for display:
+
+
+{
+  "id": "uuid",
+  "paper_id": "uuid (paper_id or test_id)",
+  "paper_category": "previous_year | proficiency | mock | dpp | practice",
+  "score": 8,
+  "total_questions": 10,
+  "percentage": 80,
+  "time_taken_seconds": 1200,
+  "grading_status": "graded | pending | ai_graded",
+  "submitted_at": "2025-01-15T10:30:00Z",
+  "answers": {
+    "question_uuid_1": "A",
+    "question_uuid_2": "some text answer"
+  },
+  "paper": {
+    "exam_name": "JEE Main 2024" or "Proficiency Test - Physics",
+    "year": 2024 or null,
+    "paper_type": "Main" or null
+  },
+  "isFromTestsTable": true/false
+}
+Mapping from test_results:
+
+paper_id = test_id
+paper_category = test_type
+paper.exam_name = test.title
+paper.year = null
+paper.paper_type = test.test_type
+isFromTestsTable = true
+Mapping from paper_test_results:
+
+paper_id = paper_id
+paper_category = paper_category
+paper.exam_name = paper.exam_name
+paper.year = paper.year
+paper.paper_type = paper.paper_type
+isFromTestsTable = false
+Both arrays are merged and sorted by submitted_at DESC (newest first).
+
+4. RESULT CARD DISPLAY
+Each result card shows:
+
+Title: exam_name + year (e.g., "JEE Main 2024")
+Category Badge: paper_category with underscores replaced by spaces, capitalized
+Date: submitted_at formatted as "MMM d, yyyy h:mm a"
+Time Taken: Formatted from seconds → "Xh Ym" or "Xm Ys"
+Question Count: total_questions
+Score: percentage% with color coding:
+Green: >= 70%
+Yellow: >= 40%
+Red: < 40%
+Correct Count: score/total_questions
+Status Badge:
+pending (no score) → Yellow "Pending" with spinner
+ai_graded → Blue "AI Graded"
+graded → Green "Graded"
+Review Button: Opens detail dialog
+5. REVIEW DIALOG - FETCHING QUESTIONS
+When user taps "Review", fetch questions based on isFromTestsTable:
+
+If isFromTestsTable === false (paper result):
+
+Query 1 - Paper Questions:
+
+FROM: questions
+SELECT: *
+WHERE: previous_year_paper_id = {paper_id}
+ORDER BY: created_at ASC
+Query 2 - Student Answers (for image uploads):
+
+FROM: student_answers
+SELECT: *
+WHERE: paper_id = {paper_id} AND user_id = current_user
+If isFromTestsTable === true (test result):
+
+FROM: test_questions
+SELECT: id, test_id, question_id, order_number, marks,
+        question:questions(id, question_text, options, correct_answer, explanation, difficulty, question_format)
+WHERE: test_id = {paper_id}
+ORDER BY: order_number ASC
+6. REVIEW QUESTION DISPLAY
+For each question in the review:
+
+answer_text = result.answers[question.id]       // from JSONB answers map
+image_answer = student_answers[question.id]?.answer_image_url  // only for paper results
+is_correct = answer_text.toUpperCase() === question.correct_answer.toUpperCase()
+Each question card shows:
+
+Question number: Q1, Q2, etc.
+Difficulty badge: from question data
+Question text: Rendered with MathpixRenderer (supports LaTeX/math)
+Status: "Correct" (green), "Incorrect" (red), "Not Answered" (gray), "Image Submitted" (blue)
+Student's answer: Text or image
+Correct answer: Shown only if incorrect
+Explanation: If available from question data
+"Clear Doubt with AI" button: Shown only when:
+Answer is incorrect
+Student provided an answer
+Overall score <= 50%
+Sends: questionText, correctAnswer, studentAnswer, subjectName to AI tab
+7. COLOR-CODED LEFT BORDER
+Each question card has a left border:
+
+Green: Correct answer
+Red: Incorrect answer
+Gray: Not answered
+8. HOW RESULTS GET SAVED (Submission Flow)
+Results are NOT created in this tab - they're created during test-taking. Here's how:
+
+Paper Test Result Submission:
+
+POST to: paper_test_results
+INSERT: {
+  student_id: current_user,
+  paper_id: "uuid of the paper",
+  subject_id: "uuid or null",
+  paper_category: "previous_year",
+  score: 8,
+  total_questions: 10,
+  percentage: 80.0,
+  time_taken_seconds: 1200,
+  answers: { "q_id_1": "A", "q_id_2": "B" },
+  grading_status: "graded"
+}
+Test Result Submission:
+
+POST to: test_results
+INSERT: {
+  student_id: current_user,
+  test_id: "uuid of the test",
+  subject_id: "uuid or null",
+  test_type: "proficiency | mock | exam | practice | dpp",
+  score: 8,
+  total_questions: 10,
+  percentage: 80.0,
+  time_taken_seconds: 1200,
+  answers: { "q_id_1": "A", "q_id_2": "text answer" },
+  grading_status: "graded | pending | ai_graded"
+}
+9. DPP DETECTION
+A result is flagged as DPP if:
+
+isFromTestsTable === true AND (paper_category === "dpp" OR exam_name contains "dpp")
+10. MOBILE IMPLEMENTATION SUMMARY
+SCREEN 1: Results List
+├── Fetch paper_test_results (with paper join)
+├── Fetch test_results (with test join)
+├── Normalize both → unified format
+├── Merge + sort by submitted_at DESC
+└── Display cards with score, time, category badge
+
+SCREEN 2: Review Detail (on tap)
+├── Show score summary card
+├── If isFromTestsTable:
+│   └── Fetch test_questions with question join
+├── Else:
+│   ├── Fetch questions by previous_year_paper_id
+│   └── Fetch student_answers for image answers
+├── For each question:
+│   ├── Get student answer from answers JSONB map
+│   ├── Compare with correct_answer
+│   └── Show correct/incorrect with explanation
+└── "Clear Doubt" button → navigate to AI tab
+
+
+
+

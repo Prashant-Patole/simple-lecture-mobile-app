@@ -1,0 +1,453 @@
+Complete Analysis: /live Page
+The /live page is a comprehensive Class Schedule Management System that displays live classes, upcoming classes, attendance tracking, and class recordings for enrolled students.
+
+1. DATABASE SCHEMA
+The page uses 7 main tables:
+
+scheduled_classes - One-time scheduled classes
+Column	Type	Description
+id	uuid	Primary key
+course_id	uuid	Foreign key to courses
+teacher_id	uuid	Foreign key to teacher_profiles
+subject	text	Subject name
+subject_id	uuid	Foreign key to popular_subjects
+chapter_id	uuid	Foreign key to subject_chapters
+topic_id	uuid	Foreign key to subject_topics
+scheduled_at	timestamptz	When class is scheduled
+duration_minutes	integer	Class duration
+meeting_link	text	YouTube/BBB meeting link
+room_number	text	Physical room location
+is_live	boolean	Whether class is currently live
+is_cancelled	boolean	Whether class is cancelled
+live_started_at	timestamptz	When live started
+live_ended_at	timestamptz	When live ended
+bbb_meeting_id	text	BigBlueButton meeting ID
+course_timetables - Recurring weekly classes
+Column	Type	Description
+id	uuid	Primary key
+course_id	uuid	Foreign key to courses
+subject_id	uuid	Foreign key to popular_subjects
+instructor_id	uuid	Foreign key to teacher_profiles
+day_of_week	integer	0-6 (Sunday-Saturday)
+start_time	time	Start time (HH:MM:SS)
+end_time	time	End time (HH:MM:SS)
+meeting_link	text	YouTube/BBB meeting link
+room_number	text	Physical room location
+is_active	boolean	Whether entry is active
+class_attendance - Student attendance records
+Column	Type	Description
+id	uuid	Primary key
+scheduled_class_id	uuid	Foreign key to scheduled_classes
+student_id	uuid	Student user ID
+status	text	'present', 'absent', 'late'
+joined_at	timestamptz	When student joined
+left_at	timestamptz	When student left
+duration_seconds	integer	Time spent in class
+class_recordings - Processed class recordings
+Column	Type	Description
+id	uuid	Primary key
+scheduled_class_id	uuid	Link to class
+duration_seconds	integer	Recording length
+processing_status	text	'pending', 'processing', 'ready', 'failed'
+available_qualities	jsonb	['360p', '480p', '720p', '1080p']
+b2_hls_720p_path	text	HLS video path
+bunny_video_guid	text	Bunny CDN video ID
+cdn_base_url	text	CDN URL for streaming
+video_watch_progress - User video progress tracking
+Column	Type	Description
+id	uuid	Primary key
+recording_id	uuid	Foreign key to class_recordings
+user_id	uuid	User ID
+progress_seconds	integer	Seconds watched
+progress_percent	numeric	Percentage completed
+completed	boolean	Whether fully watched
+enrollments - Student course enrollments
+Column	Type	Description
+student_id	uuid	User ID
+course_id	uuid	Course ID
+is_active	boolean	Active enrollment
+2. API ENDPOINTS
+Supabase REST API Calls
+
+// 1. GET STUDENT ENROLLMENTS
+GET /rest/v1/enrollments
+  ?student_id=eq.{userId}
+  &is_active=eq.true
+  &select=course_id,batch_id,enrolled_at
+
+// 2. GET SCHEDULED CLASSES (one-time classes)
+GET /rest/v1/scheduled_classes
+  ?course_id=in.({courseIds})
+  &is_cancelled=eq.false
+  &scheduled_at=gte.{todayStart}
+  &scheduled_at=lte.{weekEnd}
+  &order=scheduled_at.asc
+  &select=id,subject,scheduled_at,duration_minutes,meeting_link,is_live,
+          course_id,subject_id,chapter_id,topic_id,
+          courses(id,name),
+          popular_subjects(id,name),
+          subject_chapters(id,title),
+          subject_topics(id,title),
+          teacher_profiles(id,full_name,avatar_url)
+
+// 3. GET COURSE TIMETABLES (recurring classes)
+GET /rest/v1/course_timetables
+  ?course_id=in.({courseIds})
+  &is_active=eq.true
+  &select=id,day_of_week,start_time,end_time,room_number,meeting_link,
+          course_id,subject_id,
+          courses(id,name),
+          popular_subjects(id,name),
+          teacher_profiles(id,full_name,avatar_url)
+
+// 4. GET FILTER OPTIONS - Courses
+GET /rest/v1/courses
+  ?id=in.({courseIds})
+  &order=name
+  &select=id,name
+
+// 5. GET FILTER OPTIONS - Subjects
+GET /rest/v1/course_subjects
+  ?course_id=in.({courseIds})
+  &select=course_id,subject_id,
+          popular_subjects(id,name)
+
+// 6. GET FILTER OPTIONS - Chapters
+GET /rest/v1/subject_chapters
+  ?subject_id=in.({subjectIds})
+  &order=sequence_order
+  &select=id,title,subject_id
+
+// 7. GET ATTENDANCE RECORDS
+GET /rest/v1/class_attendance
+  ?student_id=eq.{userId}
+  &select=id,status,duration_seconds,
+          scheduled_class:scheduled_classes(id,course_id,scheduled_at,
+            courses(id,name))
+
+// 8. GET CLASS RECORDINGS
+GET /rest/v1/class_recordings
+  ?processing_status=eq.ready
+  &order=created_at.desc
+  &select=*,
+          scheduled_class:scheduled_classes(id,subject,scheduled_at,course_id,
+            course:courses(name))
+
+// 9. GET VIDEO WATCH PROGRESS
+GET /rest/v1/video_watch_progress
+  ?recording_id=eq.{recordingId}
+  &select=*
+
+// 10. UPDATE VIDEO WATCH PROGRESS
+POST /rest/v1/video_watch_progress
+  UPSERT { recording_id, user_id, progress_seconds, progress_percent, completed }
+Edge Functions
+
+// STREAMING API EDGE FUNCTION
+POST /functions/v1/streaming-api
+
+// Action: get-playback-url - Get video streaming URL
+{
+  "action": "get-playback-url",
+  "recording_id": "uuid",
+  "quality": "720p"  // 360p, 480p, 720p, 1080p
+}
+// Response: { hlsUrl, directUrl, quality, availableQualities, duration, expiresAt }
+
+// Action: list-recordings - List all recordings
+{
+  "action": "list-recordings",
+  "course_id": "uuid",  // optional
+  "limit": 50
+}
+
+// Action: report-quality - Report network quality metrics
+{
+  "action": "report-quality",
+  "recording_id": "uuid",
+  "user_id": "uuid",
+  "metrics": {
+    "connectionType": "4g",
+    "bandwidth": 5.2,
+    "latency": 50,
+    "currentQuality": "720p"
+  }
+}
+3. REACT HOOKS
+Main Data Fetching Hooks
+Hook	Purpose	Refresh Rate
+useUnifiedLiveClasses()	Combines scheduled_classes + timetables into unified format	60 seconds
+useLiveClassFilterOptions(courseIds)	Gets courses, subjects, chapters for filtering	-
+useStudentCourseIds()	Gets enrolled course IDs	2 minutes cache
+useStudentEnrollments()	Gets full enrollment data	2 minutes cache
+useLiveClasses()	Gets only currently live classes	30 seconds
+useAttendanceStats(studentId)	Calculates attendance statistics	-
+useClassRecordings(courseId)	Gets class recordings	-
+useVideoWatchProgress(recordingId)	Gets user's watch progress	-
+useUpdateWatchProgress()	Saves video progress	-
+useRecordingPlaybackUrl()	Gets signed playback URL	-
+Hook Implementation Details
+useUnifiedLiveClasses - Main hook that combines data sources:
+
+
+// Returns:
+{
+  today: UnifiedClass[],    // Classes for today
+  week: UnifiedClass[],     // Classes for the week
+  current: UnifiedClass | null,  // Currently live class
+  next: UnifiedClass | null      // Next upcoming class
+}
+
+// UnifiedClass interface:
+interface UnifiedClass {
+  id: string;
+  source: 'timetable' | 'scheduled';
+  subject_name: string;
+  subject_id: string | null;
+  course_name: string;
+  course_id: string;
+  chapter_name: string | null;
+  instructor_name: string | null;
+  instructor_avatar: string | null;
+  scheduled_at: Date;
+  ends_at: Date;
+  duration_minutes: number;
+  meeting_link: string | null;
+  is_live: boolean;
+  is_upcoming: boolean;
+  room_number: string | null;
+}
+4. UI COMPONENTS
+shadcn/ui Components Used:
+Card - Container for class cards
+Badge - Status indicators (LIVE NOW, Upcoming, Scheduled)
+Button - Join class, navigation buttons
+Tabs, TabsList, TabsTrigger, TabsContent - Main navigation tabs
+Skeleton - Loading states
+Dialog, DialogContent, DialogHeader, DialogTitle - Video player modal
+Select, SelectContent, SelectItem, SelectTrigger, SelectValue - Filter dropdowns
+Input - Search input
+Progress - Attendance/watch progress bars
+Lucide React Icons:
+Video - Video/recording icon
+Clock - Time/duration icon
+User - Instructor icon
+MapPin - Room location icon
+BookOpen - Subject icon
+Radio - Live indicator (animated)
+Calendar - Schedule icon
+ArrowRight - Next class indicator
+ChevronLeft, ChevronRight - Week navigation
+BarChart3 - Attendance tab icon
+PlayCircle - Recordings tab icon
+Play - Play button icon
+Search - Search icon
+CheckCircle2 - Completed indicator
+TrendingUp - Attendance rate icon
+Loader2 - Processing spinner
+X - Close/clear button
+5. PAGE STRUCTURE
+LivePage
+├── DashboardHeader
+├── Main Content
+│   ├── Page Title & Description
+│   ├── LiveFilters (Course/Subject/Chapter dropdowns)
+│   ├── Current/Live Class Section (if live)
+│   │   └── ClassCard (with LIVE NOW badge)
+│   ├── Next Up Section (if no live class)
+│   │   └── ClassCard (with Upcoming badge)
+│   └── MainTabs
+│       ├── Schedule Tab
+│       │   └── WeeklySchedule
+│       │       ├── Today Tab
+│       │       │   └── Grid of ClassCards
+│       │       └── This Week Tab
+│       │           ├── Week Navigation (Prev/Next/Today buttons)
+│       │           └── Classes grouped by day
+│       ├── Attendance Tab
+│       │   └── AttendanceDashboard
+│       │       ├── Overall Stats (4 cards)
+│       │       │   ├── Attendance Rate
+│       │       │   ├── Classes Attended
+│       │       │   ├── Total Classes
+│       │       │   └── Total Time
+│       │       └── Attendance by Course (Progress bars)
+│       └── Recordings Tab
+│           └── RecordingsTab
+│               ├── Search & Time Filters
+│               ├── Recordings grouped by subject
+│               │   └── RecordingCard
+│               │       ├── Video Thumbnail
+│               │       ├── Status Badge (Ready/Processing)
+│               │       ├── Duration Badge
+│               │       ├── Watch Progress
+│               │       └── Play Button
+│               └── Video Player Dialog
+│                   └── AdaptiveVideoPlayer
+└── Footer
+6. KEY FEATURES & IMPLEMENTATIONS
+Real-time Updates
+
+// Live class updates subscription
+useEffect(() => {
+  const channel = supabase
+    .channel('live-class-updates')
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'scheduled_classes',
+      },
+      () => {
+        refetch();
+        queryClient.invalidateQueries({ queryKey: ['unified-live-classes'] });
+      }
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}, [refetch, queryClient]);
+Unified Class Processing
+Combines two data sources:
+
+scheduled_classes - One-time scheduled classes with exact datetime
+course_timetables - Recurring weekly entries converted to actual dates
+
+// Timetable to actual date conversion
+function getOccurrences(entry: any, daysAhead: number = 7): Date[] {
+  const today = new Date();
+  const occurrences: Date[] = [];
+  
+  for (let i = 0; i < daysAhead; i++) {
+    const date = addDays(today, i);
+    if (date.getDay() === entry.day_of_week) {
+      occurrences.push(date);
+    }
+  }
+  return occurrences;
+}
+Live Detection Logic
+
+// Class is considered live if:
+// 1. is_live flag is true, OR
+// 2. Current time is between scheduled_at and ends_at
+const isLive = now >= scheduledAt && now <= endsAt;
+const isUpcoming = now < scheduledAt;
+Filter System
+Cascading filters with dependent resets:
+
+
+const handleCourseChange = (value: string) => {
+  setCourseFilter(value);
+  setSubjectFilter('all');  // Reset subject
+  setChapterFilter('all');  // Reset chapter
+};
+
+const handleSubjectChange = (value: string) => {
+  setSubjectFilter(value);
+  setChapterFilter('all');  // Reset chapter only
+};
+YouTube Video Embedding
+
+// Extract video ID from various URL formats
+const patterns = [
+  /(?:youtube\.com\/(?:watch\?v=|embed\/|live\/|v\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/,
+];
+
+// Generate embed URL with privacy settings
+const params = new URLSearchParams({
+  autoplay: '1',
+  controls: '1',
+  rel: '0',              // No related videos
+  modestbranding: '1',   // Minimal YouTube branding
+  iv_load_policy: '3',   // Hide annotations
+});
+Attendance Calculation
+
+// Overall attendance
+percentage = (attendedClasses / totalClasses) * 100
+
+// Color coding
+>=80% → Green (good)
+>=60% → Yellow (warning)  
+<60%  → Red (poor)
+Video Progress Tracking
+
+// Upsert progress on video watch
+await supabase.from('video_watch_progress').upsert({
+  recording_id: recordingId,
+  user_id: user.id,
+  progress_seconds: progressSeconds,
+  progress_percent: progressPercent,
+  completed: progressPercent >= 95,
+  last_watched_at: new Date().toISOString(),
+}, {
+  onConflict: 'recording_id,user_id',
+});
+7. DATA FLOW DIAGRAM
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              LivePage.tsx                                   │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  ┌──────────────────────┐    ┌──────────────────────────┐                   │
+│  │ useStudentCourseIds  │───▶│ enrollments table        │                   │
+│  └──────────────────────┘    └──────────────────────────┘                   │
+│            │                                                                 │
+│            ▼                                                                 │
+│  ┌──────────────────────┐    ┌──────────────────────────┐                   │
+│  │useUnifiedLiveClasses │───▶│ scheduled_classes        │                   │
+│  │                      │    │ course_timetables        │                   │
+│  │                      │    │ courses, subjects        │                   │
+│  │                      │    │ teacher_profiles         │                   │
+│  └──────────────────────┘    └──────────────────────────┘                   │
+│            │                           │                                     │
+│            ▼                           ▼                                     │
+│  ┌──────────────────────────────────────────────────────┐                   │
+│  │              UnifiedClass[] Array                     │                   │
+│  │  • today: classes scheduled for today                 │                   │
+│  │  • week: all classes for the week                     │                   │
+│  │  • current: currently live class                      │                   │
+│  │  • next: next upcoming class                          │                   │
+│  └──────────────────────────────────────────────────────┘                   │
+│            │                                                                 │
+│            ├───────────────────┬───────────────────────────┐                │
+│            ▼                   ▼                           ▼                │
+│  ┌──────────────┐    ┌──────────────────┐    ┌────────────────────┐        │
+│  │ ClassCard    │    │AttendanceDashboard│    │ RecordingsTab     │        │
+│  │              │    │                  │    │                    │        │
+│  │ LiveFilters  │    │useAttendanceStats│    │useClassRecordings  │        │
+│  │              │    │                  │    │useVideoWatchProgress│        │
+│  │LiveVideoPlayer│   │ class_attendance │    │ class_recordings   │        │
+│  └──────────────┘    └──────────────────┘    └────────────────────┘        │
+│                                                       │                     │
+│                                                       ▼                     │
+│                               ┌──────────────────────────────────┐          │
+│                               │   streaming-api Edge Function    │          │
+│                               │   • get-playback-url             │          │
+│                               │   • HLS streaming                │          │
+│                               │   • CDN integration              │          │
+│                               └──────────────────────────────────┘          │
+└─────────────────────────────────────────────────────────────────────────────┘
+8. KEY FILES
+File	Purpose
+src/pages/Live.tsx	Main page component with ClassCard, MainTabs, WeeklySchedule
+src/hooks/useUnifiedLiveClasses.ts	Combines scheduled + timetable data
+src/hooks/useLiveClasses.ts	Fetches only currently live classes
+src/hooks/useStudentEnrollments.ts	Gets enrolled course IDs
+src/hooks/useAttendanceStats.ts	Calculates attendance statistics
+src/hooks/useClassRecordings.ts	Fetches recordings & watch progress
+src/components/live/LiveFilters.tsx	Filter dropdowns component
+src/components/live/LiveVideoPlayer.tsx	YouTube embed dialog
+src/components/learning/AttendanceDashboard.tsx	Attendance stats display
+src/components/learning/RecordingsTab.tsx	Recordings list with search
+src/utils/videoUtils.ts	YouTube URL parsing utilities
+supabase/functions/streaming-api/index.ts	Video streaming edge function
+This page provides a complete live class management experience with real-time updates, multi-source data unification, attendance tracking, and video recording playback with progress tracking.
+
+
+
+
+

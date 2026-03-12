@@ -1,0 +1,109 @@
+Complete Overview of Discussion Groups Feature
+1. Architecture Overview
+Now I have a complete picture of the Discussion Groups feature. Let me provide you with a comprehensive overview:
+
+Complete Overview of Discussion Groups Feature
+1. Architecture Overview
+
+Flowchart
+2. Database Tables
+forum_groups
+Column	Type	Description
+id	uuid	Primary key
+name	text	Group name
+description	text	Group description (optional)
+subject_id	uuid	Link to subject (optional)
+created_by	uuid	User who created the group
+is_private	boolean	Whether group is private
+max_members	integer	Maximum allowed members
+member_count	integer	Current member count (auto-updated)
+is_active	boolean	Whether group is active
+avatar_url	text	Group profile picture URL
+created_at	timestamp	Creation timestamp
+updated_at	timestamp	Last update timestamp
+forum_group_members
+Column	Type	Description
+id	uuid	Primary key
+group_id	uuid	Foreign key to forum_groups
+user_id	uuid	Foreign key to auth.users
+role	text	Either 'admin' or 'member'
+joined_at	timestamp	When user joined
+forum_group_messages
+Column	Type	Description
+id	uuid	Primary key
+group_id	uuid	Foreign key to forum_groups
+sender_id	uuid	User who sent the message
+content	text	Message content
+message_type	text	'text', 'image', 'file', 'system', 'emoji', 'sticker', 'gif'
+file_url	text	URL for attachments
+reply_to_id	uuid	Message being replied to
+is_deleted	boolean	Soft delete flag
+created_at	timestamp	Message timestamp
+updated_at	timestamp	Last update timestamp
+3. Storage Buckets
+Bucket	Purpose	Access
+group-avatars	Group profile pictures	Public read, authenticated upload
+chat-files	Images, PDFs, docs shared in chat	Public read, authenticated upload
+4. React Hooks (APIs)
+useForumGroups.ts
+Hook	Purpose	Supabase API
+useForumGroups()	Fetch all groups + membership status	supabase.from('forum_groups').select()
+useCreateForumGroup()	Create new group + upload avatar	supabase.from('forum_groups').insert()
+useUpdateGroup()	Edit group name/description/avatar	supabase.from('forum_groups').update()
+useJoinGroup()	Join a public group	supabase.from('forum_group_members').insert()
+useLeaveGroup()	Leave a group	supabase.from('forum_group_members').delete()
+useGroupChat.ts
+Hook	Purpose	Supabase API
+useGroupDetails(groupId)	Fetch single group details + realtime subscription	supabase.from('forum_groups').select().eq('id', groupId).single()
+useGroupMessages(groupId)	Fetch messages + realtime subscription	supabase.from('forum_group_messages').select()
+useGroupMembers(groupId)	Fetch member list with profiles	supabase.from('forum_group_members').select()
+useGroupMembership(groupId)	Check if current user is member/admin	supabase.from('forum_group_members').select()
+useSendMessage()	Send text/image/file/gif/sticker	supabase.from('forum_group_messages').insert()
+useDeleteMessage()	Soft delete a message	supabase.from('forum_group_messages').update({ is_deleted: true })
+useAddMember()	Add user to group (admin only)	supabase.from('forum_group_members').insert()
+useRemoveMember()	Remove user from group	supabase.from('forum_group_members').delete()
+useUpdateMemberRole()	Change member to admin or vice versa	supabase.from('forum_group_members').update({ role })
+useSearchUsers(query)	Search users by email	supabase.functions.invoke('search-users-by-email')
+useTypingIndicator(groupId)	Show who's typing (Supabase Presence)	supabase.channel().on('presence')
+5. UI Components
+Component	File	Purpose
+Forum Page	Forum.tsx	Main page with "Discussion Groups" tab, shows all groups
+Group Chat	ForumGroupChat.tsx	Full chat interface with header, messages, input
+GroupChatHeader	GroupChatHeader.tsx	Shows group avatar, name, member count, back button
+MessageList	MessageList.tsx	Scrollable message feed with date separators
+MessageBubble	MessageBubble.tsx	Individual message with reply/delete actions, supports all message types
+MessageInput	MessageInput.tsx	Text input + file upload + emoji/gif/sticker pickers
+GroupInfoSheet	GroupInfoSheet.tsx	Side panel showing members, roles, leave/edit options
+CreateGroupDialog	CreateGroupDialog.tsx	Modal to create new group with avatar
+EditGroupDialog	EditGroupDialog.tsx	Modal to edit group name/description/avatar
+AddMemberDialog	AddMemberDialog.tsx	Search users by email and add to group
+GroupImageUpload	GroupImageUpload.tsx	Reusable avatar upload with preview
+EmojiPickerPopover	EmojiPickerPopover.tsx	Desktop emoji picker using emoji-picker-react
+MediaPickerSheet	MediaPickerSheet.tsx	Mobile bottom sheet with Emoji/GIF/Sticker tabs
+GifPicker	GifPicker.tsx	Search and select GIFs using Tenor API
+StickerPicker	StickerPicker.tsx	Emoji-based sticker packs
+6. External APIs Used
+Service	Purpose	Usage
+Tenor API	GIF search and selection	GifPicker.tsx - fetches trending/search GIFs
+Supabase Realtime	Live message updates	Postgres changes subscription on forum_group_messages
+Supabase Presence	Typing indicators	Track who's typing in real-time
+7. Key Features Implemented
+Feature	Description
+Group Creation	Create public/private groups with avatar and description
+Group Profile Picture	Upload, change, or remove group avatar
+Join/Leave Groups	Users can join public groups, leave any group
+Role Management	Creator is always admin, can promote/demote others
+Real-time Messaging	Messages appear instantly via Supabase Realtime
+Message Types	Text, Images, Files, GIFs, Stickers, System messages
+Reply to Messages	Quote and reply to specific messages
+Delete Messages	Soft delete (content replaced with "This message was deleted")
+Typing Indicators	Shows "X is typing..." using Presence
+Date Separators	"Today", "Yesterday", or formatted dates in message list
+Member Management	Admins can add/remove members, change roles
+Access Control	Private groups require invitation, public groups open to join
+Emoji Picker	Full emoji keyboard on desktop/mobile
+GIF Search	Search and send GIFs from Tenor
+File Attachments	Upload images and documents (max 10MB)
+8. Edge Functions
+Function	Purpose
+search-users-by-email	Searches the profiles table for users matching an email query. Used in AddMemberDialog to find users to invite.

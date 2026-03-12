@@ -1,0 +1,145 @@
+How DPP Results are Displayed in the "My Results" Tab
+Overview
+The "My Results" tab in the Learning page shows DPP (Daily Practice Problems) results from the test_results table - NOT from dpp_topic_submissions. The system identifies DPPs by checking if the test title or category contains "dpp".
+
+Architecture Flow
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              DATA SOURCES                                    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌──────────────────────┐   ┌─────────────────────┐   ┌─────────────────┐  │
+│  │ paper_test_results   │   │ test_results        │   │dpp_topic_submiss│  │
+│  │                      │   │                     │   │     ions        │  │
+│  │ - previous_year      │   │ - proficiency       │   │ (NOT used for   │  │
+│  │ - exam               │   │ - mock              │   │  My Results)    │  │
+│  │                      │   │ - practice          │   │                 │  │
+│  │                      │   │ - DPP (via tests)   │   │                 │  │
+│  └──────────┬───────────┘   └──────────┬──────────┘   └─────────────────┘  │
+│             │                          │                                    │
+│             └─────────────┬────────────┘                                    │
+│                           ▼                                                 │
+│              ┌────────────────────────────┐                                 │
+│              │   PaperTestResults.tsx     │                                 │
+│              │   (Unified View)           │                                 │
+│              └────────────────────────────┘                                 │
+│                           │                                                 │
+│     ┌─────────────────────┼─────────────────────┐                          │
+│     ▼                     ▼                     ▼                          │
+│ ┌───────┐   ┌─────────────────┐   ┌─────────────────┐   ┌───────┐         │
+│ │  All  │   │ PYQ │Proficiency│   │ Test │   DPP    │   │       │         │
+│ └───────┘   └─────────────────┘   └─────────────────┘   └───────┘         │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+Key Components
+Component	File	Purpose
+PaperTestResults	src/components/learning/PaperTestResults.tsx	Main UI component that displays all test results including DPP
+useTestResults	src/hooks/useTestResults.ts	Fetches results from test_results table
+usePaperTestResults	src/hooks/usePaperTestResults.ts	Fetches results from paper_test_results table
+Data Flow
+1. Data Fetching (Two Sources)
+
+// PaperTestResults.tsx - Lines 75-78
+const { data: paperResults, isLoading: paperLoading } = usePaperTestResults(subjectId);
+const { data: testResults, isLoading: testLoading } = useTestResults(subjectId);
+2. Normalize test_results to Unified Format
+
+// Lines 93-112 - Convert test_results to UnifiedResult format
+const normalizedTestResults = useMemo((): UnifiedResult[] => {
+  return (testResults || []).map(tr => ({
+    id: tr.id,
+    paper_id: tr.test_id,           // Maps test_id → paper_id
+    paper_category: tr.test_type,   // proficiency, mock, practice, dpp
+    score: tr.score ?? null,
+    total_questions: tr.total_questions,
+    percentage: tr.percentage,
+    time_taken_seconds: tr.time_taken_seconds,
+    grading_status: tr.grading_status,
+    submitted_at: tr.submitted_at,
+    answers: tr.answers || {},
+    paper: tr.test ? {
+      exam_name: tr.test.title,     // Test title becomes exam_name
+      year: null,
+      paper_type: tr.test.test_type
+    } : null,
+    isFromTestsTable: true,         // Flag to identify source
+  }));
+}, [testResults]);
+3. DPP Detection Logic
+
+// Lines 150-158 - How system identifies a DPP
+const isDppResult = (result: UnifiedResult) => {
+  if (!result.isFromTestsTable) return false;  // DPPs only come from tests table
+  
+  // Check paper_category (from test_type) = "dpp"
+  if (result.paper_category === "dpp") return true;
+  
+  // OR exam_name contains "dpp" keyword
+  const examName = result.paper?.exam_name || "";
+  return examName.toLowerCase().includes("dpp");
+};
+4. Category Filtering
+
+// Lines 160-177 - Filter by DPP tab
+const filteredResults = results?.filter(r => {
+  if (activeCategory === "all") return true;
+  
+  const isDpp = isDppResult(r);
+  
+  if (activeCategory === "dpp") {
+    return isDpp;  // Show only DPP results
+  }
+  
+  // Exclude DPPs from "Test" tab
+  if (activeCategory === "mock") {
+    if (isDpp) return false;
+    return r.paper_category === "practice" || r.paper_category === "mock";
+  }
+  
+  return r.paper_category === activeCategory;
+}) || [];
+Database Schema
+test_results Table (Used for DPP in My Results)
+Column	Type	Description
+id	UUID	Primary key
+student_id	UUID	FK to auth.users
+test_id	UUID	FK to tests table
+subject_id	UUID	FK to subjects
+test_type	string	"proficiency", "mock", "practice", "dpp"
+score	number	Correct answers
+total_questions	number	Total questions
+percentage	number	Score percentage
+time_taken_seconds	number	Duration
+answers	JSONB	{ "question_id": "answer" }
+grading_status	string	"pending", "graded", "ai_graded"
+submitted_at	timestamp	Submission time
+API Endpoints for Mobile
+1. Fetch All Test Results (includes DPP)
+
+GET /rest/v1/test_results?select=*,test:tests(title,test_type,duration_minutes)&student_id=eq.{user_id}&subject_id=eq.{subject_id}&order=submitted_at.desc
+
+Headers:
+  Authorization: Bearer {jwt_token}
+  apikey: {supabase_anon_key}
+2. Fetch Paper Test Results (PYQ, Exam)
+
+GET /rest/v1/paper_test_results?select=*,paper:subject_previous_year_papers(exam_name,year,paper_type)&student_id=eq.{user_id}&subject_id=eq.{subject_id}&order=submitted_at.desc
+3. Fetch Questions for Review
+For tests table results:
+
+
+GET /rest/v1/test_questions?select=*,question:questions(*)&test_id=eq.{test_id}&order=question_order.asc
+UI Categories (Tabs)
+Tab	Filter Logic
+All	All results from both tables
+PYQ	paper_category === "previous_year"
+Proficiency	paper_category === "proficiency"
+Test	paper_category === "practice" OR "mock" AND NOT DPP
+DPP	isDppResult(r) → checks paper_category === "dpp" OR title contains "dpp"
+Mobile Implementation Checklist
+Fetch from both sources: test_results and paper_test_results
+Normalize to unified format: Use UnifiedResult interface
+Implement DPP detection: Check test_type === "dpp" OR title contains "dpp"
+Display tabs: All, PYQ, Proficiency, Test, DPP with counts
+Review modal: Fetch questions from test_questions table using test_id
+Render math: Support KaTeX/LaTeX for question text via MathpixRenderer

@@ -1,0 +1,361 @@
+Complete Forum System Analysis
+Overview
+The Forum is a Q&A-style discussion platform integrated into your LMS that allows students to ask questions, share knowledge, and interact with peers. It features AI-assisted responses for general questions that go unanswered.
+
+Pages Structure
+Now I have a complete understanding of the Forum system. Let me provide you with a comprehensive overview:
+
+Complete Forum System Analysis
+Overview
+The Forum is a Q&A-style discussion platform integrated into your LMS that allows students to ask questions, share knowledge, and interact with peers. It features AI-assisted responses for general questions that go unanswered.
+
+Pages Structure
+
+Flowchart
+Database Tables (7 Tables)
+Table	Purpose	Key Columns
+forum_categories	Organizes posts by subject	name, slug, subject_id, is_general, display_order
+forum_posts	User questions/discussions	category_id, author_id, title, content, is_answered, is_pinned, view_count, reply_count
+forum_replies	Answers to posts	post_id, author_id, content, is_ai_generated, is_accepted_answer, upvotes
+forum_flags	Reported content	post_id, reply_id, flagged_by, reason, status, reviewed_by
+forum_groups	Discussion groups	name, description, created_by, is_private, member_count
+forum_group_members	Group membership	group_id, user_id, role (admin/member)
+forum_upvotes	Reply voting system	reply_id, user_id
+Page-by-Page Breakdown
+1. Forum Main Page (/forum)
+File: src/pages/Forum.tsx
+
+Purpose: Hub for browsing categories and groups
+
+Features:
+
+Two tabs: Categories and Discussion Groups
+Quick action buttons: "New Question" and "Create Group"
+Info card explaining how the forum works
+Displays general category with "AI Assisted" badge
+Subject-specific categories grid with post counts
+UI Components Used:
+
+Card, CardHeader, CardContent, CardTitle, CardDescription
+Button, Badge, Tabs, TabsList, TabsTrigger, TabsContent
+Icons: MessageSquare, Users, Plus, BookOpen, HelpCircle, ArrowRight
+Hooks Used:
+
+useForumCategories() - Fetches all active categories with post counts
+useForumGroups() - Fetches all discussion groups with membership status
+useJoinGroup() / useLeaveGroup() - Join/leave group mutations
+2. Category Page (/forum/category/:slug)
+File: src/pages/ForumCategory.tsx
+
+Purpose: Lists all posts within a specific category
+
+Features:
+
+Back navigation to main forum
+Category name and description header
+"New Question" button
+AI assistance badge for general categories
+Post cards showing: title, author, timestamp, reply count, view count, answered status
+UI Components Used:
+
+Card, CardHeader, CardTitle, CardContent
+Button, Badge, Avatar, AvatarFallback
+Icons: ArrowLeft, Plus, MessageSquare, Eye, Clock, CheckCircle, Bot
+Hooks Used:
+
+useForumPosts(slug) - Fetches posts filtered by category
+useForumCategories() - Gets category details
+3. Single Post Page (/forum/post/:id)
+File: src/pages/ForumPost.tsx
+
+Purpose: View a post and its replies, interact with content
+
+Features:
+
+Full post display with author, timestamp, view count
+Reply section with upvote system
+AI-generated reply badges
+"Accept Answer" functionality for post author
+"Report" button for inappropriate content
+Reply form for logged-in users
+UI Components Used:
+
+Card, CardHeader, CardTitle, CardContent
+Button, Badge, Avatar, Textarea, Separator
+Icons: ArrowLeft, ThumbsUp, CheckCircle, Bot, Flag, Clock, Eye, MessageSquare
+Hooks Used:
+
+useForumPost(id) - Fetches single post (also increments view count)
+useForumReplies(id) - Fetches all replies with upvote status
+useCreateForumReply() - Creates new reply
+useToggleUpvote() - Add/remove upvote on reply
+useAcceptAnswer() - Mark reply as accepted solution
+4. Admin Moderation Page (/admin/forum-moderation)
+File: src/pages/admin/ForumModeration.tsx
+
+Purpose: Admin dashboard for moderating forum content
+
+Features:
+
+Stats cards: Unanswered questions, Pending flags, Total posts
+Three tabs: Unanswered, Flagged, All Posts
+Trigger AI reply for unanswered questions
+Review and act on flagged content
+Delete posts
+UI Components Used:
+
+Card, CardHeader, CardTitle, CardDescription, CardContent
+Button, Badge, Tabs, Table, TableHeader, TableBody, TableRow, TableCell
+Skeleton for loading states
+Icons: MessageSquare, Flag, AlertTriangle, Bot, Trash2, Eye, CheckCircle, XCircle
+Hooks Used:
+
+useUnansweredPosts() - Fetches posts without replies
+useFlaggedContent() - Fetches pending flags
+useForumPosts() - Fetches all posts
+useReviewFlag() - Dismiss or action flags
+useDeletePost() - Soft-delete posts
+useTriggerAIReply() - Manually trigger AI response
+Dialog Components
+CreatePostDialog
+File: src/components/forum/CreatePostDialog.tsx
+
+Creates new forum posts with:
+
+Category dropdown selection
+Title input
+Content textarea
+CreateGroupDialog
+File: src/components/forum/CreateGroupDialog.tsx
+
+Creates discussion groups with:
+
+Group name input
+Description textarea
+Private/public toggle switch
+FlagContentDialog
+File: src/components/forum/FlagContentDialog.tsx
+
+Reports inappropriate content with:
+
+Reason textarea
+Submit report button
+API/Hooks Summary
+Hook	File	Supabase Table	Purpose
+useForumCategories	useForumCategories.ts	forum_categories	Fetch active categories with post counts
+useForumPosts	useForumPosts.ts	forum_posts	Fetch posts (optionally by category)
+useForumPost	useForumPosts.ts	forum_posts	Fetch single post + increment views
+useCreateForumPost	useForumPosts.ts	forum_posts	Create new post
+useFlagPost	useForumPosts.ts	forum_flags	Report a post
+useForumReplies	useForumReplies.ts	forum_replies	Fetch replies for a post
+useCreateForumReply	useForumReplies.ts	forum_replies	Create new reply
+useToggleUpvote	useForumReplies.ts	forum_upvotes	Add/remove upvote
+useAcceptAnswer	useForumReplies.ts	forum_replies	Mark reply as accepted
+useForumGroups	useForumGroups.ts	forum_groups	Fetch groups with membership
+useCreateForumGroup	useForumGroups.ts	forum_groups, forum_group_members	Create group + add creator
+useJoinGroup	useForumGroups.ts	forum_group_members	Join a group
+useLeaveGroup	useForumGroups.ts	forum_group_members	Leave a group
+useUnansweredPosts	useForumModeration.ts	forum_posts	Admin: fetch unanswered
+useFlaggedContent	useForumModeration.ts	forum_flags	Admin: fetch pending flags
+useReviewFlag	useForumModeration.ts	forum_flags, forum_posts/replies	Admin: dismiss/action flag
+useDeletePost	useForumModeration.ts	forum_posts	Admin: soft-delete post
+useTriggerAIReply	useForumModeration.ts	Edge Function	Admin: trigger AI reply
+Edge Function: AI Reply System
+File: supabase/functions/forum-ai-reply/index.ts
+
+How it works:
+
+Manual Trigger: Admin clicks "AI Reply" button → calls edge function with postId
+Auto-Check Mode: Can be called with checkOnly: true to find unanswered general posts older than 10 minutes
+AI Configuration:
+
+Uses Lovable AI Gateway (ai.gateway.lovable.dev)
+Model: google/gemini-2.5-flash
+System prompt defines it as an LMS forum assistant
+Flow:
+
+Request → Fetch Post → Generate AI Response → Insert Reply (is_ai_generated: true, author_id: null)
+Data Flow Diagram
+Database Tables (7 Tables)
+Table	Purpose	Key Columns
+forum_categories	Organizes posts by subject	name, slug, subject_id, is_general, display_order
+forum_posts	User questions/discussions	category_id, author_id, title, content, is_answered, is_pinned, view_count, reply_count
+forum_replies	Answers to posts	post_id, author_id, content, is_ai_generated, is_accepted_answer, upvotes
+forum_flags	Reported content	post_id, reply_id, flagged_by, reason, status, reviewed_by
+forum_groups	Discussion groups	name, description, created_by, is_private, member_count
+forum_group_members	Group membership	group_id, user_id, role (admin/member)
+forum_upvotes	Reply voting system	reply_id, user_id
+Page-by-Page Breakdown
+1. Forum Main Page (/forum)
+File: src/pages/Forum.tsx
+
+Purpose: Hub for browsing categories and groups
+
+Features:
+
+Two tabs: Categories and Discussion Groups
+Quick action buttons: "New Question" and "Create Group"
+Info card explaining how the forum works
+Displays general category with "AI Assisted" badge
+Subject-specific categories grid with post counts
+UI Components Used:
+
+Card, CardHeader, CardContent, CardTitle, CardDescription
+Button, Badge, Tabs, TabsList, TabsTrigger, TabsContent
+Icons: MessageSquare, Users, Plus, BookOpen, HelpCircle, ArrowRight
+Hooks Used:
+
+useForumCategories() - Fetches all active categories with post counts
+useForumGroups() - Fetches all discussion groups with membership status
+useJoinGroup() / useLeaveGroup() - Join/leave group mutations
+2. Category Page (/forum/category/:slug)
+File: src/pages/ForumCategory.tsx
+
+Purpose: Lists all posts within a specific category
+
+Features:
+
+Back navigation to main forum
+Category name and description header
+"New Question" button
+AI assistance badge for general categories
+Post cards showing: title, author, timestamp, reply count, view count, answered status
+UI Components Used:
+
+Card, CardHeader, CardTitle, CardContent
+Button, Badge, Avatar, AvatarFallback
+Icons: ArrowLeft, Plus, MessageSquare, Eye, Clock, CheckCircle, Bot
+Hooks Used:
+
+useForumPosts(slug) - Fetches posts filtered by category
+useForumCategories() - Gets category details
+3. Single Post Page (/forum/post/:id)
+File: src/pages/ForumPost.tsx
+
+Purpose: View a post and its replies, interact with content
+
+Features:
+
+Full post display with author, timestamp, view count
+Reply section with upvote system
+AI-generated reply badges
+"Accept Answer" functionality for post author
+"Report" button for inappropriate content
+Reply form for logged-in users
+UI Components Used:
+
+Card, CardHeader, CardTitle, CardContent
+Button, Badge, Avatar, Textarea, Separator
+Icons: ArrowLeft, ThumbsUp, CheckCircle, Bot, Flag, Clock, Eye, MessageSquare
+Hooks Used:
+
+useForumPost(id) - Fetches single post (also increments view count)
+useForumReplies(id) - Fetches all replies with upvote status
+useCreateForumReply() - Creates new reply
+useToggleUpvote() - Add/remove upvote on reply
+useAcceptAnswer() - Mark reply as accepted solution
+4. Admin Moderation Page (/admin/forum-moderation)
+File: src/pages/admin/ForumModeration.tsx
+
+Purpose: Admin dashboard for moderating forum content
+
+Features:
+
+Stats cards: Unanswered questions, Pending flags, Total posts
+Three tabs: Unanswered, Flagged, All Posts
+Trigger AI reply for unanswered questions
+Review and act on flagged content
+Delete posts
+UI Components Used:
+
+Card, CardHeader, CardTitle, CardDescription, CardContent
+Button, Badge, Tabs, Table, TableHeader, TableBody, TableRow, TableCell
+Skeleton for loading states
+Icons: MessageSquare, Flag, AlertTriangle, Bot, Trash2, Eye, CheckCircle, XCircle
+Hooks Used:
+
+useUnansweredPosts() - Fetches posts without replies
+useFlaggedContent() - Fetches pending flags
+useForumPosts() - Fetches all posts
+useReviewFlag() - Dismiss or action flags
+useDeletePost() - Soft-delete posts
+useTriggerAIReply() - Manually trigger AI response
+Dialog Components
+CreatePostDialog
+File: src/components/forum/CreatePostDialog.tsx
+
+Creates new forum posts with:
+
+Category dropdown selection
+Title input
+Content textarea
+CreateGroupDialog
+File: src/components/forum/CreateGroupDialog.tsx
+
+Creates discussion groups with:
+
+Group name input
+Description textarea
+Private/public toggle switch
+FlagContentDialog
+File: src/components/forum/FlagContentDialog.tsx
+
+Reports inappropriate content with:
+
+Reason textarea
+Submit report button
+API/Hooks Summary
+Hook	File	Supabase Table	Purpose
+useForumCategories	useForumCategories.ts	forum_categories	Fetch active categories with post counts
+useForumPosts	useForumPosts.ts	forum_posts	Fetch posts (optionally by category)
+useForumPost	useForumPosts.ts	forum_posts	Fetch single post + increment views
+useCreateForumPost	useForumPosts.ts	forum_posts	Create new post
+useFlagPost	useForumPosts.ts	forum_flags	Report a post
+useForumReplies	useForumReplies.ts	forum_replies	Fetch replies for a post
+useCreateForumReply	useForumReplies.ts	forum_replies	Create new reply
+useToggleUpvote	useForumReplies.ts	forum_upvotes	Add/remove upvote
+useAcceptAnswer	useForumReplies.ts	forum_replies	Mark reply as accepted
+useForumGroups	useForumGroups.ts	forum_groups	Fetch groups with membership
+useCreateForumGroup	useForumGroups.ts	forum_groups, forum_group_members	Create group + add creator
+useJoinGroup	useForumGroups.ts	forum_group_members	Join a group
+useLeaveGroup	useForumGroups.ts	forum_group_members	Leave a group
+useUnansweredPosts	useForumModeration.ts	forum_posts	Admin: fetch unanswered
+useFlaggedContent	useForumModeration.ts	forum_flags	Admin: fetch pending flags
+useReviewFlag	useForumModeration.ts	forum_flags, forum_posts/replies	Admin: dismiss/action flag
+useDeletePost	useForumModeration.ts	forum_posts	Admin: soft-delete post
+useTriggerAIReply	useForumModeration.ts	Edge Function	Admin: trigger AI reply
+Edge Function: AI Reply System
+File: supabase/functions/forum-ai-reply/index.ts
+
+How it works:
+
+Manual Trigger: Admin clicks "AI Reply" button → calls edge function with postId
+Auto-Check Mode: Can be called with checkOnly: true to find unanswered general posts older than 10 minutes
+AI Configuration:
+
+Uses Lovable AI Gateway (ai.gateway.lovable.dev)
+Model: google/gemini-2.5-flash
+System prompt defines it as an LMS forum assistant
+Flow:
+
+Request → Fetch Post → Generate AI Response → Insert Reply (is_ai_generated: true, author_id: null)
+Data Flow Diagram
+
+Sequence
+Key Features Summary
+Feature	Implementation
+Categories	General + Subject-specific, sorted by display_order
+AI Auto-Reply	For general category posts unanswered after 10 min
+Upvoting	Users can upvote helpful replies
+Accept Answer	Post author can mark best answer
+Content Flagging	Users report, admins review
+Discussion Groups	Public/private groups with join/leave
+View Tracking	Incremented on post view
+Pinned Posts	Displayed at top of category
+Soft Delete	Posts marked as deleted status
+This is the complete implementation of your Forum system. Would you like me to explain any specific part in more detail, or would you like to make improvements to any of these features?
+
+
+
+
+

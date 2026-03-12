@@ -1,0 +1,124 @@
+import { ReactNode, forwardRef, useEffect } from 'react';
+import { cn } from '@/lib/utils';
+import { PlayerNebulaBackground } from './PlayerNebulaBackground';
+import './player.css';
+
+export type StageMode = 'intro' | 'content' | 'recap' | 'memory' | 'quiz' | 'summary';
+
+interface StageProps {
+  mode: StageMode;
+  children: ReactNode;
+  className?: string;
+}
+
+export const Stage = forwardRef<HTMLDivElement, StageProps>(({
+  mode,
+  children,
+  className,
+}, ref) => {
+  return (
+    <div 
+      ref={ref}
+      className={cn(
+        "player-stage",
+        `mode-${mode}`,
+        className
+      )}
+    >
+      {/* Ultra-beautiful space nebula background */}
+      <PlayerNebulaBackground />
+      {children}
+    </div>
+  );
+});
+
+Stage.displayName = 'Stage';
+
+// Content Layer Component
+interface ContentLayerProps {
+  title?: string;
+  children: ReactNode;
+  isHidden?: boolean;
+  className?: string;
+}
+
+export const ContentLayer = ({
+  title,
+  children,
+  isHidden = false,
+  className,
+}: ContentLayerProps) => {
+  return (
+    <div 
+      className={cn(
+        "content-layer",
+        isHidden && "opacity-0 pointer-events-none",
+        className
+      )}
+    >
+      {title && (
+        <h2 className="section-title">{title}</h2>
+      )}
+      <div className="content-box">
+        {children}
+      </div>
+    </div>
+  );
+};
+
+// Video Layer Component
+interface VideoLayerProps {
+  isVisible: boolean;
+  videoSrc?: string | null;
+  isFullscreen?: boolean;
+  isPlaying?: boolean;
+  onEnded?: () => void;
+  onTimeUpdate?: (currentTime: number) => void;
+  onCanPlay?: () => void;
+  videoRef?: React.RefObject<HTMLVideoElement>;
+}
+
+export const VideoLayer = ({
+  isVisible,
+  videoSrc,
+  isFullscreen = false,
+  isPlaying = false,
+  onEnded,
+  onTimeUpdate,
+  onCanPlay,
+  videoRef,
+}: VideoLayerProps) => {
+  // Auto-play/pause based on visibility and isPlaying
+  useEffect(() => {
+    if (videoRef?.current && videoSrc) {
+      if (isVisible && isPlaying) {
+        videoRef.current.play().catch(err => {
+          console.warn('[VideoLayer] Auto-play failed:', err);
+        });
+      } else {
+        videoRef.current.pause();
+      }
+    }
+  }, [isVisible, isPlaying, videoSrc, videoRef]);
+
+  return (
+    <div className={cn(
+      "video-layer", 
+      isVisible && "visible",
+      isFullscreen && "fullscreen"
+    )}>
+      {videoSrc && (
+        <video
+          ref={videoRef}
+          className="content-video"
+          src={videoSrc}
+          muted
+          playsInline
+          onEnded={onEnded}
+          onCanPlay={onCanPlay}
+          onTimeUpdate={(e) => onTimeUpdate?.((e.target as HTMLVideoElement).currentTime)}
+        />
+      )}
+    </div>
+  );
+};

@@ -1,0 +1,244 @@
+Mobile Portrait Mode - Complete Architecture for Replit
+Here's exactly how the educational video player works on mobile devices in our web app:
+
+1. Entry Point & Container (EducationalVideoPlayerDialog.tsx)
+On mobile (window.innerWidth < 768), the Dialog does NOT use a <Dialog> overlay. Instead it renders a fixed full-screen div:
+
+fixed inset-0 z-50 bg-background flex flex-col
+Layout is split into two zones:
+
+Top 45vh: The EducationalVideoPlayer component (the actual player)
+Bottom 55vh: Scrollable metadata area (title, back button, quick actions)
+The back button (ArrowLeft icon) calls onOpenChange(false) to close.
+
+2. Player Internal Layout (EducationalVideoPlayer.tsx)
+The player wrapper is:
+
+player-theme flex flex-col h-full w-full overflow-hidden
+It has these vertical sections:
+
+Header bar (36px on mobile) - shows title + section type badge + close button. Logo is hidden on mobile.
+Stage (flex-1, aspect-ratio 16:9 on mobile) - the main content area with 3 layers
+Controls (auto height, ~30px) - playback controls at bottom of stage
+3. Three-Layer Stage Architecture
+The Stage (player-stage) uses position: relative with three absolutely positioned layers:
+
+
++-----------------------------------------------+
+|  STAGE (aspect-ratio: 16/9, black bg)         |
+|                                                |
+|  Layer 1: CONTENT (z:10)  | Layer 2: AVATAR   |
+|  - Left 55% width        | (z:20)             |
+|  - Shows text/images      | - Right side       |
+|  - Single beat at a time  | - 55% width        |
+|    on mobile              | - 95% height       |
+|                           | - translateX(25%)   |
+|                           | - Chroma-keyed      |
+|                           |   via WebGL canvas  |
+|                                                |
+|  Layer 3: VIDEO (z:15) - full width            |
+|  - Only visible during "show" phase            |
+|  - Beat/Manim animation videos                 |
+|                                                |
+|  [-------- CONTROLS BAR (z:100) ----------]    |
++-----------------------------------------------+
+Mobile CSS dimensions:
+
+Content layer: width: 55%, height: calc(100% - 30px)
+Avatar layer: width: 55%, height: 95%, transform: translateX(25%) (shifted right so only left portion overlaps content)
+Video layer: width: 100%, height: calc(100% - 30px)
+4. Mobile Content Display Pattern: "Single Beat"
+On mobile, only the currently active beat is shown (not accumulated like desktop). The active beat is determined by:
+
+activeIndex = revealedIndices[revealedIndices.length - 1]
+It renders inside a content-single-mobile container with:
+
+The beat content (image, text, latex, or markdown)
+A counter: "3 / 8" showing position
+Content types rendered:
+
+Image: <img> with the CDN/proxy URL, auto-fallback between .png and .jpg
+LaTeX: KaTeX renderer
+Markdown: ReactMarkdown with remark-gfm
+Bullet list: Formatted markdown
+5. Controls Bar (Mobile)
+Two-row compact layout (~30px):
+
+Row 1: Timeline slider with time labels on both sides (0:32 [====-----] 2:15)
+Row 2: SkipBack, Play/Pause, SkipForward, SectionPicker dropdown, Fullscreen toggle
+Volume controls and language picker are hidden on mobile.
+
+6. Fullscreen Behavior
+When the user taps the fullscreen button:
+
+requestFullscreen() is called on the wrapper div
+screen.orientation.lock('landscape') is attempted
+If orientation lock fails (iOS Safari), a CSS fallback rotates the stage 90 degrees:
+
+@media (orientation: portrait) {
+  :fullscreen .player-stage {
+    transform: rotate(90deg);
+    width: 100vh !important;
+    height: 100vw !important;
+  }
+}
+In landscape fullscreen, the layout switches to desktop-style (60% content, volume controls visible, etc.)
+7. Avatar Rendering (Chroma Key)
+The avatar is a green-screen video. It's rendered via:
+
+A hidden <video> element plays the avatar MP4
+A <canvas> overlays it
+WebGL shader (preferred) or CPU fallback removes the green pixels every frame via requestAnimationFrame
+The canvas shows the transparent avatar on top of the black stage background
+For native mobile: You'd need a native chroma-key shader (Metal/OpenGL ES) or use a pre-keyed video format (like WebM with alpha, or HEVC with alpha on iOS).
+
+8. Pre-Intro Flow
+On first open:
+
+A pre-intro video (/media/pre-intro.mp4) plays full-screen inside the stage
+A "Skip Intro" button appears
+When ended/skipped → first section auto-plays
+Header and controls are hidden during pre-intro
+9. Loading States
+Initial load: "Preparing lecture..." screen with progress bar showing cached sections count (first 3 sections are preloaded)
+Section transition: Loading spinner overlay with "Loading section..." text
+Buffering mid-play: Spinner with "Buffering..." text
+10. Section Navigation
+Sections auto-advance when avatar video fires onEnded
+Manual navigation via SkipForward/SkipBack buttons or SectionPicker dropdown
+On section change: state resets, new avatar URL resolves, beat video playlist rebuilds
+11. Color Theme
+All colors are CSS custom properties on .player-theme:
+
+Background: #000000
+Content bg: rgba(30, 41, 59, 0.9)
+Accent: #3b82f6 (blue)
+Text: #e5e7eb
+Muted text: #94a3b8
+Header/Controls: dark gradient with indigo border and cyan glow
+Beat blocks: dark gradient with indigo left border
+Now I have a thorough understanding of the mobile player architecture. Here's the comprehensive documentation:
+
+Mobile Portrait Mode - Complete Architecture for Replit
+Here's exactly how the educational video player works on mobile devices in our web app:
+
+1. Entry Point & Container (EducationalVideoPlayerDialog.tsx)
+On mobile (window.innerWidth < 768), the Dialog does NOT use a <Dialog> overlay. Instead it renders a fixed full-screen div:
+
+fixed inset-0 z-50 bg-background flex flex-col
+Layout is split into two zones:
+
+Top 45vh: The EducationalVideoPlayer component (the actual player)
+Bottom 55vh: Scrollable metadata area (title, back button, quick actions)
+The back button (ArrowLeft icon) calls onOpenChange(false) to close.
+
+2. Player Internal Layout (EducationalVideoPlayer.tsx)
+The player wrapper is:
+
+player-theme flex flex-col h-full w-full overflow-hidden
+It has these vertical sections:
+
+Header bar (36px on mobile) - shows title + section type badge + close button. Logo is hidden on mobile.
+Stage (flex-1, aspect-ratio 16:9 on mobile) - the main content area with 3 layers
+Controls (auto height, ~30px) - playback controls at bottom of stage
+3. Three-Layer Stage Architecture
+The Stage (player-stage) uses position: relative with three absolutely positioned layers:
+
+
++-----------------------------------------------+
+|  STAGE (aspect-ratio: 16/9, black bg)         |
+|                                                |
+|  Layer 1: CONTENT (z:10)  | Layer 2: AVATAR   |
+|  - Left 55% width        | (z:20)             |
+|  - Shows text/images      | - Right side       |
+|  - Single beat at a time  | - 55% width        |
+|    on mobile              | - 95% height       |
+|                           | - translateX(25%)   |
+|                           | - Chroma-keyed      |
+|                           |   via WebGL canvas  |
+|                                                |
+|  Layer 3: VIDEO (z:15) - full width            |
+|  - Only visible during "show" phase            |
+|  - Beat/Manim animation videos                 |
+|                                                |
+|  [-------- CONTROLS BAR (z:100) ----------]    |
++-----------------------------------------------+
+Mobile CSS dimensions:
+
+Content layer: width: 55%, height: calc(100% - 30px)
+Avatar layer: width: 55%, height: 95%, transform: translateX(25%) (shifted right so only left portion overlaps content)
+Video layer: width: 100%, height: calc(100% - 30px)
+4. Mobile Content Display Pattern: "Single Beat"
+On mobile, only the currently active beat is shown (not accumulated like desktop). The active beat is determined by:
+
+activeIndex = revealedIndices[revealedIndices.length - 1]
+It renders inside a content-single-mobile container with:
+
+The beat content (image, text, latex, or markdown)
+A counter: "3 / 8" showing position
+Content types rendered:
+
+Image: <img> with the CDN/proxy URL, auto-fallback between .png and .jpg
+LaTeX: KaTeX renderer
+Markdown: ReactMarkdown with remark-gfm
+Bullet list: Formatted markdown
+5. Controls Bar (Mobile)
+Two-row compact layout (~30px):
+
+Row 1: Timeline slider with time labels on both sides (0:32 [====-----] 2:15)
+Row 2: SkipBack, Play/Pause, SkipForward, SectionPicker dropdown, Fullscreen toggle
+Volume controls and language picker are hidden on mobile.
+
+6. Fullscreen Behavior
+When the user taps the fullscreen button:
+
+requestFullscreen() is called on the wrapper div
+screen.orientation.lock('landscape') is attempted
+If orientation lock fails (iOS Safari), a CSS fallback rotates the stage 90 degrees:
+
+@media (orientation: portrait) {
+  :fullscreen .player-stage {
+    transform: rotate(90deg);
+    width: 100vh !important;
+    height: 100vw !important;
+  }
+}
+In landscape fullscreen, the layout switches to desktop-style (60% content, volume controls visible, etc.)
+7. Avatar Rendering (Chroma Key)
+The avatar is a green-screen video. It's rendered via:
+
+A hidden <video> element plays the avatar MP4
+A <canvas> overlays it
+WebGL shader (preferred) or CPU fallback removes the green pixels every frame via requestAnimationFrame
+The canvas shows the transparent avatar on top of the black stage background
+For native mobile: You'd need a native chroma-key shader (Metal/OpenGL ES) or use a pre-keyed video format (like WebM with alpha, or HEVC with alpha on iOS).
+
+8. Pre-Intro Flow
+On first open:
+
+A pre-intro video (/media/pre-intro.mp4) plays full-screen inside the stage
+A "Skip Intro" button appears
+When ended/skipped → first section auto-plays
+Header and controls are hidden during pre-intro
+9. Loading States
+Initial load: "Preparing lecture..." screen with progress bar showing cached sections count (first 3 sections are preloaded)
+Section transition: Loading spinner overlay with "Loading section..." text
+Buffering mid-play: Spinner with "Buffering..." text
+10. Section Navigation
+Sections auto-advance when avatar video fires onEnded
+Manual navigation via SkipForward/SkipBack buttons or SectionPicker dropdown
+On section change: state resets, new avatar URL resolves, beat video playlist rebuilds
+11. Color Theme
+All colors are CSS custom properties on .player-theme:
+
+Background: #000000
+Content bg: rgba(30, 41, 59, 0.9)
+Accent: #3b82f6 (blue)
+Text: #e5e7eb
+Muted text: #94a3b8
+Header/Controls: dark gradient with indigo border and cyan glow
+Beat blocks: dark gradient with indigo left border
+
+
+
+

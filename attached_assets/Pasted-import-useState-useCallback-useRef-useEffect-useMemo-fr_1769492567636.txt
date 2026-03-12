@@ -1,0 +1,789 @@
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import { PresentationData, PresentationSection } from './types';
+import { PlayerControls } from './PlayerControls';
+import { SectionPicker } from './SectionPicker';
+import { usePlayerState } from './hooks/usePlayerState';
+import { getAdminMediaUrl, getAvatarVideoPath, resolveMediaPath } from './utils/mediaResolver';
+import { Stage, ContentLayer, VideoLayer } from './Stage';
+import { 
+  IntroSection, 
+  SummarySection, 
+  ContentSection, 
+  MemorySection, 
+  RecapSection,
+  QuizSection,
+} from './sections';
+import { cn } from '@/lib/utils';
+import { X, Loader2, Play, SkipForward } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+
+// Helper function for section type badge colors
+const getSectionTypeColor = (type: string) => {
+  switch (type) {
+    case 'intro':
+      return 'bg-blue-500/30 text-blue-200';
+    case 'summary':
+      return 'bg-purple-500/30 text-purple-200';
+    case 'content':
+    case 'example':
+      return 'bg-green-500/30 text-green-200';
+    case 'memory':
+      return 'bg-amber-500/30 text-amber-200';
+    case 'recap':
+      return 'bg-rose-500/30 text-rose-200';
+    case 'quiz':
+      return 'bg-cyan-500/30 text-cyan-200';
+    default:
+      return 'bg-white/10 text-gray-200';
+  }
+};
+import './player.css';
+
+// Chroma key threshold for green screen removal
+const CHROMA_THRESHOLD = 100;
+
+interface EducationalVideoPlayerProps {
+  presentationData: PresentationData;
+  jobId: string;
+  getMediaUrl?: (jobId: string, path: string) => string;
+  onClose?: () => void;
+  className?: string;
+}
+
+interface BeatVideoEntry {
+  segmentIndex: number;
+  startTime: number;
+  endTime: number;
+  videoPath: string | null;
+  isShowPhase: boolean;
+}
+
+export const EducationalVideoPlayer = ({
+  presentationData,
+  jobId,
+  getMediaUrl = getAdminMediaUrl,
+  onClose,
+  className,
+}: EducationalVideoPlayerProps) => {
+  const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [contentVideoSrc, setContentVideoSrc] = useState<string | null>(null);
+  const [avatarError, setAvatarError] = useState(false);
+  const [avatarLoading, setAvatarLoading] = useState(true);
+  const [needsUserInteraction, setNeedsUserInteraction] = useState(false);
+  const [allAvatarsReady, setAllAvatarsReady] = useState(false);
+  const [showPreIntro, setShowPreIntro] = useState(true);
+  const [preIntroEnded, setPreIntroEnded] = useState(false);
+  const preIntroVideoRef = useRef<HTMLVideoElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const fullscreenWrapperRef = useRef<HTMLDivElement>(null);
+  const contentVideoRef = useRef<HTMLVideoElement>(null);
+  const avatarVideoElementRef = useRef<HTMLVideoElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const animationFrameRef = useRef<number>();
+  const preloadedVideosRef = useRef<Map<number, HTMLVideoElement>>(new Map());
+  const hasAutoPlayedRef = useRef(false);
+  const pendingAutoPlayRef = useRef(false);
+
+  const sections = presentationData?.sections || [];
+  const currentSection = sections[currentSectionIndex] || null;
+
+  // Debug: Log section data when it changes
+  useEffect(() => {
+    console.log('[PLAYER] Current section:', {
+      index: currentSectionIndex,
+      type: currentSection?.section_type,
+      title: currentSection?.title,
+      hasNarration: !!currentSection?.narration,
+      hasSegments: !!currentSection?.narration?.segments,
+      segmentCount: currentSection?.narration?.segments?.length || 0,
+      totalDuration: currentSection?.narration?.total_duration_seconds || 'N/A',
+      avatarVideo: currentSection?.avatar_video || currentSection?.avatar?.video_path || 'default pattern',
+    });
+    // Reset states on section change
+    setContentVideoSrc(null);
+    setAvatarError(false);
+    setAvatarLoading(true);
+    prevPlayingRef.current = false; // Reset play tracking so sync effect detects state change
+  }, [currentSection, currentSectionIndex]);
+
+  // Pre-fetch all avatar videos on mount
+  useEffect(() => {
+    if (!presentationData?.sections || presentationData.sections.length === 0) return;
+    
+    console.log('[PRELOAD] Starting avatar preload for all sections');
+    const sectionsCount = presentationData.sections.length;
+    let loadedCount = 0;
+    
+    presentationData.sections.forEach((section, index) => {
+      let avatarPath: string | null = null;
+      
+      if (section.avatar_video) {
+        avatarPath = resolveMediaPath(section.avatar_video, 'avatar');
+      } else if (section.avatar?.video_path) {
+        avatarPath = resolveMediaPath(section.avatar.video_path, 'avatar');
+      } else if (section.section_id !== undefined) {
+        const sectionId = typeof section.section_id === 'number' 
+          ? section.section_id 
+          : parseInt(String(section.section_id), 10) || 0;
+        avatarPath = getAvatarVideoPath(sectionId);
+      }
+      
+      if (avatarPath) {
+        const url = getMediaUrl(jobId, avatarPath);
+        const video = document.createElement('video');
+        video.crossOrigin = 'anonymous';
+        video.preload = 'auto';
+        
+        video.oncanplay = () => {
+          loadedCount++;
+          console.log(`[PRELOAD] Ready ${loadedCount}/${sectionsCount}: Section ${index}`);
+          if (loadedCount >= sectionsCount) {
+            setAllAvatarsReady(true);
+            console.log('[PRELOAD] All avatars ready!');
+          }
+        };
+        
+        video.onerror = () => {
+          loadedCount++;
+          console.warn(`[PRELOAD] Failed section ${index}, continuing...`);
+          if (loadedCount >= sectionsCount) {
+            setAllAvatarsReady(true);
+          }
+        };
+        
+        video.src = url;
+        preloadedVideosRef.current.set(index, video);
+      } else {
+        loadedCount++;
+        if (loadedCount >= sectionsCount) {
+          setAllAvatarsReady(true);
+        }
+      }
+    });
+    
+    return () => {
+      preloadedVideosRef.current.forEach(v => {
+        v.src = '';
+        v.load();
+      });
+      preloadedVideosRef.current.clear();
+    };
+  }, [presentationData, jobId, getMediaUrl]);
+
+  // Player state management
+  const {
+    state,
+    totalDuration,
+    setAvatarVideoRef,
+    togglePlayPause,
+    seek,
+    reset,
+    play,
+    pause,
+  } = usePlayerState({
+    section: currentSection,
+    onSectionEnd: () => {
+      if (currentSectionIndex < sections.length - 1) {
+        console.log('[SECTION END] Auto-advancing to next section');
+        handleSectionChange(currentSectionIndex + 1, true);
+      } else {
+        console.log('[SECTION END] Presentation complete');
+      }
+    },
+  });
+
+  // Get avatar URL with fallback paths
+  const avatarUrl = useMemo(() => {
+    if (!currentSection || avatarError) return null;
+    
+    // Try explicit avatar_video field first
+    if (currentSection.avatar_video) {
+      const path = resolveMediaPath(currentSection.avatar_video, 'avatar');
+      console.log('[AVATAR] Using avatar_video:', path);
+      return getMediaUrl(jobId, path);
+    }
+    
+    // Try nested avatar.video_path
+    if (currentSection.avatar?.video_path) {
+      const path = resolveMediaPath(currentSection.avatar.video_path, 'avatar');
+      console.log('[AVATAR] Using avatar.video_path:', path);
+      return getMediaUrl(jobId, path);
+    }
+    
+    // Default pattern: avatars/avatar_{section_id}.webm
+    const sectionId = currentSection.section_id;
+    if (sectionId !== undefined) {
+      const path = getAvatarVideoPath(typeof sectionId === 'number' ? sectionId : parseInt(String(sectionId), 10) || 0);
+      console.log('[AVATAR] Using default pattern:', path);
+      return getMediaUrl(jobId, path);
+    }
+    
+    return null;
+  }, [currentSection, jobId, getMediaUrl, avatarError]);
+
+  // Debug log avatar URL
+  useEffect(() => {
+    console.log('[AVATAR DEBUG]', {
+      sectionId: currentSection?.section_id,
+      sectionType: currentSection?.section_type,
+      hasAvatarVideo: !!currentSection?.avatar_video,
+      avatarVideoValue: currentSection?.avatar_video,
+      hasAvatarPath: !!currentSection?.avatar?.video_path,
+      computedUrl: avatarUrl,
+      avatarError,
+      avatarLoading,
+    });
+  }, [currentSection, avatarUrl, avatarError, avatarLoading]);
+
+  // Build beat video playlist from section segments
+  const beatVideoPlaylist = useMemo((): BeatVideoEntry[] => {
+    if (!currentSection?.narration?.segments) return [];
+    
+    let cumulativeTime = 0;
+    return currentSection.narration.segments.map((segment, index) => {
+      const startTime = cumulativeTime;
+      const duration = segment.duration_seconds || 5;
+      cumulativeTime += duration;
+      
+      const beatVideo = segment.beat_videos?.[0] || null;
+      const visualLayer = segment.display_directives?.visual_layer;
+      // Normalize: only 'show' triggers video layer, everything else (teach/hide/undefined) keeps content visible
+      const isShowPhase = visualLayer === 'show';
+      
+      return {
+        segmentIndex: index,
+        startTime,
+        endTime: cumulativeTime,
+        videoPath: beatVideo,
+        isShowPhase,
+      };
+    });
+  }, [currentSection]);
+
+  // Determine if video layer should be visible (SHOW phase) - MOVED EARLIER for dependency order
+  const isVideoLayerVisible = useMemo(() => {
+    if (!beatVideoPlaylist.length) return false;
+    
+    const currentEntry = beatVideoPlaylist.find(
+      entry => state.currentTime >= entry.startTime && state.currentTime < entry.endTime
+    );
+    
+    return currentEntry?.isShowPhase && !!currentEntry.videoPath;
+  }, [beatVideoPlaylist, state.currentTime]);
+
+  // Update content video source based on current time and SHOW phase
+  useEffect(() => {
+    if (!beatVideoPlaylist.length) return;
+    
+    const currentEntry = beatVideoPlaylist.find(
+      entry => state.currentTime >= entry.startTime && state.currentTime < entry.endTime
+    );
+    
+    if (currentEntry?.isShowPhase && currentEntry.videoPath) {
+      const videoPath = resolveMediaPath(currentEntry.videoPath, 'video');
+      const videoUrl = getMediaUrl(jobId, videoPath);
+      
+      if (videoUrl !== contentVideoSrc) {
+        console.log('[VIDEO] Switching to SHOW phase video:', videoPath);
+        setContentVideoSrc(videoUrl);
+      }
+    } else if (!currentEntry?.isShowPhase && contentVideoSrc) {
+      console.log('[VIDEO] Switching back to TEACH phase');
+      setContentVideoSrc(null);
+    }
+  }, [state.currentTime, beatVideoPlaylist, jobId, getMediaUrl, contentVideoSrc]);
+
+  // Auto-play content video when it's set and player is playing
+  useEffect(() => {
+    if (contentVideoSrc && state.isPlaying && contentVideoRef.current) {
+      contentVideoRef.current.play().catch(err => {
+        console.warn('[VIDEO] Auto-play failed:', err);
+      });
+    }
+  }, [contentVideoSrc, state.isPlaying]);
+
+  // Chroma key rendering function - removes green screen (runs continuously like reference player)
+  const renderChromaFrame = useCallback(() => {
+    const video = avatarVideoElementRef.current;
+    const canvas = canvasRef.current;
+    
+    // ALWAYS schedule next frame - don't check paused state (matches reference player)
+    const scheduleNext = () => {
+      animationFrameRef.current = requestAnimationFrame(renderChromaFrame);
+    };
+
+    // Check readyState but keep loop running
+    if (!video || video.readyState < 2) {
+      scheduleNext();
+      return;
+    }
+
+    if (!canvas) {
+      scheduleNext();
+      return;
+    }
+
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    if (!ctx) {
+      scheduleNext();
+      return;
+    }
+
+    // Sync canvas size with video
+    if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
+      if (video.videoWidth > 0 && video.videoHeight > 0) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+      }
+    }
+
+    // Skip rendering if canvas not ready, but keep loop running
+    if (canvas.width === 0 || canvas.height === 0) {
+      scheduleNext();
+      return;
+    }
+
+    try {
+      // Draw current frame
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      // Get image data for chroma key processing
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+
+      // Process each pixel - remove green background (1.3 multiplier matches reference)
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+
+        if (g > CHROMA_THRESHOLD && g > r * 1.3 && g > b * 1.3) {
+          data[i + 3] = 0;
+        }
+      }
+
+      ctx.putImageData(imageData, 0, 0);
+    } catch (e) {
+      console.error('[CHROMA] Error:', e);
+    }
+
+    // CRITICAL: Always schedule next frame
+    scheduleNext();
+  }, []);
+
+  // Track previous play state to detect genuine changes
+  const prevPlayingRef = useRef<boolean>(state.isPlaying);
+
+  // Start chroma loop once on mount - runs continuously (matches reference player)
+  useEffect(() => {
+    console.log('[CHROMA] Starting continuous chroma key loop');
+    animationFrameRef.current = requestAnimationFrame(renderChromaFrame);
+    
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, [renderChromaFrame]);
+
+  // Sync avatar video playback - avatar provides audio, NEVER pause during SHOW phase
+  useEffect(() => {
+    const video = avatarVideoElementRef.current;
+    
+    if (!video) return;
+    
+    // Only act if playing state actually changed (ignore visibility changes for audio)
+    if (prevPlayingRef.current === state.isPlaying) {
+      return;
+    }
+    
+    prevPlayingRef.current = state.isPlaying;
+    
+    console.log('[SYNC] Play state changed:', {
+      isPlaying: state.isPlaying,
+      isVideoLayerVisible,
+      readyState: video.readyState,
+      hasError: !!video.error,
+    });
+    
+    // Avatar plays when isPlaying is true, regardless of video layer visibility
+    // The avatar canvas is hidden visually during SHOW phase, but audio continues
+    if (state.isPlaying) {
+      // If avatar has error, don't try to play it - timer fallback handles this
+      if (video.error) {
+        console.log('[SYNC] Avatar has error, relying on timer fallback');
+        return;
+      }
+      
+      if (video.readyState >= 2) {
+        video.play().catch(err => {
+          if (err.name === 'NotAllowedError') {
+            console.warn('[SYNC] Autoplay blocked');
+            setNeedsUserInteraction(true);
+            pause();
+          }
+        });
+      }
+    } else {
+      video.pause();
+    }
+  }, [state.isPlaying, pause, currentSectionIndex]);
+
+  // Auto-play when all avatars are ready AND pre-intro has ended
+  useEffect(() => {
+    if (allAvatarsReady && preIntroEnded && !hasAutoPlayedRef.current) {
+      hasAutoPlayedRef.current = true;
+      console.log('[AUTOPLAY] Pre-intro ended and avatars ready, starting playback');
+      setTimeout(() => {
+        play();
+      }, 100);
+    }
+  }, [allAvatarsReady, preIntroEnded, play]);
+
+  // Monitor avatar video readyState for auto-play
+  useEffect(() => {
+    const video = avatarVideoElementRef.current;
+    
+    if (!pendingAutoPlayRef.current) return;
+    
+    // Function to check if video is ready and start playback
+    const checkReadyAndPlay = () => {
+      const currentVideo = avatarVideoElementRef.current;
+      if (currentVideo && currentVideo.readyState >= 2 && pendingAutoPlayRef.current) {
+        pendingAutoPlayRef.current = false;
+        console.log('[AUTOPLAY] Video ready, starting playback for section', currentSectionIndex);
+        
+        prevPlayingRef.current = false;
+        play();
+        
+        currentVideo.play().catch(err => {
+          if (err.name === 'NotAllowedError') {
+            console.warn('[AUTOPLAY] Blocked by browser, needs user interaction');
+            setNeedsUserInteraction(true);
+          } else {
+            console.warn('[AUTOPLAY] Direct play failed:', err);
+          }
+        });
+      }
+    };
+    
+    // Check immediately in case video is already ready
+    if (video && video.readyState >= 2) {
+      checkReadyAndPlay();
+      return;
+    }
+    
+    // Listen for canplay event
+    const handleCanPlay = () => {
+      console.log('[AUTOPLAY] canplay event fired');
+      checkReadyAndPlay();
+    };
+    
+    if (video) {
+      video.addEventListener('canplay', handleCanPlay);
+      return () => {
+        video.removeEventListener('canplay', handleCanPlay);
+      };
+    }
+  }, [currentSectionIndex, play, avatarLoading, preIntroEnded]);
+
+  // Handle section change
+  const handleSectionChange = useCallback((index: number, autoPlay: boolean = false) => {
+    if (index >= 0 && index < sections.length) {
+      reset();
+      setCurrentSectionIndex(index);
+      
+      if (autoPlay) {
+        pendingAutoPlayRef.current = true;
+      }
+    }
+  }, [sections.length, reset]);
+
+  const handlePrevious = useCallback(() => {
+    if (currentSectionIndex > 0) handleSectionChange(currentSectionIndex - 1);
+  }, [currentSectionIndex, handleSectionChange]);
+
+  const handleNext = useCallback(() => {
+    if (currentSectionIndex < sections.length - 1) handleSectionChange(currentSectionIndex + 1);
+  }, [currentSectionIndex, sections.length, handleSectionChange]);
+
+  // Toggle fullscreen
+  const toggleFullscreen = useCallback(() => {
+    if (!fullscreenWrapperRef.current) return;
+    if (!document.fullscreenElement) {
+      fullscreenWrapperRef.current.requestFullscreen().catch(console.error);
+      setIsFullscreen(true);
+    } else {
+      document.exitFullscreen().catch(console.error);
+      setIsFullscreen(false);
+    }
+  }, []);
+
+  // Keyboard controls
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      switch (e.key) {
+        case ' ': e.preventDefault(); togglePlayPause(); break;
+        case 'ArrowLeft': e.ctrlKey ? handlePrevious() : seek(Math.max(0, state.currentTime - 10)); break;
+        case 'ArrowRight': e.ctrlKey ? handleNext() : seek(Math.min(totalDuration, state.currentTime + 10)); break;
+        case 'f': toggleFullscreen(); break;
+        case 'Escape': isFullscreen ? document.exitFullscreen() : onClose?.(); break;
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [togglePlayPause, handlePrevious, handleNext, seek, state.currentTime, totalDuration, toggleFullscreen, isFullscreen, onClose]);
+
+  // Note: isVideoLayerVisible is now computed earlier (line ~165) for proper dependency order
+
+  // Determine stage mode
+  const getStageMode = () => {
+    if (!currentSection) return 'content';
+    if (currentSection.section_type === 'intro') return 'intro';
+    if (currentSection.section_type === 'recap' && isVideoLayerVisible) return 'recap';
+    return currentSection.section_type as any;
+  };
+
+  // Render section content
+  const renderSection = () => {
+    if (!currentSection) return <div className="flex items-center justify-center h-full opacity-50">No content</div>;
+
+    const commonProps = {
+      section: currentSection,
+      revealedIndices: state.revealedBeatIndices,
+      jobId,
+      getMediaUrl,
+      currentSegmentIndex: state.currentSegmentIndex,
+      currentTime: state.currentTime,
+      totalDuration,
+      isVideoLayerVisible,
+    };
+
+    switch (currentSection.section_type) {
+      case 'intro':
+        return <IntroSection section={currentSection} presentationTitle={presentationData.presentation_title} jobId={jobId} getMediaUrl={getMediaUrl} />;
+      case 'summary':
+        return <SummarySection {...commonProps} />;
+      case 'content':
+      case 'example':
+        return <ContentSection {...commonProps} />;
+      case 'memory':
+        return <MemorySection section={currentSection} revealedIndices={state.revealedBeatIndices} currentTime={state.currentTime} totalDuration={totalDuration} />;
+      case 'quiz':
+        return <QuizSection {...commonProps} />;
+      case 'recap':
+        return <RecapSection {...commonProps} />;
+      default:
+        return <ContentSection {...commonProps} />;
+    }
+  };
+
+  // Handle pre-intro end (skip or video finish) - MUST be before early returns
+  const handlePreIntroEnd = useCallback(() => {
+    setShowPreIntro(false);
+    setPreIntroEnded(true);
+    console.log('[PRE-INTRO] Ended, transitioning to first section');
+    
+    // Trigger auto-play for the first section
+    pendingAutoPlayRef.current = true;
+    
+    // Force play after a short delay to ensure state has updated
+    setTimeout(() => {
+      const video = avatarVideoElementRef.current;
+      if (video && video.readyState >= 2) {
+        console.log('[PRE-INTRO] Forcing video playback');
+        prevPlayingRef.current = false;
+        play();
+        video.play().catch(err => {
+          console.warn('[PRE-INTRO] Auto-play blocked:', err);
+          setNeedsUserInteraction(true);
+        });
+      }
+    }, 150);
+  }, [play]);
+
+  if (!presentationData || !sections.length) {
+    return <div className={cn("player-stage flex items-center justify-center", className)}><p className="opacity-50">No presentation data</p></div>;
+  }
+
+  // Show loading screen until all avatars are preloaded
+  if (!allAvatarsReady) {
+    return (
+      <div className={cn("flex flex-col h-full w-full overflow-hidden", className)}>
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-background">
+          <div className="text-center">
+            <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4 text-primary" />
+            <p className="text-muted-foreground">Loading presentation...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div ref={fullscreenWrapperRef} className={cn("player-theme flex flex-col h-full w-full overflow-hidden", isFullscreen && "fixed inset-0 z-50", className)}>
+      {/* Pre-Intro Video Overlay */}
+      {showPreIntro && !preIntroEnded && (
+        <div className="pre-intro-overlay">
+          <video
+            ref={preIntroVideoRef}
+            autoPlay
+            playsInline
+            onEnded={handlePreIntroEnd}
+            src="/media/pre-intro.mp4"
+            className="pre-intro-video"
+          />
+          <button 
+            className="skip-intro-button"
+            onClick={handlePreIntroEnd}
+          >
+            Skip Intro
+            <SkipForward className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Header Bar */}
+      <div className="player-header">
+        <span className="player-header-logo">📚 SimpleLectures</span>
+        <span className="player-header-title">{presentationData.presentation_title}</span>
+        <div className="player-header-actions">
+          <Badge className={cn("text-xs", getSectionTypeColor(currentSection?.section_type || ''))}>
+            {currentSection?.section_type || 'unknown'}
+          </Badge>
+          {onClose && (
+            <button 
+              onClick={onClose}
+              className="control-button close-button"
+              aria-label="Close player"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Main Stage */}
+      <Stage ref={containerRef} mode={getStageMode()} className="flex-1">
+        {/* Content Layer */}
+        <ContentLayer isHidden={currentSection?.section_type === 'intro'}>
+          {renderSection()}
+        </ContentLayer>
+
+        {/* User Interaction Prompt for Autoplay */}
+        {needsUserInteraction && (
+          <div 
+            className="absolute inset-0 z-50 bg-black/80 flex items-center justify-center cursor-pointer"
+            onClick={() => {
+              setNeedsUserInteraction(false);
+              play();
+            }}
+          >
+            <div className="text-center text-white">
+              <Play className="w-16 h-16 mx-auto mb-4 text-primary" />
+              <h3 className="text-xl font-semibold mb-2">Click to Start</h3>
+              <p className="text-muted-foreground">
+                Browser requires interaction to play media with audio
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Avatar Layer with Chroma Key */}
+        <div className={cn(
+          "avatar-layer",
+          currentSection?.section_type === 'intro' && "mode-intro",
+          isVideoLayerVisible && "avatar-hidden"
+        )}>
+          {avatarUrl && !avatarError && (
+            <div className="avatar-canvas-container">
+              {/* Hidden video element - source for chroma key */}
+              <video
+                ref={(el) => {
+                  // CRITICAL: Always notify hook of element changes (including null on unmount)
+                  // This ensures event listeners are properly attached even when handlers change
+                  const previousEl = avatarVideoElementRef.current;
+                  avatarVideoElementRef.current = el;
+                  
+                  if (el !== previousEl) {
+                    setAvatarVideoRef(el);
+                  }
+                }}
+                src={avatarUrl}
+                crossOrigin="anonymous"
+                className="avatar-video-source"
+                style={{ position: 'absolute', opacity: 0, pointerEvents: 'none' }}
+                playsInline
+                preload="auto"
+                onLoadStart={() => {
+                  console.log('[AVATAR] Load started');
+                  setAvatarLoading(true);
+                }}
+                onLoadedMetadata={() => {
+                  console.log('[AVATAR] Metadata loaded');
+                }}
+                onCanPlay={() => {
+                  console.log('[AVATAR] Can play');
+                  setAvatarLoading(false);
+                  // Continuous loop handles chroma key - no need for first frame draw
+                }}
+                onError={() => {
+                  console.error('[AVATAR] Video error');
+                  setAvatarError(true);
+                  setAvatarLoading(false);
+                }}
+                onPlay={() => console.log('[AVATAR] Playing')}
+                onPause={() => console.log('[AVATAR] Paused')}
+              />
+              
+              {/* Canvas for chroma-keyed output */}
+              <canvas
+                ref={canvasRef}
+                className="avatar-canvas"
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Video Layer - Manim/Content Videos */}
+        <VideoLayer 
+          isVisible={isVideoLayerVisible}
+          videoSrc={contentVideoSrc}
+          isFullscreen={currentSection?.section_type === 'recap'}
+          isPlaying={state.isPlaying}
+          videoRef={contentVideoRef}
+          onEnded={() => {
+            console.log('[VIDEO] Content video ended');
+          }}
+          onCanPlay={() => {
+            console.log('[VIDEO] Content video ready:', contentVideoSrc);
+          }}
+        />
+
+        {/* Controls */}
+        <PlayerControls
+          isPlaying={state.isPlaying}
+          currentTime={state.currentTime}
+          duration={state.duration || totalDuration}
+          onPlayPause={togglePlayPause}
+          onSeek={seek}
+          onPrevious={handlePrevious}
+          onNext={handleNext}
+          hasPrevious={currentSectionIndex > 0}
+          hasNext={currentSectionIndex < sections.length - 1}
+          isFullscreen={isFullscreen}
+          onToggleFullscreen={toggleFullscreen}
+          sectionPicker={
+            <SectionPicker 
+              sections={sections} 
+              currentIndex={currentSectionIndex} 
+              onSectionChange={handleSectionChange}
+              container={isFullscreen ? fullscreenWrapperRef.current : undefined}
+            />
+          }
+        />
+      </Stage>
+    </div>
+  );
+};

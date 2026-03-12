@@ -1,0 +1,376 @@
+Complete Payment Integration Documentation for Mobile
+Configuration
+Key	Value
+Supabase URL	https://oxwhqvsoelqqsblmqkxx.supabase.co
+Supabase Anon Key	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im94d2hxdnNvZWxxcXNibG1xa3h4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk1MTU4NTgsImV4cCI6MjA3NTA5MTg1OH0.nZbWSb9AQK5uGAQmc7zXAceTHm9GRQJvqkg4-LNo_DM
+Payment Gateway	Razorpay
+Edge Functions Base URL	https://oxwhqvsoelqqsblmqkxx.supabase.co/functions/v1
+Database Schema
+1. payments Table
+
+CREATE TABLE payments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id),
+  order_id TEXT NOT NULL,                      -- Internal order ID (e.g., "ORD-1767947940447-v8m1zxtyu")
+  payment_gateway TEXT DEFAULT 'razorpay',
+  gateway_payment_id TEXT,                     -- Razorpay payment ID
+  gateway_order_id TEXT,                       -- Razorpay order ID
+  amount_inr INTEGER NOT NULL,                 -- Original amount in INR
+  discount_amount INTEGER DEFAULT 0,           -- Discount applied
+  final_amount INTEGER NOT NULL,               -- Final payable amount
+  currency TEXT DEFAULT 'INR',
+  status TEXT DEFAULT 'pending',               -- 'pending', 'success', 'failed'
+  payment_method TEXT,
+  error_message TEXT,
+  metadata JSONB,                              -- Stores customerInfo, promoCode
+  created_at TIMESTAMP DEFAULT now(),
+  completed_at TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT now()
+);
+2. order_items Table
+
+CREATE TABLE order_items (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  payment_id UUID REFERENCES payments(id),
+  course_id UUID REFERENCES courses(id),
+  price_inr INTEGER NOT NULL,
+  created_at TIMESTAMP DEFAULT now()
+);
+3. enrollments Table
+
+CREATE TABLE enrollments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  student_id UUID NOT NULL REFERENCES auth.users(id),
+  course_id UUID NOT NULL REFERENCES courses(id),
+  enrolled_at TIMESTAMPTZ DEFAULT now(),
+  expires_at TIMESTAMPTZ,                      -- 1 year from enrollment
+  is_active BOOLEAN DEFAULT true,
+  batch_id UUID REFERENCES batches(id),
+  UNIQUE(student_id, course_id)
+);
+4. discount_codes Table
+
+CREATE TABLE discount_codes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  code TEXT NOT NULL UNIQUE,                   -- e.g., "WELCOME10", "NEET2026"
+  description TEXT,
+  discount_percent INTEGER,                    -- e.g., 10 for 10%
+  discount_amount INTEGER,                     -- Fixed amount discount
+  max_uses INTEGER,
+  times_used INTEGER DEFAULT 0,
+  valid_from TIMESTAMP DEFAULT now(),
+  valid_until TIMESTAMP,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP DEFAULT now()
+);
+API Endpoints
+1. Validate Promo Code
+Endpoint: POST /functions/v1/validate-promo-code
+
+Headers:
+
+
+{
+  "Content-Type": "application/json",
+  "Authorization": "Bearer <SUPABASE_ANON_KEY>"
+}
+Request Body:
+
+
+{
+  "code": "WELCOME10",
+  "course_id": "d106db94-58ce-41a7-8d73-d0baa3ad9f43"  // Optional
+}
+Success Response:
+
+
+{
+  "valid": true,
+  "id": "38b76055-ca96-4c68-ac44-9576c5b68cce",
+  "code": "WELCOME10",
+  "description": "Welcome discount - 10% off",
+  "discount_percent": 10,
+  "discount_amount": null,
+  "message": "Promo code applied successfully"
+}
+Error Response:
+
+
+{
+  "valid": false,
+  "message": "Invalid promo code"
+}
+2. Create Payment Order
+Endpoint: POST /functions/v1/create-payment-order
+
+Headers:
+
+
+{
+  "Content-Type": "application/json",
+  "Authorization": "Bearer <USER_JWT_TOKEN>"
+}
+Request Body:
+
+
+{
+  "amount": 2000,
+  "courses": [
+    {
+      "id": "d106db94-58ce-41a7-8d73-d0baa3ad9f43",
+      "name": "JEE Main + Advanced Bundle",
+      "price": 2000
+    }
+  ],
+  "customerInfo": {
+    "fullName": "Pramod Kumar",
+    "email": "pramod@example.com",
+    "phone": "+91 9876543210",
+    "state": "Maharashtra",
+    "city": "Sangamner"
+  },
+  "promoCode": "WELCOME10",
+  "userId": "47a9b651-79d6-440b-a18c-9612ecf68b5a"
+}
+Success Response:
+
+
+{
+  "orderId": "ORD-1767947940447-v8m1zxtyu",
+  "amount": 1800,
+  "status": "created",
+  "paymentId": "717014b5-9ce5-40e3-819d-258c4b14c2c4",
+  "razorpayOrderId": "order_S1iW9K22srUV0M",
+  "razorpayKeyId": "rzp_test_xxxxx"
+}
+3. Verify Payment (After Razorpay Checkout)
+Endpoint: POST /functions/v1/verify-payment
+
+Headers:
+
+
+{
+  "Content-Type": "application/json",
+  "Authorization": "Bearer <USER_JWT_TOKEN>"
+}
+Request Body:
+
+
+{
+  "razorpay_order_id": "order_S1iW9K22srUV0M",
+  "razorpay_payment_id": "pay_S1iWxxxxx",
+  "razorpay_signature": "signature_hash_from_razorpay",
+  "orderId": "ORD-1767947940447-v8m1zxtyu",
+  "userId": "47a9b651-79d6-440b-a18c-9612ecf68b5a",
+  "courses": [
+    {
+      "id": "d106db94-58ce-41a7-8d73-d0baa3ad9f43",
+      "price": 1800
+    }
+  ]
+}
+Success Response:
+
+
+{
+  "verified": true,
+  "message": "Payment verified and enrollment created"
+}
+Error Response:
+
+
+{
+  "error": "Payment verification failed",
+  "verified": false
+}
+Complete Payment Flow
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         PAYMENT FLOW DIAGRAM                                │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌──────────┐    ┌──────────────────┐    ┌──────────────┐    ┌──────────────┐
+│  Mobile  │    │  Supabase Edge   │    │   Razorpay   │    │   Database   │
+│   App    │    │    Functions     │    │     API      │    │              │
+└────┬─────┘    └────────┬─────────┘    └──────┬───────┘    └──────┬───────┘
+     │                   │                     │                   │
+     │  1. Apply Promo   │                     │                   │
+     │──────────────────>│                     │                   │
+     │                   │  Query discount_codes                   │
+     │                   │─────────────────────────────────────────>
+     │                   │<─────────────────────────────────────────
+     │  Discount details │                     │                   │
+     │<──────────────────│                     │                   │
+     │                   │                     │                   │
+     │  2. Create Order  │                     │                   │
+     │──────────────────>│                     │                   │
+     │                   │  3. Create Razorpay Order               │
+     │                   │────────────────────>│                   │
+     │                   │<────────────────────│                   │
+     │                   │  4. Insert payment (pending)            │
+     │                   │─────────────────────────────────────────>
+     │  Order details    │<─────────────────────────────────────────
+     │<──────────────────│                     │                   │
+     │                   │                     │                   │
+     │  5. Open Razorpay Checkout              │                   │
+     │─────────────────────────────────────────>                   │
+     │  6. User completes payment              │                   │
+     │<─────────────────────────────────────────                   │
+     │                   │                     │                   │
+     │  7. Verify Payment│                     │                   │
+     │──────────────────>│                     │                   │
+     │                   │  8. Verify signature                    │
+     │                   │────────────────────>│                   │
+     │                   │  9. Update payment (success)            │
+     │                   │─────────────────────────────────────────>
+     │                   │  10. Create enrollment                  │
+     │                   │─────────────────────────────────────────>
+     │  Success          │<─────────────────────────────────────────
+     │<──────────────────│                     │                   │
+     │                   │                     │                   │
+Mobile Implementation (React Native / Flutter)
+Step 1: Validate Promo Code (Optional)
+
+const validatePromoCode = async (code, courseId) => {
+  const response = await fetch(
+    'https://oxwhqvsoelqqsblmqkxx.supabase.co/functions/v1/validate-promo-code',
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+      },
+      body: JSON.stringify({ code, course_id: courseId })
+    }
+  );
+  return await response.json();
+};
+
+// Usage
+const discount = await validatePromoCode('WELCOME10', courseId);
+if (discount.valid) {
+  // Apply discount_percent or discount_amount to calculate final price
+  const finalPrice = discount.discount_percent 
+    ? originalPrice * (1 - discount.discount_percent / 100)
+    : originalPrice - (discount.discount_amount || 0);
+}
+Step 2: Create Payment Order
+
+const createPaymentOrder = async (userToken, orderDetails) => {
+  const response = await fetch(
+    'https://oxwhqvsoelqqsblmqkxx.supabase.co/functions/v1/create-payment-order',
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${userToken}`
+      },
+      body: JSON.stringify({
+        amount: orderDetails.finalAmount,
+        courses: orderDetails.courses,
+        customerInfo: {
+          fullName: orderDetails.fullName,
+          email: orderDetails.email,
+          phone: orderDetails.phone,
+          state: orderDetails.state,
+          city: orderDetails.city
+        },
+        promoCode: orderDetails.promoCode || null,
+        userId: orderDetails.userId
+      })
+    }
+  );
+  return await response.json();
+};
+Step 3: Open Razorpay Checkout
+
+// For React Native, use react-native-razorpay
+import RazorpayCheckout from 'react-native-razorpay';
+
+const openRazorpayCheckout = async (orderData, customerInfo) => {
+  const options = {
+    key: orderData.razorpayKeyId,
+    amount: orderData.amount * 100,  // Amount in paise
+    currency: 'INR',
+    name: 'SimpleLecture',
+    description: 'Course Purchase',
+    order_id: orderData.razorpayOrderId,
+    prefill: {
+      name: customerInfo.fullName,
+      email: customerInfo.email,
+      contact: customerInfo.phone
+    },
+    theme: { color: '#6366f1' }
+  };
+
+  try {
+    const paymentData = await RazorpayCheckout.open(options);
+    // paymentData contains: razorpay_payment_id, razorpay_order_id, razorpay_signature
+    return paymentData;
+  } catch (error) {
+    throw error;
+  }
+};
+Step 4: Verify Payment
+
+const verifyPayment = async (userToken, paymentData, orderDetails) => {
+  const response = await fetch(
+    'https://oxwhqvsoelqqsblmqkxx.supabase.co/functions/v1/verify-payment',
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${userToken}`
+      },
+      body: JSON.stringify({
+        razorpay_order_id: paymentData.razorpay_order_id,
+        razorpay_payment_id: paymentData.razorpay_payment_id,
+        razorpay_signature: paymentData.razorpay_signature,
+        orderId: orderDetails.orderId,
+        userId: orderDetails.userId,
+        courses: orderDetails.courses
+      })
+    }
+  );
+  return await response.json();
+};
+Sample Active Promo Codes
+Code	Description	Discount	Valid Until
+WELCOME10	Welcome discount	10% off	Oct 2026
+NEET2026	NEET 2026 Special	15% off	Apr 2026
+JEE2026	JEE 2026 Special	15% off	Apr 2026
+Check User Enrollment (Direct Supabase Query)
+
+// Check if user is already enrolled in a course
+const checkEnrollment = async (studentId, courseId) => {
+  const { data, error } = await supabase
+    .from('enrollments')
+    .select('id')
+    .eq('student_id', studentId)
+    .eq('course_id', courseId)
+    .eq('is_active', true)
+    .single();
+  
+  return !!data;
+};
+Get User's Payment History
+
+const getPaymentHistory = async (userId) => {
+  const { data, error } = await supabase
+    .from('payments')
+    .select(`
+      *,
+      order_items (
+        course_id,
+        price_inr,
+        courses (
+          id,
+          name,
+          thumbnail_url
+        )
+      )
+    `)
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+  
+  return data;
+};

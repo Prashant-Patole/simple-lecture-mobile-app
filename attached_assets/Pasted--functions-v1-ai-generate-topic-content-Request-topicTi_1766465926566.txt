@@ -1,0 +1,148 @@
+/functions/v1/ai-generate-topic-content
+Request:
+
+
+{
+  "topicTitle": "Newton's Laws",
+  "topicDescription": "...",
+  "chapterTitle": "Mechanics",
+  "subjectName": "Physics",
+  "categoryName": "JEE",
+  "estimatedDurationMinutes": 15
+}
+Response:
+
+
+{
+  "content": "# Newton's Laws\n\nDetailed markdown content with LaTeX formulas...",
+  "examples": [
+    {
+      "title": "Example 1: Basic Application",
+      "problem": "A 5kg block is pushed...",
+      "solution": "Step 1: F = ma...",
+      "difficulty": "easy"
+    }
+  ],
+  "practiceQuestions": [
+    {
+      "type": "mcq",
+      "question": "Which law explains inertia?",
+      "options": ["First Law", "Second Law", "Third Law", "None"],
+      "correctAnswer": "First Law",
+      "explanation": "...",
+      "difficulty": "medium"
+    }
+  ]
+}
+2. /functions/v1/ai-generate-image
+Request:
+
+
+{ "prompt": "A diagram showing Newton's third law with action-reaction forces" }
+Response:
+
+
+{ "imageUrl": "data:image/png;base64,iVBORw0KGgoAAAANS..." }
+3. /functions/v1/sarvam-tts (Indian languages)
+Request:
+
+
+{ "text": "आइए न्यूटन के नियम समझते हैं...", "languageCode": "hi-IN", "gender": "male" }
+Response:
+
+
+{
+  "audioContent": "base64-encoded-mp3-data...",
+  "isChunked": true,
+  "chunkCount": 3,
+  "languageCode": "hi-IN",
+  "voice": "abhilash"
+}
+4. /functions/v1/google-tts (English fallback via OpenAI)
+Request:
+
+
+{ "text": "Let's understand Newton's laws...", "languageCode": "en-IN", "gender": "female" }
+Response:
+
+
+{
+  "audioContent": "base64-encoded-mp3-data...",
+  "languageCode": "en-IN",
+  "voice": "nova"
+}
+Here are the API Response Bodies:
+
+1. /functions/v1/ai-generate-topic-content
+Request:
+
+
+{
+  "topicTitle": "Newton's Laws",
+  "topicDescription": "...",
+  "chapterTitle": "Mechanics",
+  "subjectName": "Physics",
+  "categoryName": "JEE",
+  "estimatedDurationMinutes": 15
+}
+Response:
+
+
+{
+  "content": "# Newton's Laws\n\nDetailed markdown content with LaTeX formulas...",
+  "examples": [
+    {
+      "title": "Example 1: Basic Application",
+      "problem": "A 5kg block is pushed...",
+      "solution": "Step 1: F = ma...",
+      "difficulty": "easy"
+    }
+  ],
+  "practiceQuestions": [
+    {
+      "type": "mcq",
+      "question": "Which law explains inertia?",
+      "options": ["First Law", "Second Law", "Third Law", "None"],
+      "correctAnswer": "First Law",
+      "explanation": "...",
+      "difficulty": "medium"
+    }
+  ]
+}
+2. /functions/v1/ai-generate-image
+Request:
+
+
+{ "prompt": "A diagram showing Newton's third law with action-reaction forces" }
+Response:
+
+
+{ "imageUrl": "data:image/png;base64,iVBORw0KGgoAAAANS..." }
+3. /functions/v1/sarvam-tts (Indian languages)
+Request:
+
+
+{ "text": "आइए न्यूटन के नियम समझते हैं...", "languageCode": "hi-IN", "gender": "male" }
+Response:
+
+
+{
+  "audioContent": "base64-encoded-mp3-data...",
+  "isChunked": true,
+  "chunkCount": 3,
+  "languageCode": "hi-IN",
+  "voice": "abhilash"
+}
+4. /functions/v1/google-tts (English fallback via OpenAI)
+Request:
+
+
+{ "text": "Let's understand Newton's laws...", "languageCode": "en-IN", "gender": "female" }
+Response:
+
+
+{
+  "audioContent": "base64-encoded-mp3-data...",
+  "languageCode": "en-IN",
+  "voice": "nova"
+}

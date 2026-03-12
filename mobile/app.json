@@ -1,0 +1,69 @@
+{
+  "expo": {
+    "name": "Simple Lecture",
+    "slug": "edulearn-mobile",
+    "version": "1.0.0",
+    "scheme": "com.edulearn.mobile",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": false,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#2BBD6E"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.edulearn.mobile",
+      "infoPlist": {
+        "UIBackgroundModes": [
+          "remote-notification"
+        ],
+        "LSApplicationQueriesSchemes": [
+          "tez",
+          "phonepe",
+          "paytm",
+          "gpay",
+          "bhim",
+          "upi"
+        ],
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLSchemes": [
+              "com.edulearn.mobile"
+            ],
+            "CFBundleURLName": "com.edulearn.mobile"
+          }
+        ]
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#F5F5F5"
+      },
+      "package": "com.edulearn.mobile",
+      "useNextNotificationsApi": true
+    },
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#2BBD6E",
+          "sounds": []
+        }
+      ]
+    ],
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "51bdb97e-7dd0-420c-b41b-07a7e908751d"
+      }
+    },
+    "owner": "prashant1111s-organization"
+  }
+}

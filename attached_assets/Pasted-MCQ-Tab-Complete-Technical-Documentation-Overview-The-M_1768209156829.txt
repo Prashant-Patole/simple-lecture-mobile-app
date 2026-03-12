@@ -1,0 +1,666 @@
+MCQ Tab - Complete Technical Documentation
+Overview
+The MCQ (Multiple Choice Questions) tab in SimpleLecture works at two distinct levels:
+
+Topic Level - Questions specific to a single topic within a chapter
+Chapter Level - Questions that cover the entire chapter (not tied to any specific topic)
+Database Schema
+
+-- questions table structure (key fields)
+CREATE TABLE questions (
+  id UUID PRIMARY KEY,
+  question_text TEXT NOT NULL,
+  options JSONB,                    -- {"A": {"text": "..."}, "B": {"text": "..."}, ...}
+  correct_answer TEXT NOT NULL,     -- "A", "B", "C", or "D"
+  explanation TEXT,
+  difficulty TEXT,                  -- "Low", "Medium", "Intermediate", "Advanced"
+  marks INTEGER DEFAULT 1,
+  question_format TEXT,             -- "single_choice", "multiple_choice", or NULL
+  question_image_url TEXT,
+  is_important BOOLEAN DEFAULT false,
+  topic_id UUID REFERENCES topics(id),      -- NULL for chapter-level
+  chapter_id UUID REFERENCES chapters(id),  -- Required for chapter-level
+  created_at TIMESTAMPTZ
+);
+Key Difference: Topic vs Chapter Level
+Aspect	Topic Level	Chapter Level
+topic_id	Has a value (UUID)	NULL
+chapter_id	May or may not have value	Required (UUID)
+Scope	Specific to one topic	Covers entire chapter
+Use Case	Practice after studying a topic	Chapter revision/assessment
+Current Database Stats:
+
+Chapter Level Questions: 171 (where topic_id IS NULL)
+Topic Level Questions: 577 (where topic_id IS NOT NULL)
+Component Props & Usage
+
+// MCQTest component interface
+interface MCQTestProps {
+  topicId?: string;      // For topic-level questions
+  chapterId?: string;    // For chapter-level questions
+  chapterOnly?: boolean; // When true, fetches ONLY chapter-level (topic_id IS NULL)
+}
+Usage in Learning.tsx:
+
+
+// Topic Level - When a topic is selected
+<MCQTest topicId={selectedTopic.id} />
+
+// Chapter Level - When a chapter is selected (no topic)
+<MCQTest chapterId={selectedChapter.id} chapterOnly />
+API/Query Logic (Direct Supabase)
+1. Fetch Topic Level MCQs
+
+// Mobile API Call
+const getTopicMCQs = async (topicId) => {
+  const { data, error } = await supabase
+    .from("questions")
+    .select("*")
+    .eq("topic_id", topicId)
+    .or("question_format.eq.single_choice,question_format.eq.multiple_choice,question_format.is.null")
+    .not("options", "is", null)
+    .order("created_at");
+  
+  return data;
+};
+2. Fetch Chapter Level ONLY MCQs
+
+// Mobile API Call - Chapter level questions only (topic_id is NULL)
+const getChapterOnlyMCQs = async (chapterId) => {
+  const { data, error } = await supabase
+    .from("questions")
+    .select("*")
+    .eq("chapter_id", chapterId)
+    .is("topic_id", null)  // KEY: topic_id must be NULL
+    .or("question_format.eq.single_choice,question_format.eq.multiple_choice,question_format.is.null")
+    .not("options", "is", null)
+    .order("created_at");
+  
+  return data;
+};
+3. Fetch ALL MCQs in a Chapter (Topic + Chapter Level)
+
+// Mobile API Call - All questions with this chapter_id
+const getAllChapterMCQs = async (chapterId) => {
+  const { data, error } = await supabase
+    .from("questions")
+    .select("*")
+    .eq("chapter_id", chapterId)  // No topic_id filter
+    .or("question_format.eq.single_choice,question_format.eq.multiple_choice,question_format.is.null")
+    .not("options", "is", null)
+    .order("created_at");
+  
+  return data;
+};
+Question Counts API
+
+// Get counts by difficulty for setup screen
+const getQuestionCounts = async (topicId, chapterId, chapterOnly) => {
+  let query = supabase
+    .from("questions")
+    .select("difficulty")
+    .or("question_format.eq.single_choice,question_format.eq.multiple_choice,question_format.is.null")
+    .not("options", "is", null);
+
+  if (topicId) {
+    query = query.eq("topic_id", topicId);
+  } else if (chapterId && chapterOnly) {
+    query = query.eq("chapter_id", chapterId).is("topic_id", null);
+  } else if (chapterId) {
+    query = query.eq("chapter_id", chapterId);
+  }
+
+  const { data } = await query;
+  
+  // Return counts object
+  const counts = { all: 0, Low: 0, Medium: 0, Intermediate: 0, Advanced: 0 };
+  data?.forEach(q => {
+    counts.all++;
+    if (counts[q.difficulty] !== undefined) counts[q.difficulty]++;
+  });
+  
+  return counts;
+};
+Data Transformation
+The database stores options as JSONB, which needs transformation:
+
+
+// Database format
+{
+  "options": {
+    "A": { "text": "Option A text" },
+    "B": { "text": "Option B text" },
+    "C": { "text": "Option C text" },
+    "D": { "text": "Option D text" }
+  }
+}
+
+// Transform to array format for UI
+const transformOptions = (dbOptions) => {
+  return Object.entries(dbOptions)
+    .sort(([a], [b]) => a.localeCompare(b))  // Sort A, B, C, D
+    .map(([key, value]) => ({
+      key,
+      text: value.text || String(value)
+    }));
+};
+
+// Result: [{ key: "A", text: "..." }, { key: "B", text: "..." }, ...]
+Full Question Transform:
+
+
+const transformQuestion = (dbQuestion) => ({
+  id: dbQuestion.id,
+  question_text: dbQuestion.question_text,
+  options: transformOptions(dbQuestion.options),
+  correct_answer: dbQuestion.correct_answer,
+  explanation: dbQuestion.explanation || "No explanation available.",
+  difficulty: dbQuestion.difficulty || "Medium",
+  question_image_url: dbQuestion.question_image_url || undefined,
+  marks: dbQuestion.marks || 1,
+  is_important: dbQuestion.is_important || false
+});
+Test Flow (3 States)
+Now I have a comprehensive understanding of how the MCQ tab works at both topic and chapter levels. Let me provide you with a detailed explanation.
+
+MCQ Tab - Complete Technical Documentation
+Overview
+The MCQ (Multiple Choice Questions) tab in SimpleLecture works at two distinct levels:
+
+Topic Level - Questions specific to a single topic within a chapter
+Chapter Level - Questions that cover the entire chapter (not tied to any specific topic)
+Database Schema
+
+-- questions table structure (key fields)
+CREATE TABLE questions (
+  id UUID PRIMARY KEY,
+  question_text TEXT NOT NULL,
+  options JSONB,                    -- {"A": {"text": "..."}, "B": {"text": "..."}, ...}
+  correct_answer TEXT NOT NULL,     -- "A", "B", "C", or "D"
+  explanation TEXT,
+  difficulty TEXT,                  -- "Low", "Medium", "Intermediate", "Advanced"
+  marks INTEGER DEFAULT 1,
+  question_format TEXT,             -- "single_choice", "multiple_choice", or NULL
+  question_image_url TEXT,
+  is_important BOOLEAN DEFAULT false,
+  topic_id UUID REFERENCES topics(id),      -- NULL for chapter-level
+  chapter_id UUID REFERENCES chapters(id),  -- Required for chapter-level
+  created_at TIMESTAMPTZ
+);
+Key Difference: Topic vs Chapter Level
+Aspect	Topic Level	Chapter Level
+topic_id	Has a value (UUID)	NULL
+chapter_id	May or may not have value	Required (UUID)
+Scope	Specific to one topic	Covers entire chapter
+Use Case	Practice after studying a topic	Chapter revision/assessment
+Current Database Stats:
+
+Chapter Level Questions: 171 (where topic_id IS NULL)
+Topic Level Questions: 577 (where topic_id IS NOT NULL)
+Component Props & Usage
+
+// MCQTest component interface
+interface MCQTestProps {
+  topicId?: string;      // For topic-level questions
+  chapterId?: string;    // For chapter-level questions
+  chapterOnly?: boolean; // When true, fetches ONLY chapter-level (topic_id IS NULL)
+}
+Usage in Learning.tsx:
+
+
+// Topic Level - When a topic is selected
+<MCQTest topicId={selectedTopic.id} />
+
+// Chapter Level - When a chapter is selected (no topic)
+<MCQTest chapterId={selectedChapter.id} chapterOnly />
+API/Query Logic (Direct Supabase)
+1. Fetch Topic Level MCQs
+
+// Mobile API Call
+const getTopicMCQs = async (topicId) => {
+  const { data, error } = await supabase
+    .from("questions")
+    .select("*")
+    .eq("topic_id", topicId)
+    .or("question_format.eq.single_choice,question_format.eq.multiple_choice,question_format.is.null")
+    .not("options", "is", null)
+    .order("created_at");
+  
+  return data;
+};
+2. Fetch Chapter Level ONLY MCQs
+
+// Mobile API Call - Chapter level questions only (topic_id is NULL)
+const getChapterOnlyMCQs = async (chapterId) => {
+  const { data, error } = await supabase
+    .from("questions")
+    .select("*")
+    .eq("chapter_id", chapterId)
+    .is("topic_id", null)  // KEY: topic_id must be NULL
+    .or("question_format.eq.single_choice,question_format.eq.multiple_choice,question_format.is.null")
+    .not("options", "is", null)
+    .order("created_at");
+  
+  return data;
+};
+3. Fetch ALL MCQs in a Chapter (Topic + Chapter Level)
+
+// Mobile API Call - All questions with this chapter_id
+const getAllChapterMCQs = async (chapterId) => {
+  const { data, error } = await supabase
+    .from("questions")
+    .select("*")
+    .eq("chapter_id", chapterId)  // No topic_id filter
+    .or("question_format.eq.single_choice,question_format.eq.multiple_choice,question_format.is.null")
+    .not("options", "is", null)
+    .order("created_at");
+  
+  return data;
+};
+Question Counts API
+
+// Get counts by difficulty for setup screen
+const getQuestionCounts = async (topicId, chapterId, chapterOnly) => {
+  let query = supabase
+    .from("questions")
+    .select("difficulty")
+    .or("question_format.eq.single_choice,question_format.eq.multiple_choice,question_format.is.null")
+    .not("options", "is", null);
+
+  if (topicId) {
+    query = query.eq("topic_id", topicId);
+  } else if (chapterId && chapterOnly) {
+    query = query.eq("chapter_id", chapterId).is("topic_id", null);
+  } else if (chapterId) {
+    query = query.eq("chapter_id", chapterId);
+  }
+
+  const { data } = await query;
+  
+  // Return counts object
+  const counts = { all: 0, Low: 0, Medium: 0, Intermediate: 0, Advanced: 0 };
+  data?.forEach(q => {
+    counts.all++;
+    if (counts[q.difficulty] !== undefined) counts[q.difficulty]++;
+  });
+  
+  return counts;
+};
+Data Transformation
+The database stores options as JSONB, which needs transformation:
+
+
+// Database format
+{
+  "options": {
+    "A": { "text": "Option A text" },
+    "B": { "text": "Option B text" },
+    "C": { "text": "Option C text" },
+    "D": { "text": "Option D text" }
+  }
+}
+
+// Transform to array format for UI
+const transformOptions = (dbOptions) => {
+  return Object.entries(dbOptions)
+    .sort(([a], [b]) => a.localeCompare(b))  // Sort A, B, C, D
+    .map(([key, value]) => ({
+      key,
+      text: value.text || String(value)
+    }));
+};
+
+// Result: [{ key: "A", text: "..." }, { key: "B", text: "..." }, ...]
+Full Question Transform:
+
+
+const transformQuestion = (dbQuestion) => ({
+  id: dbQuestion.id,
+  question_text: dbQuestion.question_text,
+  options: transformOptions(dbQuestion.options),
+  correct_answer: dbQuestion.correct_answer,
+  explanation: dbQuestion.explanation || "No explanation available.",
+  difficulty: dbQuestion.difficulty || "Medium",
+  question_image_url: dbQuestion.question_image_url || undefined,
+  marks: dbQuestion.marks || 1,
+  is_important: dbQuestion.is_important || false
+});
+Test Flow (3 States)
+
+State
+State 1: Setup Screen
+
+Select difficulty (All/Low/Medium/Intermediate/Advanced)
+Select question count (5/10/15/20)
+Select timer (15/30/60 min or Unlimited)
+Shows available question count per difficulty
+State 2: Testing Screen
+
+Timer countdown
+Progress bar
+Question with options (RadioGroup)
+Flag button for marking review
+Question palette (grid navigation)
+Previous/Next navigation
+Submit button
+State 3: Results Screen
+
+Score percentage
+Correct/Total count
+Detailed review per question
+Shows user answer vs correct answer
+Explanation for each question
+Scoring System
+
+const calculateScore = () => {
+  let correct = 0;
+  questions.forEach((q, index) => {
+    if (answers[index] === q.correct_answer) {
+      correct++;
+    }
+  });
+  return {
+    correct,
+    total: questions.length,
+    percentage: (correct / questions.length) * 100
+  };
+};
+Note: Currently counts questions (1 point each), NOT using the marks field from database.
+
+Complete Mobile Implementation
+
+// Complete MCQ fetching for mobile
+class MCQService {
+  constructor(supabaseClient) {
+    this.supabase = supabaseClient;
+  }
+
+  // Transform options from JSONB to array
+  transformOptions(dbOptions) {
+    if (!dbOptions || typeof dbOptions !== 'object') return [];
+    return Object.entries(dbOptions)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([key, value]) => ({
+        key,
+        text: typeof value === 'object' && value.text ? value.text : String(value)
+      }));
+  }
+
+  // Transform full question
+  transformQuestion(q) {
+    return {
+      id: q.id,
+      question_text: q.question_text,
+      options: this.transformOptions(q.options),
+      correct_answer: q.correct_answer,
+      explanation: q.explanation || "No explanation available.",
+      difficulty: q.difficulty || "Medium",
+      question_image_url: q.question_image_url,
+      marks: q.marks || 1,
+      is_important: q.is_important || false
+    };
+  }
+
+  // Fetch MCQs - handles all cases
+  async fetchMCQs({ topicId, chapterId, chapterOnly = false }) {
+    let query = this.supabase
+      .from("questions")
+      .select("*")
+      .or("question_format.eq.single_choice,question_format.eq.multiple_choice,question_format.is.null")
+      .not("options", "is", null)
+      .order("created_at");
+
+    if (topicId) {
+      // TOPIC LEVEL
+      query = query.eq("topic_id", topicId);
+    } else if (chapterId && chapterOnly) {
+      // CHAPTER LEVEL ONLY (topic_id is NULL)
+      query = query.eq("chapter_id", chapterId).is("topic_id", null);
+    } else if (chapterId) {
+      // ALL questions in chapter
+      query = query.eq("chapter_id", chapterId);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+    
+    return (data || []).map(q => this.transformQuestion(q));
+  }
+
+  // Get question counts by difficulty
+  async fetchQuestionCounts({ topicId, chapterId, chapterOnly = false }) {
+    let query = this.supabase
+      .from("questions")
+      .select("difficulty")
+      .or("question_format.eq.single_choice,question_format.eq.multiple_choice,question_format.is.null")
+      .not("options", "is", null);
+
+    if (topicId) {
+      query = query.eq("topic_id", topicId);
+    } else if (chapterId && chapterOnly) {
+      query = query.eq("chapter_id", chapterId).is("topic_id", null);
+    } else if (chapterId) {
+      query = query.eq("chapter_id", chapterId);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    const counts = { all: 0, Low: 0, Medium: 0, Intermediate: 0, Advanced: 0 };
+    (data || []).forEach(q => {
+      counts.all++;
+      if (q.difficulty && counts[q.difficulty] !== undefined) {
+        counts[q.difficulty]++;
+      }
+    });
+
+    return counts;
+  }
+}
+
+// Usage Example
+const mcqService = new MCQService(supabase);
+
+// For Topic Level
+const topicQuestions = await mcqService.fetchMCQs({ 
+  topicId: "616b36c6-5820-4c1d-8110-ec899a5d232d" 
+});
+
+// For Chapter Level Only
+const chapterOnlyQuestions = await mcqService.fetchMCQs({ 
+  chapterId: "d1427cd7-7be8-4786-b742-e863e47756eb",
+  chapterOnly: true 
+});
+
+// For All Chapter Questions (Topic + Chapter Level)
+const allChapterQuestions = await mcqService.fetchMCQs({ 
+  chapterId: "d1427cd7-7be8-4786-b742-e863e47756eb"
+});
+UI Components Used
+Component	Purpose
+Card, CardHeader, CardContent	Question display container
+RadioGroup, RadioGroupItem	Option selection
+Button	Navigation, submit, flag
+Badge	Question number, difficulty, important marker
+Progress	Test progress bar
+Select, SelectContent, SelectItem	Difficulty/count/timer selection
+Label	Form labels
+Skeleton	Loading state
+MathpixRenderer	LaTeX/Math formula rendering
+Visual Diagram: How Props Control Fetching
+State 1: Setup Screen
+
+Select difficulty (All/Low/Medium/Intermediate/Advanced)
+Select question count (5/10/15/20)
+Select timer (15/30/60 min or Unlimited)
+Shows available question count per difficulty
+State 2: Testing Screen
+
+Timer countdown
+Progress bar
+Question with options (RadioGroup)
+Flag button for marking review
+Question palette (grid navigation)
+Previous/Next navigation
+Submit button
+State 3: Results Screen
+
+Score percentage
+Correct/Total count
+Detailed review per question
+Shows user answer vs correct answer
+Explanation for each question
+Scoring System
+
+const calculateScore = () => {
+  let correct = 0;
+  questions.forEach((q, index) => {
+    if (answers[index] === q.correct_answer) {
+      correct++;
+    }
+  });
+  return {
+    correct,
+    total: questions.length,
+    percentage: (correct / questions.length) * 100
+  };
+};
+Note: Currently counts questions (1 point each), NOT using the marks field from database.
+
+Complete Mobile Implementation
+
+// Complete MCQ fetching for mobile
+class MCQService {
+  constructor(supabaseClient) {
+    this.supabase = supabaseClient;
+  }
+
+  // Transform options from JSONB to array
+  transformOptions(dbOptions) {
+    if (!dbOptions || typeof dbOptions !== 'object') return [];
+    return Object.entries(dbOptions)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([key, value]) => ({
+        key,
+        text: typeof value === 'object' && value.text ? value.text : String(value)
+      }));
+  }
+
+  // Transform full question
+  transformQuestion(q) {
+    return {
+      id: q.id,
+      question_text: q.question_text,
+      options: this.transformOptions(q.options),
+      correct_answer: q.correct_answer,
+      explanation: q.explanation || "No explanation available.",
+      difficulty: q.difficulty || "Medium",
+      question_image_url: q.question_image_url,
+      marks: q.marks || 1,
+      is_important: q.is_important || false
+    };
+  }
+
+  // Fetch MCQs - handles all cases
+  async fetchMCQs({ topicId, chapterId, chapterOnly = false }) {
+    let query = this.supabase
+      .from("questions")
+      .select("*")
+      .or("question_format.eq.single_choice,question_format.eq.multiple_choice,question_format.is.null")
+      .not("options", "is", null)
+      .order("created_at");
+
+    if (topicId) {
+      // TOPIC LEVEL
+      query = query.eq("topic_id", topicId);
+    } else if (chapterId && chapterOnly) {
+      // CHAPTER LEVEL ONLY (topic_id is NULL)
+      query = query.eq("chapter_id", chapterId).is("topic_id", null);
+    } else if (chapterId) {
+      // ALL questions in chapter
+      query = query.eq("chapter_id", chapterId);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+    
+    return (data || []).map(q => this.transformQuestion(q));
+  }
+
+  // Get question counts by difficulty
+  async fetchQuestionCounts({ topicId, chapterId, chapterOnly = false }) {
+    let query = this.supabase
+      .from("questions")
+      .select("difficulty")
+      .or("question_format.eq.single_choice,question_format.eq.multiple_choice,question_format.is.null")
+      .not("options", "is", null);
+
+    if (topicId) {
+      query = query.eq("topic_id", topicId);
+    } else if (chapterId && chapterOnly) {
+      query = query.eq("chapter_id", chapterId).is("topic_id", null);
+    } else if (chapterId) {
+      query = query.eq("chapter_id", chapterId);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    const counts = { all: 0, Low: 0, Medium: 0, Intermediate: 0, Advanced: 0 };
+    (data || []).forEach(q => {
+      counts.all++;
+      if (q.difficulty && counts[q.difficulty] !== undefined) {
+        counts[q.difficulty]++;
+      }
+    });
+
+    return counts;
+  }
+}
+
+// Usage Example
+const mcqService = new MCQService(supabase);
+
+// For Topic Level
+const topicQuestions = await mcqService.fetchMCQs({ 
+  topicId: "616b36c6-5820-4c1d-8110-ec899a5d232d" 
+});
+
+// For Chapter Level Only
+const chapterOnlyQuestions = await mcqService.fetchMCQs({ 
+  chapterId: "d1427cd7-7be8-4786-b742-e863e47756eb",
+  chapterOnly: true 
+});
+
+// For All Chapter Questions (Topic + Chapter Level)
+const allChapterQuestions = await mcqService.fetchMCQs({ 
+  chapterId: "d1427cd7-7be8-4786-b742-e863e47756eb"
+});
+UI Components Used
+Component	Purpose
+Card, CardHeader, CardContent	Question display container
+RadioGroup, RadioGroupItem	Option selection
+Button	Navigation, submit, flag
+Badge	Question number, difficulty, important marker
+Progress	Test progress bar
+Select, SelectContent, SelectItem	Difficulty/count/timer selection
+Label	Form labels
+Skeleton	Loading state
+MathpixRenderer	LaTeX/Math formula rendering
+Visual Diagram: How Props Control Fetching
+
+Diagram
+Summary
+Level	Props	SQL Filter	Use Case
+Topic	topicId="..."	topic_id = ?	Practice for specific topic
+Chapter Only	chapterId="..." chapterOnly	chapter_id = ? AND topic_id IS NULL	Chapter revision
+All Chapter	chapterId="..."	chapter_id = ?	Comprehensive chapter test
+Summary
+Level	Props	SQL Filter	Use Case
+Topic	topicId="..."	topic_id = ?	Practice for specific topic
+Chapter Only	chapterId="..." chapterOnly	chapter_id = ? AND topic_id IS NULL	Chapter revision
+All Chapter	chapterId="..."	chapter_id = ?	Comprehensive chapter test
+
+
+
+

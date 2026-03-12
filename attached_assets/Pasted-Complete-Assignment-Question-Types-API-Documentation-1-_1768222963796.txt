@@ -1,0 +1,506 @@
+Complete Assignment Question Types & API Documentation
+1. Supported Question Types
+Type ID	Label	Answer Format	Input Method
+mcq	Multiple Choice	Text (selected option)	RadioGroup
+true_false	True/False	"True" or "False"	RadioGroup
+short_answer	Short Answer	Text (2-3 sentences)	Textarea (3 rows)
+long_answer	Long Answer	Text (paragraph)	Textarea (6 rows)
+fill_blank	Fill in the Blanks	Text (single word/phrase)	Input field
+diagram	Diagram Based	Image URL only	Image upload only
+case_study	Case Study	Text + optional Image	Textarea + Image upload
+real_world_application	Real-world Application	Text + optional Image	Textarea + Image upload
+application	Application	Text + optional Image	Textarea + Image upload
+2. Question Structure (Stored in assignments.questions JSONB)
+
+{
+  "id": "q_0",
+  "question": "What is the SI unit of electric charge?",
+  "type": "mcq",
+  "difficulty": "easy",
+  "marks": 1,
+  "options": ["Ampere", "Volt", "Coulomb", "Ohm"],
+  "correct_answer": "Coulomb",
+  "explanation": "The SI unit for electric charge is the Coulomb (C).",
+  "image_url": null
+}
+3. Answer Structure (Stored in assignment_submissions.answers JSONB)
+
+{
+  "q_0": {
+    "question_id": "q_0",
+    "text_answer": "Coulomb",
+    "image_url": null,
+    "marks_awarded": 1,
+    "feedback": "Correct!",
+    "is_correct": true
+  },
+  "q_1": {
+    "question_id": "q_1",
+    "text_answer": null,
+    "image_url": "https://storage.supabase.co/student-answers/.../diagram.png",
+    "marks_awarded": 4,
+    "feedback": "Well-drawn diagram with correct field lines.",
+    "is_correct": true
+  }
+}
+4. API Endpoints & Payloads
+A. Get Assignments for a Subject (Student View)
+Endpoint: GET /rest/v1/assignments
+
+Query:
+
+
+SELECT id, title, description, due_date, valid_until, total_marks, 
+       passing_marks, duration_minutes, chapter_id, topic_id
+FROM assignments
+WHERE subject_id = :subject_id 
+  AND is_active = true
+ORDER BY created_at DESC
+Response:
+
+
+[
+  {
+    "id": "270f3c7d-0957-43b2-b3bc-1a1480209fed",
+    "title": "Chapter Assignment",
+    "description": "Test your understanding",
+    "due_date": null,
+    "valid_until": "2026-01-13T00:00:00Z",
+    "total_marks": 20,
+    "passing_marks": 8,
+    "duration_minutes": 30,
+    "chapter_id": "d1427cd7-7be8-4786-b742-e863e47756eb",
+    "topic_id": null
+  }
+]
+B. Get Assignment Questions (Full Details)
+Endpoint: GET /rest/v1/assignments?id=eq.{assignment_id}
+
+Response:
+
+
+{
+  "id": "270f3c7d-0957-43b2-b3bc-1a1480209fed",
+  "title": "Electrostatics Assignment",
+  "description": "Test on Chapter 1",
+  "instructions": "Answer all questions",
+  "total_marks": 20,
+  "passing_marks": 8,
+  "duration_minutes": 30,
+  "due_date": null,
+  "valid_until": "2026-01-13T00:00:00Z",
+  "questions": [
+    {
+      "id": "q_0",
+      "question": "What is the SI unit of electric charge?",
+      "type": "mcq",
+      "difficulty": "easy",
+      "marks": 1,
+      "options": ["Ampere", "Volt", "Coulomb", "Ohm"],
+      "correct_answer": "Coulomb",
+      "explanation": "The SI unit for electric charge is the Coulomb (C)."
+    },
+    {
+      "id": "q_1",
+      "question": "The property by virtue of which an electric charge is always an integral multiple of the basic unit of charge (e) is called _______________.",
+      "type": "fill_blank",
+      "difficulty": "easy",
+      "marks": 1,
+      "correct_answer": "quantization of charge",
+      "explanation": "Charge quantization means charge exists in discrete packets of e."
+    },
+    {
+      "id": "q_2",
+      "question": "Draw the electric field lines for a system consisting of two positive point charges of unequal magnitude.",
+      "type": "diagram",
+      "difficulty": "medium",
+      "marks": 4,
+      "correct_answer": "Field lines diverge from both positive charges, with more lines from the larger charge. Lines curve away from each other showing repulsion.",
+      "explanation": "The density of lines represents field strength."
+    }
+  ]
+}
+C. Submit Assignment Answers
+Endpoint: POST /rest/v1/assignment_submissions
+
+Request Payload:
+
+
+{
+  "assignment_id": "270f3c7d-0957-43b2-b3bc-1a1480209fed",
+  "student_id": "47a9b651-79d6-440b-a18c-9612ecf68b5a",
+  "answers": {
+    "q_0": {
+      "question_id": "q_0",
+      "text_answer": "Coulomb"
+    },
+    "q_1": {
+      "question_id": "q_1",
+      "text_answer": "quantization of charge"
+    },
+    "q_2": {
+      "question_id": "q_2",
+      "text_answer": null,
+      "image_url": "https://oxwhqvsoelqqsblmqkxx.supabase.co/storage/v1/object/public/student-answers/assignments/270f3c7d/q_2/1736687200.png"
+    }
+  },
+  "score": 18,
+  "percentage": 90,
+  "feedback": "Excellent work!",
+  "submitted_at": "2026-01-12T13:00:00Z",
+  "graded_at": "2026-01-12T13:00:05Z",
+  "time_taken_seconds": 1200
+}
+Response:
+
+
+{
+  "id": "sub_123456",
+  "assignment_id": "270f3c7d-0957-43b2-b3bc-1a1480209fed",
+  "student_id": "47a9b651-79d6-440b-a18c-9612ecf68b5a",
+  "score": 18,
+  "percentage": 90,
+  "submitted_at": "2026-01-12T13:00:00Z",
+  "graded_at": "2026-01-12T13:00:05Z"
+}
+D. AI Grade Assignment (Edge Function)
+Endpoint: POST /functions/v1/ai-grade-assignment
+
+Request Payload:
+
+
+{
+  "questions": [
+    {
+      "question_id": "q_0",
+      "question": "What is the SI unit of electric charge?",
+      "type": "mcq",
+      "correct_answer": "Coulomb",
+      "student_answer": "Coulomb",
+      "marks": 1
+    },
+    {
+      "question_id": "q_1",
+      "question": "The property by virtue of which an electric charge is always an integral multiple of the basic unit of charge (e) is called _______________.",
+      "type": "fill_blank",
+      "correct_answer": "quantization of charge",
+      "student_answer": "quantization",
+      "marks": 1
+    },
+    {
+      "question_id": "q_2",
+      "question": "Draw the electric field lines for two positive charges.",
+      "type": "diagram",
+      "correct_answer": "Field lines diverge from both positive charges.",
+      "student_answer": "[IMAGE_URL: https://...diagram.png]",
+      "marks": 4
+    }
+  ]
+}
+Response:
+
+
+{
+  "grades": [
+    {
+      "question_id": "q_0",
+      "marks_awarded": 1,
+      "feedback": "Correct! Coulomb is the SI unit of charge.",
+      "is_correct": true
+    },
+    {
+      "question_id": "q_1",
+      "marks_awarded": 0.5,
+      "feedback": "Partial credit. The complete term is 'quantization of charge'.",
+      "is_correct": false
+    },
+    {
+      "question_id": "q_2",
+      "marks_awarded": 4,
+      "feedback": "Excellent diagram showing correct field line distribution.",
+      "is_correct": true
+    }
+  ],
+  "total_marks_awarded": 5.5,
+  "total_max_marks": 6,
+  "percentage": 92
+}
+E. Upload Answer Image (for Diagram/Case Study)
+Endpoint: POST /storage/v1/object/student-answers/{path}
+
+Path Format: assignments/{assignment_id}/{question_id}/{timestamp}.{ext}
+
+Request: Multipart form data with file
+
+Response:
+
+
+{
+  "Key": "student-answers/assignments/270f3c7d/q_2/1736687200.png",
+  "Id": "abc123"
+}
+Get Public URL:
+
+GET /storage/v1/object/public/student-answers/assignments/270f3c7d/q_2/1736687200.png
+5. Answer Format by Question Type
+Type	text_answer	image_url
+mcq	Selected option text	N/A
+true_false	"True" or "False"	N/A
+short_answer	2-3 sentence text	Optional
+long_answer	Paragraph text	Optional
+fill_blank	Word/phrase to fill	N/A
+diagram	N/A (null)	Required (image URL)
+case_study	Analysis text	Optional (supporting image)
+real_world_application	Explanation text	Optional (supporting image)
+application	Solution text	Optional (diagram/image)
+6. Database Tables Summary
+Table	Purpose
+assignments	Store assignment metadata + questions (JSONB)
+assignment_submissions	Store student answers + scores
+student-answers (Storage)	Store uploaded images for diagram answers
+This documentation should provide Replit with everything needed to integrate with your assignment system!
+
+Now I have all the information. Let me compile the complete documentation for you.
+
+Complete Assignment Question Types & API Documentation
+1. Supported Question Types
+Type ID	Label	Answer Format	Input Method
+mcq	Multiple Choice	Text (selected option)	RadioGroup
+true_false	True/False	"True" or "False"	RadioGroup
+short_answer	Short Answer	Text (2-3 sentences)	Textarea (3 rows)
+long_answer	Long Answer	Text (paragraph)	Textarea (6 rows)
+fill_blank	Fill in the Blanks	Text (single word/phrase)	Input field
+diagram	Diagram Based	Image URL only	Image upload only
+case_study	Case Study	Text + optional Image	Textarea + Image upload
+real_world_application	Real-world Application	Text + optional Image	Textarea + Image upload
+application	Application	Text + optional Image	Textarea + Image upload
+2. Question Structure (Stored in assignments.questions JSONB)
+
+{
+  "id": "q_0",
+  "question": "What is the SI unit of electric charge?",
+  "type": "mcq",
+  "difficulty": "easy",
+  "marks": 1,
+  "options": ["Ampere", "Volt", "Coulomb", "Ohm"],
+  "correct_answer": "Coulomb",
+  "explanation": "The SI unit for electric charge is the Coulomb (C).",
+  "image_url": null
+}
+3. Answer Structure (Stored in assignment_submissions.answers JSONB)
+
+{
+  "q_0": {
+    "question_id": "q_0",
+    "text_answer": "Coulomb",
+    "image_url": null,
+    "marks_awarded": 1,
+    "feedback": "Correct!",
+    "is_correct": true
+  },
+  "q_1": {
+    "question_id": "q_1",
+    "text_answer": null,
+    "image_url": "https://storage.supabase.co/student-answers/.../diagram.png",
+    "marks_awarded": 4,
+    "feedback": "Well-drawn diagram with correct field lines.",
+    "is_correct": true
+  }
+}
+4. API Endpoints & Payloads
+A. Get Assignments for a Subject (Student View)
+Endpoint: GET /rest/v1/assignments
+
+Query:
+
+
+SELECT id, title, description, due_date, valid_until, total_marks, 
+       passing_marks, duration_minutes, chapter_id, topic_id
+FROM assignments
+WHERE subject_id = :subject_id 
+  AND is_active = true
+ORDER BY created_at DESC
+Response:
+
+
+[
+  {
+    "id": "270f3c7d-0957-43b2-b3bc-1a1480209fed",
+    "title": "Chapter Assignment",
+    "description": "Test your understanding",
+    "due_date": null,
+    "valid_until": "2026-01-13T00:00:00Z",
+    "total_marks": 20,
+    "passing_marks": 8,
+    "duration_minutes": 30,
+    "chapter_id": "d1427cd7-7be8-4786-b742-e863e47756eb",
+    "topic_id": null
+  }
+]
+B. Get Assignment Questions (Full Details)
+Endpoint: GET /rest/v1/assignments?id=eq.{assignment_id}
+
+Response:
+
+
+{
+  "id": "270f3c7d-0957-43b2-b3bc-1a1480209fed",
+  "title": "Electrostatics Assignment",
+  "description": "Test on Chapter 1",
+  "instructions": "Answer all questions",
+  "total_marks": 20,
+  "passing_marks": 8,
+  "duration_minutes": 30,
+  "due_date": null,
+  "valid_until": "2026-01-13T00:00:00Z",
+  "questions": [
+    {
+      "id": "q_0",
+      "question": "What is the SI unit of electric charge?",
+      "type": "mcq",
+      "difficulty": "easy",
+      "marks": 1,
+      "options": ["Ampere", "Volt", "Coulomb", "Ohm"],
+      "correct_answer": "Coulomb",
+      "explanation": "The SI unit for electric charge is the Coulomb (C)."
+    },
+    {
+      "id": "q_1",
+      "question": "The property by virtue of which an electric charge is always an integral multiple of the basic unit of charge (e) is called _______________.",
+      "type": "fill_blank",
+      "difficulty": "easy",
+      "marks": 1,
+      "correct_answer": "quantization of charge",
+      "explanation": "Charge quantization means charge exists in discrete packets of e."
+    },
+    {
+      "id": "q_2",
+      "question": "Draw the electric field lines for a system consisting of two positive point charges of unequal magnitude.",
+      "type": "diagram",
+      "difficulty": "medium",
+      "marks": 4,
+      "correct_answer": "Field lines diverge from both positive charges, with more lines from the larger charge. Lines curve away from each other showing repulsion.",
+      "explanation": "The density of lines represents field strength."
+    }
+  ]
+}
+C. Submit Assignment Answers
+Endpoint: POST /rest/v1/assignment_submissions
+
+Request Payload:
+
+
+{
+  "assignment_id": "270f3c7d-0957-43b2-b3bc-1a1480209fed",
+  "student_id": "47a9b651-79d6-440b-a18c-9612ecf68b5a",
+  "answers": {
+    "q_0": {
+      "question_id": "q_0",
+      "text_answer": "Coulomb"
+    },
+    "q_1": {
+      "question_id": "q_1",
+      "text_answer": "quantization of charge"
+    },
+    "q_2": {
+      "question_id": "q_2",
+      "text_answer": null,
+      "image_url": "https://oxwhqvsoelqqsblmqkxx.supabase.co/storage/v1/object/public/student-answers/assignments/270f3c7d/q_2/1736687200.png"
+    }
+  },
+  "score": 18,
+  "percentage": 90,
+  "feedback": "Excellent work!",
+  "submitted_at": "2026-01-12T13:00:00Z",
+  "graded_at": "2026-01-12T13:00:05Z",
+  "time_taken_seconds": 1200
+}
+Response:
+
+
+{
+  "id": "sub_123456",
+  "assignment_id": "270f3c7d-0957-43b2-b3bc-1a1480209fed",
+  "student_id": "47a9b651-79d6-440b-a18c-9612ecf68b5a",
+  "score": 18,
+  "percentage": 90,
+  "submitted_at": "2026-01-12T13:00:00Z",
+  "graded_at": "2026-01-12T13:00:05Z"
+}
+D. AI Grade Assignment (Edge Function)
+Endpoint: POST /functions/v1/ai-grade-assignment
+
+Request Payload:
+
+
+{
+  "questions": [
+    {
+      "question_id": "q_0",
+      "question": "What is the SI unit of electric charge?",
+      "type": "mcq",
+      "correct_answer": "Coulomb",
+      "student_answer": "Coulomb",
+      "marks": 1
+    },
+    {
+      "question_id": "q_1",
+      "question": "The property by virtue of which an electric charge is always an integral multiple of the basic unit of charge (e) is called _______________.",
+      "type": "fill_blank",
+      "correct_answer": "quantization of charge",
+      "student_answer": "quantization",
+      "marks": 1
+    },
+    {
+      "question_id": "q_2",
+      "question": "Draw the electric field lines for two positive charges.",
+      "type": "diagram",
+      "correct_answer": "Field lines diverge from both positive charges.",
+      "student_answer": "[IMAGE_URL: https://...diagram.png]",
+      "marks": 4
+    }
+  ]
+}
+Response:
+
+
+{
+  "grades": [
+    {
+      "question_id": "q_0",
+      "marks_awarded": 1,
+      "feedback": "Correct! Coulomb is the SI unit of charge.",
+      "is_correct": true
+    },
+    {
+      "question_id": "q_1",
+      "marks_awarded": 0.5,
+      "feedback": "Partial credit. The complete term is 'quantization of charge'.",
+      "is_correct": false
+    },
+    {
+      "question_id": "q_2",
+      "marks_awarded": 4,
+      "feedback": "Excellent diagram showing correct field line distribution.",
+      "is_correct": true
+    }
+  ],
+  "total_marks_awarded": 5.5,
+  "total_max_marks": 6,
+  "percentage": 92
+}
+E. Upload Answer Image (for Diagram/Case Study)
+Endpoint: POST /storage/v1/object/student-answers/{path}
+
+Path Format: assignments/{assignment_id}/{question_id}/{timestamp}.{ext}
+
+Request: Multipart form data with file
+
+Response:
+
+
+{
+  "Key": "student-answers/assignments/270f3c7d/q_2/1736687200.png",
+  "Id": "abc123"
+}
+Get Public URL:

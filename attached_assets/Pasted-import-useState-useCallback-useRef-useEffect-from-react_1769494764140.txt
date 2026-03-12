@@ -1,0 +1,142 @@
+import { useState, useCallback, useRef, useEffect } from 'react';
+
+interface UseTimerFallbackOptions {
+  duration: number;
+  onTimeUpdate?: (currentTime: number) => void;
+  onEnded?: () => void;
+}
+
+interface UseTimerFallbackReturn {
+  currentTime: number;
+  duration: number;
+  isPlaying: boolean;
+  play: () => void;
+  pause: () => void;
+  seek: (time: number) => void;
+  reset: (newDuration?: number) => void;
+}
+
+/**
+ * Timer fallback for when avatar video doesn't exist.
+ * Simulates video-like timing behavior using requestAnimationFrame.
+ */
+export const useTimerFallback = ({
+  duration: initialDuration,
+  onTimeUpdate,
+  onEnded,
+}: UseTimerFallbackOptions): UseTimerFallbackReturn => {
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(initialDuration);
+  const [isPlaying, setIsPlaying] = useState(false);
+  
+  const lastFrameTime = useRef<number>(0);
+  const animationRef = useRef<number>();
+  const tickRef = useRef<(timestamp: number) => void>(); // Ref to hold latest tick function
+
+  // Animation loop for timer
+  const tick = useCallback((timestamp: number) => {
+    if (!lastFrameTime.current) {
+      lastFrameTime.current = timestamp;
+    }
+
+    const elapsed = (timestamp - lastFrameTime.current) / 1000; // Convert to seconds
+    lastFrameTime.current = timestamp;
+
+    setCurrentTime(prev => {
+      const newTime = Math.min(prev + elapsed, duration || Infinity);
+      onTimeUpdate?.(newTime);
+
+      // Check if ended - only if duration is valid
+      if (duration > 0 && newTime >= duration) {
+        setIsPlaying(false);
+        onEnded?.();
+        return duration;
+      }
+
+      return newTime;
+    });
+
+    // Use tickRef.current to always call the latest version (fixes stale closure)
+    animationRef.current = requestAnimationFrame((ts) => tickRef.current?.(ts));
+  }, [duration, onTimeUpdate, onEnded]);
+
+  // Keep tickRef updated with latest tick function
+  useEffect(() => {
+    tickRef.current = tick;
+  }, [tick]);
+
+  // Start/stop animation based on playing state
+  useEffect(() => {
+    if (isPlaying) {
+      lastFrameTime.current = 0;
+      // Cancel any existing animation before starting new one
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+      // Use tickRef.current to always use latest version
+      animationRef.current = requestAnimationFrame((ts) => tickRef.current?.(ts));
+    } else {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+        animationRef.current = undefined;
+      }
+    }
+
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+        animationRef.current = undefined;
+      }
+    };
+  }, [isPlaying]); // Removed tick from dependencies - we use tickRef now
+
+  const play = useCallback(() => {
+    console.log('[TIMER] Play called with duration:', duration, 'currentTime:', currentTime);
+    
+    // Reset to start if we've reached the end
+    if (duration > 0 && currentTime >= duration) {
+      console.log('[TIMER] Resetting to start');
+      setCurrentTime(0);
+    }
+    console.log('[TIMER] Starting playback');
+    setIsPlaying(true);
+  }, [currentTime, duration]);
+
+  const pause = useCallback(() => {
+    setIsPlaying(false);
+  }, []);
+
+  const seek = useCallback((time: number) => {
+    setCurrentTime(Math.max(0, Math.min(time, duration)));
+    lastFrameTime.current = 0; // Reset frame timing
+    onTimeUpdate?.(time);
+  }, [duration, onTimeUpdate]);
+
+  const reset = useCallback((newDuration?: number) => {
+    setIsPlaying(false);
+    setCurrentTime(0);
+    if (newDuration !== undefined) {
+      setDuration(newDuration);
+    }
+    lastFrameTime.current = 0;
+  }, []);
+
+  // Update duration when prop changes (only if valid)
+  useEffect(() => {
+    console.log('[TIMER] Duration prop changed:', initialDuration);
+    if (initialDuration > 0) {
+      console.log('[TIMER] Setting internal duration to:', initialDuration);
+      setDuration(initialDuration);
+    }
+  }, [initialDuration]);
+
+  return {
+    currentTime,
+    duration,
+    isPlaying,
+    play,
+    pause,
+    seek,
+    reset,
+  };
+};

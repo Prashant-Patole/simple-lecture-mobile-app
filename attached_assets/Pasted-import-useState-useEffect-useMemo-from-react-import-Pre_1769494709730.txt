@@ -1,0 +1,146 @@
+import { useState, useEffect, useMemo } from 'react';
+import { PresentationSection, FlashCard } from '../types';
+import { cn } from '@/lib/utils';
+import { ContentRenderer } from '../ContentRenderer';
+
+interface MemorySectionProps {
+  section: PresentationSection;
+  revealedIndices: number[];
+  currentTime: number;
+  totalDuration: number;
+}
+
+interface FlashCardComponentProps {
+  card: FlashCard;
+  isRevealed: boolean;
+  isFlipped: boolean;
+  onFlip: () => void;
+}
+
+const FlashCardComponent = ({ card, isRevealed, isFlipped, onFlip }: FlashCardComponentProps) => {
+  return (
+    <div
+      className={cn(
+        "flashcard",
+        isRevealed && "revealed",
+        isFlipped && "flipped"
+      )}
+      onClick={onFlip}
+    >
+      <div className="flashcard-inner">
+        {/* Front - Question */}
+        <div className="flashcard-face flashcard-front">
+          <span className="flashcard-label">Question</span>
+          <div className="flashcard-content">
+            <ContentRenderer 
+              content={card.front} 
+              type="markdown"
+            />
+          </div>
+          <span className="flashcard-hint">Click to flip</span>
+        </div>
+
+        {/* Back - Answer */}
+        <div className="flashcard-face flashcard-back">
+          <span className="flashcard-label">Answer</span>
+          <div className="flashcard-content">
+            <ContentRenderer 
+              content={card.back} 
+              type="markdown"
+            />
+          </div>
+          <span className="flashcard-hint">Click to flip back</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export const MemorySection = ({
+  section,
+  revealedIndices,
+  currentTime,
+  totalDuration,
+}: MemorySectionProps) => {
+  const flashcards = section.flashcards || [];
+  const [flippedCards, setFlippedCards] = useState<Set<string>>(new Set());
+
+  // Auto-flip logic based on timing
+  // Each card gets equal time, flip happens at midpoint
+  useEffect(() => {
+    if (flashcards.length === 0 || totalDuration === 0) return;
+
+    const timePerCard = totalDuration / flashcards.length;
+    
+    flashcards.forEach((card, index) => {
+      const cardStartTime = index * timePerCard;
+      const flipTime = cardStartTime + (timePerCard * 0.5); // Flip at midpoint
+
+      if (currentTime >= flipTime && !flippedCards.has(card.card_id)) {
+        setFlippedCards(prev => new Set([...prev, card.card_id]));
+      }
+    });
+  }, [currentTime, totalDuration, flashcards, flippedCards]);
+
+  // Calculate which cards should be revealed based on timing
+  const revealedCardIndices = useMemo(() => {
+    if (flashcards.length === 0 || totalDuration === 0) return [];
+    
+    const timePerCard = totalDuration / flashcards.length;
+    const revealed: number[] = [];
+    
+    flashcards.forEach((_, index) => {
+      const cardStartTime = index * timePerCard;
+      if (currentTime >= cardStartTime) {
+        revealed.push(index);
+      }
+    });
+    
+    return revealed;
+  }, [currentTime, totalDuration, flashcards]);
+
+  const handleFlip = (cardId: string) => {
+    setFlippedCards(prev => {
+      const next = new Set(prev);
+      if (next.has(cardId)) {
+        next.delete(cardId);
+      } else {
+        next.add(cardId);
+      }
+      return next;
+    });
+  };
+
+  // Reset flipped cards when section changes
+  useEffect(() => {
+    setFlippedCards(new Set());
+  }, [section.section_id]);
+
+  return (
+    <div className="h-full flex flex-col">
+      {/* Section Title */}
+      <h2 className="section-title">{section.title}</h2>
+      <p className="text-sm opacity-70 mb-4 px-4">
+        Test your understanding with these flashcards
+      </p>
+
+      {/* Flashcard Grid */}
+      <div className="flashcard-grid content-box">
+        {flashcards.map((card, index) => (
+          <FlashCardComponent
+            key={card.card_id}
+            card={card}
+            isRevealed={revealedCardIndices.includes(index)}
+            isFlipped={flippedCards.has(card.card_id)}
+            onFlip={() => handleFlip(card.card_id)}
+          />
+        ))}
+      </div>
+
+      {/* Progress */}
+      <div className="mt-4 text-center text-sm opacity-70">
+        {flippedCards.size} of {flashcards.length} cards reviewed
+      </div>
+    </div>
+  );
+};

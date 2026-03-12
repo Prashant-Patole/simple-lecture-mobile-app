@@ -1,0 +1,422 @@
+DPP (Daily Practice Problems) Tab - Complete Documentation
+Overview
+The DPP tab allows students to take 10 random practice questions on a topic/chapter daily. It tracks streak, history, and shows progress on a calendar.
+
+Database Schema
+1. dpp_questions - Stores all DPP questions
+Column	Type	Description
+id	uuid	Primary key
+document_id	uuid	Reference to DPP document
+subject_id	uuid	Subject this question belongs to
+chapter_id	uuid	Chapter (can be NULL for topic-level)
+topic_id	uuid	Topic (NULL for chapter-level questions)
+dpp_number	integer	DPP set number
+question_number	integer	Question order in set
+question_text	text	Question text (supports LaTeX)
+options	jsonb	Options like {"a": "text", "b": "text", ...}
+correct_answer	text	Correct option (e.g., "A", "B")
+explanation	text	Explanation for the answer
+difficulty	text	"easy", "medium", "hard"
+is_active	boolean	Whether question is active
+created_at	timestamp	Creation time
+Sample Question:
+
+
+{
+  "id": "8b04c7d3-20fb-4865-8e3f-c7f106f106f2",
+  "question_text": "If $n$ is a positive integer, then which of the following relations is false",
+  "options": {
+    "a": "$i^{4n} = 1$",
+    "b": "$i^{4n-1} = i$",
+    "c": "$i^{4n+1} = i$",
+    "d": "$i^{-4n} = 1$"
+  },
+  "correct_answer": "A",
+  "difficulty": "medium"
+}
+2. dpp_topic_submissions - Stores student submissions
+Column	Type	Description
+id	uuid	Primary key
+student_id	uuid	User who took the test
+topic_id	uuid	Topic for this DPP
+test_date	date	Date of submission (YYYY-MM-DD)
+dpp_type	text	"teacher", "ai_generated", "database"
+questions	jsonb	Full questions array with options
+answers	jsonb	User answers like {"1": "C", "2": "B", ...}
+score	integer	Number of correct answers
+total_questions	integer	Total questions (usually 10)
+time_taken_seconds	integer	Time spent on test
+submitted_at	timestamp	Submission time
+3. dpp_attempted_questions - Tracks which questions user has seen
+Column	Type	Description
+id	uuid	Primary key
+student_id	uuid	User ID
+question_id	uuid	Reference to dpp_questions.id
+topic_id	uuid	Topic ID
+attempted_at	timestamp	When attempted
+was_correct	boolean	Whether answered correctly
+4. dpp_documents - DPP PDF documents uploaded by admin
+Column	Type	Description
+id	uuid	Primary key
+subject_id	uuid	Subject
+chapter_id	uuid	Chapter
+topic_id	uuid	Topic
+display_name	text	Document name
+questions_file_url	text	PDF file URL
+questions_mmd	text	Extracted MMD content
+status	text	"processing", "completed", "failed"
+questions_count	integer	Number of extracted questions
+current_page	integer	Current extraction progress
+total_pages	integer	Total pages
+API Queries (Direct Supabase Calls)
+1. Check DPP Availability
+
+// Check if topic has DPP questions with valid answers
+const { count } = await supabase
+  .from('dpp_questions')
+  .select('*', { count: 'exact', head: true })
+  .eq('topic_id', topicId)
+  .eq('is_active', true)
+  .neq('correct_answer', '')  // Must have answer
+  .not('correct_answer', 'is', null);
+2. Fetch DPP Questions (Prioritizing Unattempted)
+
+// Step 1: Get already attempted question IDs
+const { data: attemptedData } = await supabase
+  .from('dpp_attempted_questions')
+  .select('question_id')
+  .eq('student_id', userId)
+  .eq('topic_id', topicId);
+
+const attemptedIds = attemptedData.map(a => a.question_id);
+
+// Step 2: Fetch unattempted questions first
+let query = supabase
+  .from('dpp_questions')
+  .select('*')
+  .eq('is_active', true)
+  .eq('topic_id', topicId)
+  .neq('correct_answer', '')
+  .not('correct_answer', 'is', null);
+
+// Exclude already attempted
+if (attemptedIds.length > 0) {
+  query = query.not('id', 'in', `(${attemptedIds.join(',')})`);
+}
+
+const { data: questions } = await query.limit(50);
+
+// Step 3: Shuffle and select 10 random questions
+const selected = shuffleAndSelect(questions, 10);
+3. Submit DPP Answers
+
+// Upsert submission (allows one per topic per day)
+const { data, error } = await supabase
+  .from('dpp_topic_submissions')
+  .upsert({
+    student_id: userId,
+    topic_id: topicId,
+    test_date: '2026-01-12',  // Today's date
+    dpp_type: 'teacher',
+    questions: questionsArray,  // Full questions with options
+    answers: { 1: "A", 2: "B", ... },
+    score: 8,
+    total_questions: 10,
+    time_taken_seconds: 245,
+    submitted_at: new Date().toISOString()
+  }, {
+    onConflict: 'student_id,topic_id,test_date'
+  });
+
+// Also track attempted questions
+await supabase
+  .from('dpp_attempted_questions')
+  .upsert(questions.map(q => ({
+    student_id: userId,
+    question_id: q.originalId,
+    topic_id: topicId,
+    was_correct: answers[q.id] === q.correctAnswer
+  })), { onConflict: 'student_id,question_id' });
+4. Fetch Submission History
+
+const { data: history } = await supabase
+  .from('dpp_topic_submissions')
+  .select('test_date, score, total_questions, time_taken_seconds, submitted_at')
+  .eq('student_id', userId)
+  .eq('topic_id', topicId)
+  .order('test_date', { ascending: false });
+5. Get Submission by Date
+
+const { data: submission } = await supabase
+  .from('dpp_topic_submissions')
+  .select('*')
+  .eq('student_id', userId)
+  .eq('topic_id', topicId)
+  .eq('test_date', '2026-01-10')
+  .single();
+Topic Level vs Chapter Level DPP
+Aspect	Topic Level	Chapter Level
+Filter	topic_id = ?	chapter_id = ? AND topic_id IS NULL
+Use Case	Questions specific to one topic	Questions covering full chapter
+Priority	Checked first	Fallback if topic has < 5 questions
+Query Logic:
+
+
+// 1. Try topic-level first
+if (topicId) {
+  const questions = await fetchQuestions('topic_id', topicId);
+  if (questions.length >= 5) return questions;
+}
+
+// 2. Fallback to chapter-level
+if (chapterId) {
+  const questions = await fetchQuestions('chapter_id', chapterId);
+  if (questions.length >= 5) return questions;
+}
+Streak Calculation Algorithm
+
+const calculateStreak = (submissions) => {
+  const today = format(new Date(), 'yyyy-MM-dd');
+  const yesterday = format(subDays(new Date(), 1), 'yyyy-MM-dd');
+  
+  // Get unique dates, sorted newest first
+  const dates = [...new Set(submissions.map(s => s.test_date))].sort().reverse();
+  
+  // Must have submission today or yesterday to have streak
+  if (dates[0] !== today && dates[0] !== yesterday) return 0;
+  
+  let streak = 1;
+  for (let i = 0; i < dates.length - 1; i++) {
+    const current = parseISO(dates[i]);
+    const next = parseISO(dates[i + 1]);
+    const diffDays = differenceInDays(current, next);
+    
+    if (diffDays === 1) streak++;  // Consecutive days
+    else break;  // Gap found
+  }
+  return streak;
+};
+Scoring System
+Currently: Simple count of correct answers (each question = 1 point)
+
+
+const score = questions.reduce((acc, q) => {
+  return acc + (answers[q.id] === q.correctAnswer ? 1 : 0);
+}, 0);
+
+const percentage = Math.round((score / total) * 100);
+Note: The dpp_questions table doesn't have a marks field - all questions are equal weight.
+
+UI Components Used
+Component	Purpose
+Card, CardHeader, CardContent	Container for dashboard, test, results
+Button	Start DPP, navigation, submit
+Badge	Streak, question count, difficulty
+Calendar (shadcn)	Progress calendar with completed dates
+Progress	Progress bar during test
+MathpixRenderer	LaTeX/Math formula rendering
+Loader2	Loading spinner
+DPPGeneratingAnimation	Animated loading with science icons
+Icons Used:
+
+Flame - Streak indicator
+Trophy - Results header
+Target - Dashboard/empty state
+CheckCircle2 - Correct answer
+XCircle - Incorrect answer
+CalendarDays - Progress section
+AlertCircle - No questions warning
+ArrowLeft, ArrowRight - Navigation
+DPP Test Flow
+┌─────────────────────────────────────────────────────────────────┐
+│                        DASHBOARD VIEW                           │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │  🎯 Daily Practice Problems     🔥 5 Day Streak         │   │
+│  │                                                          │   │
+│  │         Today's Challenge                                │   │
+│  │    Test your knowledge with 10 questions                 │   │
+│  │                                                          │   │
+│  │              [Start DPP]                                 │   │
+│  │                                                          │   │
+│  │  10 Questions    Mixed Difficulty                        │   │
+│  └─────────────────────────────────────────────────────────┘   │
+│                                                                  │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │  📅 Your Progress                                        │   │
+│  │  [Calendar showing completed dates highlighted]          │   │
+│  │  [Selected date results: Score, Time, etc.]              │   │
+│  └─────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────┘
+                           │
+                           ▼ Click "Start DPP"
+┌─────────────────────────────────────────────────────────────────┐
+│                       LOADING VIEW                               │
+│  [Animated science icons floating]                               │
+│  [Progress bar with shimmer effect]                              │
+│  [Rotating fun facts]                                            │
+│           "Generating Your DPP..."                               │
+└─────────────────────────────────────────────────────────────────┘
+                           │
+                           ▼ Questions loaded
+┌─────────────────────────────────────────────────────────────────┐
+│                         TEST VIEW                                │
+│  [Exit]              Q 3 of 10              7/10 Answered        │
+│  ════════════════════▓▓▓▓▓▓▓░░░░░░░░░░░░░░░░░░░══════════       │
+│                                                                  │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │ [Medium]                                                  │   │
+│  │                                                          │   │
+│  │ Q: If $x = 3 + i$, then $x^3 - 3x^2 - 8x + 15 = $       │   │
+│  │                                                          │   │
+│  │  ○ A. 6                                                  │   │
+│  │  ● B. 10   (selected)                                    │   │
+│  │  ○ C. -18                                                │   │
+│  │  ○ D. -15                                                │   │
+│  └─────────────────────────────────────────────────────────┘   │
+│                                                                  │
+│  [← Previous]                              [Next →] / [Submit]  │
+│                                                                  │
+│  Question dots: ● ● ● ○ ○ ○ ○ ○ ○ ○                             │
+└─────────────────────────────────────────────────────────────────┘
+                           │
+                           ▼ Submit
+┌─────────────────────────────────────────────────────────────────┐
+│                       RESULTS VIEW                               │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │  🏆 DPP Completed!                                       │   │
+│  │                                                          │   │
+│  │              8/10                                        │   │
+│  │               80%                                        │   │
+│  │                                                          │   │
+│  │   🔥 5 Day     ✓ 8 Correct     ✗ 2 Incorrect            │   │
+│  │                                                          │   │
+│  │           [Back to Dashboard]                            │   │
+│  └─────────────────────────────────────────────────────────┘   │
+│                                                                  │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │  📝 Review Your Answers                                  │   │
+│  │                                                          │   │
+│  │  Q1. Question text...                              ✓     │   │
+│  │      A. Option A  ✓ (Correct answer)                    │   │
+│  │      B. Option B                                         │   │
+│  │      C. Option C  ✗ (Your answer)                       │   │
+│  │      D. Option D                                         │   │
+│  │      Explanation: This is because...                     │   │
+│  └─────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────┘
+Current Database Stats
+Metric	Value
+Total DPP Questions	678
+Questions with Answers	592
+Topics with DPP	2
+Chapters with DPP	1
+Mobile API Integration
+For mobile integration, you would use direct Supabase queries:
+
+
+// DPP Service for Mobile
+class DPPService {
+  constructor(supabaseClient) {
+    this.supabase = supabaseClient;
+  }
+
+  // Check if DPP available for topic
+  async checkDPPAvailability(topicId, chapterId) {
+    // Try topic level
+    if (topicId) {
+      const { count } = await this.supabase
+        .from('dpp_questions')
+        .select('*', { count: 'exact', head: true })
+        .eq('topic_id', topicId)
+        .eq('is_active', true)
+        .neq('correct_answer', '')
+        .not('correct_answer', 'is', null);
+      
+      if (count > 0) return { available: true, source: 'topic', count };
+    }
+    
+    // Try chapter level
+    if (chapterId) {
+      const { count } = await this.supabase
+        .from('dpp_questions')
+        .select('*', { count: 'exact', head: true })
+        .eq('chapter_id', chapterId)
+        .eq('is_active', true)
+        .neq('correct_answer', '')
+        .not('correct_answer', 'is', null);
+      
+      if (count > 0) return { available: true, source: 'chapter', count };
+    }
+    
+    return { available: false, source: null, count: 0 };
+  }
+
+  // Fetch 10 random DPP questions
+  async fetchDPPQuestions(userId, topicId, chapterId) {
+    // Get attempted question IDs
+    const { data: attempted } = await this.supabase
+      .from('dpp_attempted_questions')
+      .select('question_id')
+      .eq('student_id', userId)
+      .eq('topic_id', topicId);
+    
+    const attemptedIds = (attempted || []).map(a => a.question_id);
+
+    // Build query
+    let query = this.supabase
+      .from('dpp_questions')
+      .select('*')
+      .eq('is_active', true)
+      .eq('topic_id', topicId)
+      .neq('correct_answer', '')
+      .not('correct_answer', 'is', null);
+    
+    if (attemptedIds.length > 0) {
+      query = query.not('id', 'in', `(${attemptedIds.join(',')})`);
+    }
+    
+    const { data: questions } = await query.limit(50);
+    
+    // Shuffle and select 10
+    return this.shuffleAndSelect(questions || [], 10);
+  }
+
+  // Submit DPP
+  async submitDPP(userId, topicId, questions, answers, score, timeSeconds) {
+    const today = new Date().toISOString().split('T')[0];
+    
+    const { data, error } = await this.supabase
+      .from('dpp_topic_submissions')
+      .upsert({
+        student_id: userId,
+        topic_id: topicId,
+        test_date: today,
+        dpp_type: 'teacher',
+        questions: questions,
+        answers: answers,
+        score: score,
+        total_questions: questions.length,
+        time_taken_seconds: timeSeconds,
+        submitted_at: new Date().toISOString()
+      }, { onConflict: 'student_id,topic_id,test_date' });
+    
+    return { data, error };
+  }
+
+  // Get submission history
+  async getSubmissionHistory(userId, topicId) {
+    const { data } = await this.supabase
+      .from('dpp_topic_submissions')
+      .select('test_date, score, total_questions, time_taken_seconds')
+      .eq('student_id', userId)
+      .eq('topic_id', topicId)
+      .order('test_date', { ascending: false });
+    
+    return data || [];
+  }
+
+  shuffleAndSelect(array, count) {
+    const shuffled = [...array].sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, count);
+  }
+}

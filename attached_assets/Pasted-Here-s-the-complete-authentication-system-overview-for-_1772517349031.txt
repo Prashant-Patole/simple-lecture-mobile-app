@@ -1,0 +1,170 @@
+Here's the complete authentication system overview for your Replit mobile APK implementation:
+
+Authentication Methods Used
+Your app has 3 login/signup methods:
+
+Phone OTP - User enters phone number, receives SMS OTP, verifies to login/signup
+Email OTP - User enters email, receives email OTP, verifies to login/signup
+Email + Password - Traditional email/password login (signup not available via this method)
+Plus a Forgot Password flow (Email OTP-based password reset).
+
+All Auth API Endpoints
+Your Supabase project URL: https://oxwhqvsoelqqsblmqkxx.supabase.co
+
+Phone OTP Flow
+Step	Method	Endpoint
+Send OTP	POST	/functions/v1/send-phone-otp
+Verify OTP	POST	/functions/v1/verify-phone-otp
+send-phone-otp body:
+
+
+{ "phone": "9876543210", "purpose": "login" | "signup", "channel": "sms" }
+verify-phone-otp body:
+
+
+{
+  "phone": "9876543210",
+  "otp_code": "123456",
+  "purpose": "login" | "signup",
+  "signup_data": { "full_name": "John", "email": "john@example.com" }
+}
+Returns: { session: { access_token, refresh_token }, user: { id, email } }
+
+Email OTP Flow
+Step	Method	Endpoint
+Send OTP	POST	/functions/v1/send-email-otp
+Verify OTP	POST	/functions/v1/verify-email-otp
+send-email-otp body:
+
+
+{ "email": "user@example.com", "purpose": "login" | "signup" }
+verify-email-otp body:
+
+
+{
+  "email": "user@example.com",
+  "otp_code": "123456",
+  "purpose": "login" | "signup",
+  "signup_data": { "full_name": "John", "phone": "9876543210" }
+}
+Returns: { session: { access_token, refresh_token }, user: { id, email } }
+
+Email + Password Login
+Step	Method	Endpoint
+Login	POST	/auth/v1/token?grant_type=password
+Body:
+
+
+{ "email": "user@example.com", "password": "password123" }
+Forgot Password Flow
+Step	Method	Endpoint
+Send Reset OTP	POST	/functions/v1/send-password-reset-otp
+Verify Reset OTP	POST	/functions/v1/verify-password-reset-otp
+Set New Password	POST	/functions/v1/reset-password-with-token
+send-password-reset-otp: { "email": "user@example.com" } verify-password-reset-otp: { "email": "user@example.com", "otp_code": "123456" } → Returns { reset_token, user_id } reset-password-with-token: { "reset_token": "...", "new_password": "...", "user_id": "..." }
+
+All API Requests Need These Headers
+apikey: <SUPABASE_ANON_KEY>
+Authorization: Bearer <SUPABASE_ANON_KEY>  (or user's access_token after login)
+Content-Type: application/json
+Session Management
+After successful OTP verification, you receive access_token + refresh_token
+Store both tokens securely (SharedPreferences on Android / Keychain on iOS)
+Use access_token in Authorization: Bearer <token> header for all authenticated requests
+Refresh session via POST /auth/v1/token?grant_type=refresh_token with { "refresh_token": "..." }
+Implementation Plan for Mobile APK
+Auth Screen - Tabs for Phone OTP / Email OTP / Email+Password
+OTP Verification Screen - 6-digit input with 60s resend cooldown, 3 max attempts
+Signup Form - Collects full_name + email + phone (all 3 required)
+Forgot Password Flow - Email → OTP → New Password → Success
+Token Storage - Save access/refresh tokens securely after login
+Auto-refresh - Refresh token before expiry on app launch
+The proxy URL https://supabase-proxy.utuberpraveen.workers.dev is used instead of the direct Supabase URL to bypass ISP blocks in India. Your mobile app should use this same proxy URL for all API calls.
+
+Here's the complete authentication system overview for your Replit mobile APK implementation:
+
+Authentication Methods Used
+Your app has 3 login/signup methods:
+
+Phone OTP - User enters phone number, receives SMS OTP, verifies to login/signup
+Email OTP - User enters email, receives email OTP, verifies to login/signup
+Email + Password - Traditional email/password login (signup not available via this method)
+Plus a Forgot Password flow (Email OTP-based password reset).
+
+All Auth API Endpoints
+Your Supabase project URL: https://oxwhqvsoelqqsblmqkxx.supabase.co
+
+Phone OTP Flow
+Step	Method	Endpoint
+Send OTP	POST	/functions/v1/send-phone-otp
+Verify OTP	POST	/functions/v1/verify-phone-otp
+send-phone-otp body:
+
+
+{ "phone": "9876543210", "purpose": "login" | "signup", "channel": "sms" }
+verify-phone-otp body:
+
+
+{
+  "phone": "9876543210",
+  "otp_code": "123456",
+  "purpose": "login" | "signup",
+  "signup_data": { "full_name": "John", "email": "john@example.com" }
+}
+Returns: { session: { access_token, refresh_token }, user: { id, email } }
+
+Email OTP Flow
+Step	Method	Endpoint
+Send OTP	POST	/functions/v1/send-email-otp
+Verify OTP	POST	/functions/v1/verify-email-otp
+send-email-otp body:
+
+
+{ "email": "user@example.com", "purpose": "login" | "signup" }
+verify-email-otp body:
+
+
+{
+  "email": "user@example.com",
+  "otp_code": "123456",
+  "purpose": "login" | "signup",
+  "signup_data": { "full_name": "John", "phone": "9876543210" }
+}
+Returns: { session: { access_token, refresh_token }, user: { id, email } }
+
+Email + Password Login
+Step	Method	Endpoint
+Login	POST	/auth/v1/token?grant_type=password
+Body:
+
+
+{ "email": "user@example.com", "password": "password123" }
+Forgot Password Flow
+Step	Method	Endpoint
+Send Reset OTP	POST	/functions/v1/send-password-reset-otp
+Verify Reset OTP	POST	/functions/v1/verify-password-reset-otp
+Set New Password	POST	/functions/v1/reset-password-with-token
+send-password-reset-otp: { "email": "user@example.com" } verify-password-reset-otp: { "email": "user@example.com", "otp_code": "123456" } → Returns { reset_token, user_id } reset-password-with-token: { "reset_token": "...", "new_password": "...", "user_id": "..." }
+
+All API Requests Need These Headers
+apikey: <SUPABASE_ANON_KEY>
+Authorization: Bearer <SUPABASE_ANON_KEY>  (or user's access_token after login)
+Content-Type: application/json
+Session Management
+After successful OTP verification, you receive access_token + refresh_token
+Store both tokens securely (SharedPreferences on Android / Keychain on iOS)
+Use access_token in Authorization: Bearer <token> header for all authenticated requests
+Refresh session via POST /auth/v1/token?grant_type=refresh_token with { "refresh_token": "..." }
+Implementation Plan for Mobile APK
+Auth Screen - Tabs for Phone OTP / Email OTP / Email+Password
+OTP Verification Screen - 6-digit input with 60s resend cooldown, 3 max attempts
+Signup Form - Collects full_name + email + phone (all 3 required)
+Forgot Password Flow - Email → OTP → New Password → Success
+Token Storage - Save access/refresh tokens securely after login
+Auto-refresh - Refresh token before expiry on app launch
+The proxy URL https://supabase-proxy.utuberpraveen.workers.dev is used instead of the direct Supabase URL to bypass ISP blocks in India. Your mobile app should use this same proxy URL for all API calls.
+
+
+
+
+

@@ -1,0 +1,186 @@
+import { useMemo } from 'react';
+import { PresentationSection, VisualBeat } from '../types';
+import { ContentRenderer } from '../ContentRenderer';
+import { cn } from '@/lib/utils';
+import { getImagePath } from '../utils/mediaResolver';
+
+interface ContentSectionProps {
+  section: PresentationSection;
+  revealedIndices: number[];
+  currentSegmentIndex: number;
+  isVideoLayerVisible: boolean;
+  jobId: string;
+  getMediaUrl: (jobId: string, path: string) => string;
+}
+
+// Helper to normalize display_text from various formats
+const normalizeDisplayText = (displayText: string | string[] | { text: string }[] | undefined): string => {
+  if (!displayText) return '';
+  if (typeof displayText === 'string') return displayText;
+  if (Array.isArray(displayText)) {
+    return displayText.map(item => 
+      typeof item === 'string' ? item : item.text
+    ).join('\n');
+  }
+  return '';
+};
+
+// Extract all beats using multiple strategies
+const extractAllBeats = (section: PresentationSection): VisualBeat[] => {
+  const beats: VisualBeat[] = [];
+  const seenIds = new Set<string>();
+
+  // Strategy 1: Direct visual_beats
+  if (section.visual_beats && section.visual_beats.length > 0) {
+    section.visual_beats.forEach(beat => {
+      if (!seenIds.has(beat.beat_id)) {
+        beats.push(beat);
+        seenIds.add(beat.beat_id);
+      }
+    });
+  }
+
+  // Strategy 2: Explanation plan visual_beats
+  if (section.explanation_plan?.visual_beats) {
+    section.explanation_plan.visual_beats.forEach(beat => {
+      if (!seenIds.has(beat.beat_id)) {
+        beats.push(beat);
+        seenIds.add(beat.beat_id);
+      }
+    });
+  }
+
+  // Strategy 3: Create beats from narration segments if no visual beats
+  if (beats.length === 0 && section.narration?.segments) {
+    section.narration.segments.forEach((seg, index) => {
+      if (seg.text && seg.text.trim()) {
+        beats.push({
+          beat_id: `narration-${index}`,
+          visual_type: 'text',
+          display_text: seg.text,
+          segment_id: seg.segment_id,
+        });
+      }
+    });
+  }
+
+  return beats;
+};
+
+export const ContentSection = ({
+  section,
+  revealedIndices,
+  currentSegmentIndex,
+  isVideoLayerVisible,
+  jobId,
+  getMediaUrl,
+}: ContentSectionProps) => {
+  // Extract all beats using multi-strategy approach
+  const allBeats = useMemo(() => extractAllBeats(section), [section]);
+
+  // Get current segment for display directives
+  const currentSegment = section.narration?.segments?.[currentSegmentIndex];
+  
+  // Get active beat index (the most recently revealed one)
+  const activeIndex = revealedIndices.length > 0 
+    ? revealedIndices[revealedIndices.length - 1] 
+    : -1;
+
+  return (
+    <div className="h-full flex flex-col">
+      {/* Section Title */}
+      <h2 className="section-title">{section.title}</h2>
+
+      {/* Content Beats with V2.6 styling */}
+      <div className="content-box space-y-4">
+        {allBeats.map((beat, index) => {
+          const isRevealed = revealedIndices.includes(index);
+          const isActive = index === activeIndex;
+          const isImage = beat.visual_type === 'image' || beat.image_id;
+          const isLatex = beat.visual_type === 'latex' || beat.latex_content;
+          const displayText = normalizeDisplayText(beat.display_text);
+          
+          return (
+            <div
+              key={beat.beat_id}
+              className={cn(
+                "beat-block",
+                isRevealed ? "reveal-visible" : "reveal-hidden",
+                isActive && "beat-active"
+              )}
+            >
+              {/* Image Beat */}
+              {isImage && beat.image_id && (
+                <div className="beat-image-container">
+                  <img
+                    src={getMediaUrl(jobId, getImagePath(beat.image_id))}
+                    alt=""
+                    className="beat-image"
+                    onError={(e) => {
+                      // Try alternate extensions
+                      const img = e.target as HTMLImageElement;
+                      const src = img.src;
+                      if (src.endsWith('.png')) {
+                        img.src = src.replace('.png', '.jpg');
+                      } else if (src.endsWith('.jpg')) {
+                        img.src = src.replace('.jpg', '.jpeg');
+                      }
+                    }}
+                  />
+                  {displayText && (
+                    <div className="beat-image-caption">
+                      {displayText}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* LaTeX Beat */}
+              {isLatex && beat.latex_content && (
+                <div className="latex-container">
+                  <ContentRenderer 
+                    content={beat.latex_content} 
+                    type="latex"
+                    isRevealed={isRevealed}
+                  />
+                  {displayText && (
+                    <p className="mt-3 text-sm opacity-80">
+                      {displayText}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Text/Markdown Beat */}
+              {!isImage && !isLatex && displayText && (
+                <div className="markdown-content-container">
+                  <ContentRenderer 
+                    content={displayText} 
+                    type={beat.visual_type === 'bullet_list' ? 'bullet' : 'markdown'}
+                    isRevealed={isRevealed}
+                  />
+                </div>
+              )}
+            </div>
+          );
+        })}
+
+        {/* Video Layer Indicator (when in SHOW phase) */}
+        {isVideoLayerVisible && currentSegment?.beat_videos?.[0] && (
+          <div className="p-4 rounded-lg bg-primary/20 border border-primary/30 text-center">
+            <span className="text-primary font-medium">
+              📹 Visual Demo Playing
+            </span>
+          </div>
+        )}
+
+        {/* Show message if no content found */}
+        {allBeats.length === 0 && (
+          <div className="text-center text-muted-foreground py-8">
+            <p>No content available for this section.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};

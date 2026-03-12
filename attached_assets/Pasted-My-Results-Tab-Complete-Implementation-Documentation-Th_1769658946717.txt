@@ -1,0 +1,343 @@
+My Results Tab - Complete Implementation Documentation
+This document explains how the My Results feature works across the LMS platform, covering all components, data flow, database tables, and API patterns needed to implement this in a mobile app.
+
+Overview
+The "My Results" feature exists in two locations:
+
+Location	Component	Purpose
+Student Dashboard (/student-dashboard)	MyTestsTab.tsx	Overall test analytics and stats across all subjects
+Learning Page (/learning/:courseId)	PaperTestResults.tsx	Subject-specific test results with detailed question review
+Architecture Diagram
+Database Schema
+1. dpp_topic_submissions - Daily Practice Problems
+Column	Type	Description
+id	uuid	Primary key
+student_id	uuid	User ID (required)
+topic_id	uuid	Topic reference
+test_date	date	Date of test (YYYY-MM-DD)
+dpp_type	text	Type of DPP (e.g., "DPP", "daily")
+questions	jsonb	Question data
+answers	jsonb	Student answers {question_id: answer}
+score	integer	Number correct
+total_questions	integer	Total questions
+time_taken_seconds	integer	Time spent
+submitted_at	timestamp	Submission time
+created_at	timestamp	Creation time
+2. paper_test_results - Previous Year Papers
+Column	Type	Description
+id	uuid	Primary key
+student_id	uuid	User ID (required)
+paper_id	uuid	FK to subject_previous_year_papers
+subject_id	uuid	Subject reference
+paper_category	text	One of: previous_year, proficiency, exam
+score	integer	Number correct
+total_questions	integer	Total questions
+percentage	numeric	Score percentage
+time_taken_seconds	integer	Time spent
+answers	jsonb	Student answers {question_id: answer}
+grading_status	text	pending, graded, ai_graded
+submitted_at	timestamp	Submission time
+graded_at	timestamp	When graded
+created_at	timestamp	Creation time
+3. test_results - Proficiency/Mock/Exam Tests
+Column	Type	Description
+id	uuid	Primary key
+student_id	uuid	User ID (required)
+test_id	uuid	FK to tests table
+subject_id	uuid	Subject reference
+test_type	text	proficiency, mock, practice, exam, dpp
+score	integer	Number correct
+total_questions	integer	Total questions
+percentage	numeric	Score percentage
+time_taken_seconds	integer	Time spent
+answers	jsonb	Student answers {question_id: answer}
+grading_status	text	pending, graded, ai_graded
+submitted_at	timestamp	Submission time
+graded_at	timestamp	When graded
+created_at	timestamp	Creation time
+4. Related Tables for Review
+tests - Test metadata:
+
+id, title, description, subject_id, chapter_id, topic_id, 
+duration_minutes, total_marks, test_type, is_active, created_by
+subject_previous_year_papers - Paper metadata:
+
+id, subject_id, exam_name, year, paper_type, ...
+questions - Question bank:
+
+id, question_text, options (jsonb), correct_answer, explanation, 
+difficulty, question_format, previous_year_paper_id, ...
+test_questions - Links tests to questions:
+
+id, test_id, question_id, order_number, marks
+student_answers - Written/image answers:
+
+id, user_id, question_id, paper_id, answer_text, answer_image_url, submitted_at
+API Endpoints (Supabase REST)
+Fetching Results
+1. Get DPP Submissions
+
+GET /rest/v1/dpp_topic_submissions
+?student_id=eq.{user_id}
+&order=test_date.desc
+&select=id,score,total_questions,test_date,time_taken_seconds,dpp_type
+2. Get Paper Test Results
+
+GET /rest/v1/paper_test_results
+?student_id=eq.{user_id}
+&order=created_at.desc
+&select=*,paper:subject_previous_year_papers(exam_name,year,paper_type)
+Optional: Filter by subject:
+
+
+&subject_id=eq.{subject_id}
+3. Get Test Results (Proficiency/Mock/Exam)
+
+GET /rest/v1/test_results
+?student_id=eq.{user_id}
+&order=submitted_at.desc
+&select=*,test:tests(title,test_type,duration_minutes)
+Fetching Questions for Review
+For Paper Results (paper_test_results)
+
+GET /rest/v1/questions
+?previous_year_paper_id=eq.{paper_id}
+&order=created_at.asc
+For Test Results (test_results)
+
+GET /rest/v1/test_questions
+?test_id=eq.{test_id}
+&order=order_number.asc
+&select=*,question:questions(id,question_text,options,correct_answer,explanation,difficulty,question_format)
+Get Student Image Answers
+
+GET /rest/v1/student_answers
+?paper_id=eq.{paper_id}
+&user_id=eq.{user_id}
+Data Models (TypeScript/Mobile)
+Unified Result Type
+
+interface UnifiedResult {
+  id: string;
+  paper_id: string;              // paper_id or test_id
+  paper_category: string;        // 'previous_year' | 'proficiency' | 'practice' | 'mock' | 'dpp'
+  score: number | null;
+  total_questions: number;
+  percentage: number | null;
+  time_taken_seconds: number | null;
+  grading_status: string;        // 'pending' | 'graded' | 'ai_graded'
+  submitted_at: string;
+  answers: Record<string, string>; // {question_id: "A" or answer text}
+  paper: {
+    exam_name: string;
+    year: number | null;
+    paper_type: string | null;
+  } | null;
+  isFromTestsTable: boolean;     // true = test_results, false = paper_test_results
+}
+Test Submission (for Dashboard Stats)
+
+interface TestSubmission {
+  id: string;
+  type: 'dpp' | 'paper';
+  score: number;
+  total_questions: number;
+  percentage: number;
+  date: string;
+  time_taken_seconds: number;
+  category?: string;
+}
+Question for Review
+
+interface ReviewQuestion {
+  id: string;
+  question_text: string;
+  options: Record<string, { text: string }> | null;  // {"A": {"text": "..."}, "B": {...}}
+  correct_answer: string | null;
+  explanation: string | null;
+  difficulty: string;
+}
+Business Logic
+1. Calculating Stats (Dashboard)
+
+// Combine all sources
+const allTests = [...dppTests, ...paperTests, ...testResults];
+
+// Sort by date descending
+allTests.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+// Calculate totals
+const totalTests = allTests.length;
+const averageScore = totalTests > 0
+  ? Math.round(allTests.reduce((acc, t) => acc + t.percentage, 0) / totalTests)
+  : 0;
+
+// Stats per category
+const dppStats = {
+  total: dppTests.length,
+  avgScore: dppTests.length > 0 
+    ? Math.round(dppTests.reduce((acc, t) => acc + t.percentage, 0) / dppTests.length) 
+    : 0,
+  totalCorrect: dppTests.reduce((acc, t) => acc + t.score, 0),
+  totalQuestions: dppTests.reduce((acc, t) => acc + t.total_questions, 0),
+};
+2. Filtering Results by Category
+
+// Categories: 'all' | 'previous_year' | 'proficiency' | 'dpp' | 'mock'
+
+const isDppResult = (result: UnifiedResult) => {
+  if (!result.isFromTestsTable) return false;
+  if (result.paper_category === "dpp") return true;
+  return result.paper?.exam_name?.toLowerCase().includes("dpp") || false;
+};
+
+const filterResults = (results: UnifiedResult[], category: string) => {
+  if (category === "all") return results;
+  
+  if (category === "dpp") {
+    return results.filter(r => isDppResult(r));
+  }
+  
+  if (category === "mock") {
+    // "Test" tab - practice/mock but NOT DPPs
+    return results.filter(r => 
+      !isDppResult(r) && 
+      (r.paper_category === "practice" || r.paper_category === "mock")
+    );
+  }
+  
+  return results.filter(r => r.paper_category === category);
+};
+3. Determining Correct/Incorrect Answers
+
+const isCorrect = (studentAnswer: string, correctAnswer: string) => {
+  return studentAnswer?.toUpperCase() === correctAnswer?.toUpperCase();
+};
+
+// Score color based on percentage
+const getScoreColor = (percentage: number | null) => {
+  if (percentage === null) return "gray";
+  if (percentage >= 70) return "green";
+  if (percentage >= 40) return "yellow";
+  return "red";
+};
+4. Status Badge Logic
+
+const getStatus = (result: UnifiedResult) => {
+  const hasValidScore = result.score !== null && result.percentage !== null;
+  
+  if (result.grading_status === "pending" && !hasValidScore) {
+    return { label: "Pending", color: "yellow" };
+  }
+  if (result.grading_status === "ai_graded") {
+    return { label: "AI Graded", color: "blue" };
+  }
+  return { label: "Graded", color: "green" };
+};
+UI Components Structure
+1. Dashboard My Tests Tab
+MyTestsTab
+├── Stats Cards (3 columns)
+│   ├── Total Tests (DPPs + Papers count)
+│   ├── Average Score (overall %)
+│   └── Total Questions (correct/total)
+├── Charts Section
+│   ├── Bar Chart (Performance by Type: DPP vs Papers)
+│   └── Pie Chart (Test Distribution)
+└── Recent Tests List
+    └── TestItem (icon, name, category, date, time, percentage, score)
+2. Learning Page My Results Tab
+PaperTestResults
+├── Category Tabs
+│   ├── All (count)
+│   ├── PYQ (previous_year count)
+│   ├── Proficiency (count)
+│   ├── Test (mock/practice count)
+│   └── DPP (count)
+├── Results List
+│   └── ResultCard
+│       ├── Exam Name + Year
+│       ├── Category Badge
+│       ├── Date, Time Taken, Questions
+│       ├── Score (percentage + correct/total)
+│       ├── Status Badge
+│       └── Review Button
+└── Review Dialog/Modal
+    ├── Score Summary Card
+    └── Question Review List
+        └── QuestionCard
+            ├── Question Number + Difficulty
+            ├── Status (Correct/Incorrect/Not Answered)
+            ├── Question Text (with math rendering)
+            ├── Image Answer (if applicable)
+            ├── Your Answer vs Correct Answer
+            ├── Explanation
+            └── Clear Doubt Button (if score ≤ 50% and incorrect)
+API Request Examples (for Mobile)
+Authentication
+Include JWT token in headers:
+
+
+Authorization: Bearer {supabase_access_token}
+apikey: {supabase_anon_key}
+Example: Fetch All My Results
+
+// 1. Fetch DPP submissions
+const dppResponse = await fetch(
+  `${SUPABASE_URL}/rest/v1/dpp_topic_submissions?student_id=eq.${userId}&order=test_date.desc`,
+  { headers: { Authorization: `Bearer ${token}`, apikey: ANON_KEY } }
+);
+
+// 2. Fetch paper test results
+const paperResponse = await fetch(
+  `${SUPABASE_URL}/rest/v1/paper_test_results?student_id=eq.${userId}&order=created_at.desc&select=*,paper:subject_previous_year_papers(exam_name,year,paper_type)`,
+  { headers: { Authorization: `Bearer ${token}`, apikey: ANON_KEY } }
+);
+
+// 3. Fetch test results
+const testResponse = await fetch(
+  `${SUPABASE_URL}/rest/v1/test_results?student_id=eq.${userId}&order=submitted_at.desc&select=*,test:tests(title,test_type,duration_minutes)`,
+  { headers: { Authorization: `Bearer ${token}`, apikey: ANON_KEY } }
+);
+Example: Fetch Questions for Review
+
+// For paper_test_results (previous year papers)
+const questionsResponse = await fetch(
+  `${SUPABASE_URL}/rest/v1/questions?previous_year_paper_id=eq.${paperId}&order=created_at.asc`,
+  { headers: { Authorization: `Bearer ${token}`, apikey: ANON_KEY } }
+);
+
+// For test_results (proficiency/mock/exam)
+const testQuestionsResponse = await fetch(
+  `${SUPABASE_URL}/rest/v1/test_questions?test_id=eq.${testId}&order=order_number.asc&select=*,question:questions(id,question_text,options,correct_answer,explanation,difficulty,question_format)`,
+  { headers: { Authorization: `Bearer ${token}`, apikey: ANON_KEY } }
+);
+Special Features
+1. Clear Doubt with AI
+When a student scores ≤ 50% and reviews an incorrect answer, they can trigger the AI Teaching Assistant to explain the question. This navigates to the AI Assistant tab with pre-loaded context:
+
+
+interface DoubtData {
+  questionText: string;
+  correctAnswer: string;
+  studentAnswer: string;
+  subjectName?: string;
+}
+2. Math Rendering
+Question text may contain LaTeX/MathML. Use a math rendering library (KaTeX, MathJax) for display.
+
+3. Image Answers
+For subjective questions, students can upload image answers stored in student_answers.answer_image_url.
+
+Summary for Mobile Implementation
+Authentication: Use Supabase auth, include JWT in all requests
+Three Data Sources: dpp_topic_submissions, paper_test_results, test_results
+Unified Display: Normalize all results into a common format
+Category Tabs: All, PYQ, Proficiency, Test, DPP
+Question Review: Different query based on isFromTestsTable flag
+Math Support: Render LaTeX in question text
+Image Support: Display uploaded answer images
+
+
+
+

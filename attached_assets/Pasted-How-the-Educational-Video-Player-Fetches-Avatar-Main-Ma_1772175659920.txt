@@ -1,0 +1,164 @@
+How the Educational Video Player Fetches Avatar & Main (Manim/Beat) Videos
+1. Data Source: video_generation_jobs Table
+The primary database table is video_generation_jobs. Key columns:
+
+Column	Purpose
+external_job_id	The job folder ID on the generation server (e.g., 0d01675f)
+presentation_json	Full JSON with sections, narration timings, visual beats, avatar paths
+is_published	Only true jobs are shown to students
+server_ip	The hardware node IP where assets were generated
+video_url	Legacy field, rarely used
+When a lecture is published, presentation_json is stored in this table. The player also fetches a live copy from the worker server via the usePresentationReview hook (edge function call to video-generation-proxy with action: 'review') to get the latest avatar_languages array, which is often missing from the DB copy.
+
+2. Presentation JSON Structure (per section)
+
+{
+  "section_id": 0,
+  "title": "Introduction",
+  "narration": {
+    "segments": [
+      {
+        "text": "...",
+        "duration_seconds": 12.5,
+        "beat_videos": ["videos/topic_3_beat_0.mp4"]
+      }
+    ]
+  },
+  "visual_beats": [...],
+  "avatar_languages": [
+    {
+      "language": "kannada",
+      "video_path": "avatars/kannada/section_0_avatar.mp4",
+      "status": "completed"
+    }
+  ]
+}
+3. File Path Patterns on Server
+Asset Type	Path Pattern	Example
+English avatar	avatars/section_{id}_avatar.mp4	avatars/section_0_avatar.mp4
+Language avatar	avatars/{lang}/section_{id}_avatar.mp4	avatars/kannada/section_0_avatar.mp4
+Beat/Manim video	videos/{filename}.mp4	videos/topic_3_beat_0.mp4
+Audio	audio/{id}.mp3	audio/0.mp3
+Images	images/{id}.png	images/beat_0_image.png
+These are resolved by getAvatarVideoPath() and resolveMediaPath() in mediaResolver.ts.
+
+4. Student-Side URL: CDN Proxy (the critical part)
+On the student side, ALL media goes through the CDN proxy. The function getCdnMediaUrl() builds this URL:
+
+https://oxwhqvsoelqqsblmqkxx.supabase.co/functions/v1/video-generation-proxy
+  ?action=cdn_proxy
+  &job_id=0d01675f
+  &file_path=avatars/section_0_avatar.mp4
+  &cdn_base_url=https://server1.simplelecture.com/video
+The edge function then fetches from:
+
+https://server1.simplelecture.com/video/0d01675f/avatars/section_0_avatar.mp4
+and streams it back with proper CORS headers.
+
+No direct server IPs are ever exposed to students. The cdn_base_url defaults to https://server1.simplelecture.com/video (configured in ai_settings table, field cdn_base_url).
+
+5. Avatar Selection Logic (in EducationalVideoPlayer.tsx)
+The player resolves avatar URLs with this priority:
+
+Language-specific avatar (if non-English selected): checks avatar_languages array for matching language with status: 'completed', uses its video_path
+Section's avatar_video field (direct path)
+Section's avatar.video_path field (nested object)
+Default pattern: getAvatarVideoPath(sectionId) → avatars/section_{id}_avatar.mp4
+All paths are then wrapped in getCdnMediaUrl() for the final student-facing URL.
+
+6. Beat/Manim Video Selection
+Beat videos come from narration.segments[].beat_videos[] array. Each entry like "videos/topic_3_beat_0.mp4" is resolved via resolveMediaPath() then wrapped in getCdnMediaUrl().
+
+Summary for Replit
+Table: video_generation_jobs
+  → presentation_json.sections[].avatar_languages[].video_path  (language avatars)
+  → presentation_json.sections[].narration.segments[].beat_videos[]  (manim videos)
+
+Student URL formula:
+  Edge Function Proxy + CDN:
+  {supabase_url}/functions/v1/video-generation-proxy?action=cdn_proxy&job_id={id}&file_path={path}&cdn_base_url=https://server1.simplelecture.com/video
+Now I have a complete picture. Here's the full explanation for your Replit team:
+
+How the Educational Video Player Fetches Avatar & Main (Manim/Beat) Videos
+1. Data Source: video_generation_jobs Table
+The primary database table is video_generation_jobs. Key columns:
+
+Column	Purpose
+external_job_id	The job folder ID on the generation server (e.g., 0d01675f)
+presentation_json	Full JSON with sections, narration timings, visual beats, avatar paths
+is_published	Only true jobs are shown to students
+server_ip	The hardware node IP where assets were generated
+video_url	Legacy field, rarely used
+When a lecture is published, presentation_json is stored in this table. The player also fetches a live copy from the worker server via the usePresentationReview hook (edge function call to video-generation-proxy with action: 'review') to get the latest avatar_languages array, which is often missing from the DB copy.
+
+2. Presentation JSON Structure (per section)
+
+{
+  "section_id": 0,
+  "title": "Introduction",
+  "narration": {
+    "segments": [
+      {
+        "text": "...",
+        "duration_seconds": 12.5,
+        "beat_videos": ["videos/topic_3_beat_0.mp4"]
+      }
+    ]
+  },
+  "visual_beats": [...],
+  "avatar_languages": [
+    {
+      "language": "kannada",
+      "video_path": "avatars/kannada/section_0_avatar.mp4",
+      "status": "completed"
+    }
+  ]
+}
+3. File Path Patterns on Server
+Asset Type	Path Pattern	Example
+English avatar	avatars/section_{id}_avatar.mp4	avatars/section_0_avatar.mp4
+Language avatar	avatars/{lang}/section_{id}_avatar.mp4	avatars/kannada/section_0_avatar.mp4
+Beat/Manim video	videos/{filename}.mp4	videos/topic_3_beat_0.mp4
+Audio	audio/{id}.mp3	audio/0.mp3
+Images	images/{id}.png	images/beat_0_image.png
+These are resolved by getAvatarVideoPath() and resolveMediaPath() in mediaResolver.ts.
+
+4. Student-Side URL: CDN Proxy (the critical part)
+On the student side, ALL media goes through the CDN proxy. The function getCdnMediaUrl() builds this URL:
+
+https://oxwhqvsoelqqsblmqkxx.supabase.co/functions/v1/video-generation-proxy
+  ?action=cdn_proxy
+  &job_id=0d01675f
+  &file_path=avatars/section_0_avatar.mp4
+  &cdn_base_url=https://server1.simplelecture.com/video
+The edge function then fetches from:
+
+https://server1.simplelecture.com/video/0d01675f/avatars/section_0_avatar.mp4
+and streams it back with proper CORS headers.
+
+No direct server IPs are ever exposed to students. The cdn_base_url defaults to https://server1.simplelecture.com/video (configured in ai_settings table, field cdn_base_url).
+
+5. Avatar Selection Logic (in EducationalVideoPlayer.tsx)
+The player resolves avatar URLs with this priority:
+
+Language-specific avatar (if non-English selected): checks avatar_languages array for matching language with status: 'completed', uses its video_path
+Section's avatar_video field (direct path)
+Section's avatar.video_path field (nested object)
+Default pattern: getAvatarVideoPath(sectionId) → avatars/section_{id}_avatar.mp4
+All paths are then wrapped in getCdnMediaUrl() for the final student-facing URL.
+
+6. Beat/Manim Video Selection
+Beat videos come from narration.segments[].beat_videos[] array. Each entry like "videos/topic_3_beat_0.mp4" is resolved via resolveMediaPath() then wrapped in getCdnMediaUrl().
+
+Summary for Replit
+Table: video_generation_jobs
+  → presentation_json.sections[].avatar_languages[].video_path  (language avatars)
+  → presentation_json.sections[].narration.segments[].beat_videos[]  (manim videos)
+
+Student URL formula:
+  Edge Function Proxy + CDN:
+  {supabase_url}/functions/v1/video-generation-proxy?action=cdn_proxy&job_id={id}&file_path={path}&cdn_base_url=https://server1.simplelecture.com/video
+
+
+
+

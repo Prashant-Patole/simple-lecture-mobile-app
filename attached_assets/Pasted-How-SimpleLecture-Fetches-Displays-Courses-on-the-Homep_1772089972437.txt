@@ -1,0 +1,123 @@
+How SimpleLecture Fetches & Displays Courses on the Homepage (/)
+Architecture Overview
+The homepage uses a single consolidated edge function (homepage-data) that fetches ALL data in one request, then distributes it to child components via props. This avoids multiple network calls from the browser.
+
+1. DATA FETCHING
+Single API Call:
+
+Frontend calls: supabase.functions.invoke("homepage-data", { method: "GET" })
+Edge Function: supabase/functions/homepage-data/index.ts
+
+This runs 7 parallel Supabase queries and returns them all in one JSON response:
+
+
+{
+  "categories": [...],       // 3-level category hierarchy (level 1 → 2 → 3)
+  "courses": [...],          // All active courses (up to 50, sorted by student_count)
+  "bestsellers": [...],      // Featured courses where section_type = 'bestsellers'
+  "topCourses": [...],       // Featured courses where section_type = 'top_courses'
+  "mostPopular": [...],      // Featured courses where section_type = 'most_popular'
+  "exploreGoals": [...],     // "Explore by Goal" section items
+  "heroVideoSettings": {...} // Hero section video config
+}
+2. DATABASE TABLES
+courses table (main course data):
+
+id, name, slug, short_description, price_inr, original_price_inr,
+duration_months, student_count, rating, instructor_name, 
+is_active, is_coming_soon, thumbnail_url (legacy, may contain base64 - DO NOT USE)
+course_thumbnails table (CDN thumbnail URLs):
+
+course_id, storage_url  (one-to-one with courses)
+Always JOIN this table to get thumbnails: courses → course_thumbnails(storage_url)
+The storage_url is a Backblaze B2 CDN URL like https://cdn.simplelecture.com/file/...
+featured_courses table (curated course lists):
+
+id, course_id, section_type ('bestsellers' | 'top_courses' | 'most_popular'),
+display_order, is_active
+Has a foreign key JOIN to courses which includes course_thumbnails(storage_url)
+categories table (3-level hierarchy):
+
+id, name, slug, icon, level (1/2/3), parent_id, display_order, is_active
+Self-referencing: categories.parent_id → categories.id
+Query uses nested selects: categories!parent_id(subcategories:categories!parent_id(...))
+3. COURSE CARD DATA SHAPE
+Each course card needs this data (after mapping from DB):
+
+
+{
+  id: string;            // course UUID
+  title: string;         // course.name
+  slug: string;          // for navigation: /course/{slug} or /enroll/{slug}
+  instructor: string;    // course.instructor_name || "SimpleLecture Team"
+  rating: number;        // course.rating || 4.9
+  students: number;      // course.student_count || 0
+  duration: string;      // calculated: `${duration_months * 50} Hours`
+  price: number;         // course.price_inr (in INR, display as ₹{price})
+  originalPrice: number; // course.original_price_inr (shown as strikethrough)
+  isComingSoon: boolean;  // course.is_coming_soon
+  thumbnailUrl: string | null; // from course_thumbnails.storage_url
+}
+Discount badge: Math.round(((originalPrice - price) / originalPrice) * 100)% OFF
+
+4. THUMBNAIL HANDLING (CRITICAL)
+The course_thumbnails JOIN returns either an object or array depending on Supabase's response shape. You MUST normalize:
+
+
+// Thumbnail extraction pattern used everywhere:
+const thumbnailUrl = (() => {
+  const ct = course.course_thumbnails;
+  return Array.isArray(ct) ? ct[0]?.storage_url : ct?.storage_url || null;
+})();
+Rules:
+
+NEVER use courses.thumbnail_url directly (may contain 1.4MB base64 strings)
+Always use course_thumbnails.storage_url (CDN URL)
+If storage_url is null → show a gradient placeholder background
+If URL starts with data: → treat as null (skip it)
+Thumbnail URLs look like:
+
+https://f003.backblazeb2.com/file/simplelecture-storage/course-thumbnails/{uuid}/{filename}.png
+5. HOMEPAGE SECTIONS
+Section	Component	Data Source	Display
+Explore Programs	ExploreProgramsSection	courses + categories	Grid with category sidebar filter, 3-level drill-down
+Most Popular	MostPopularSection	mostPopular (featured_courses)	3-card carousel
+Bestsellers	BestsellersSection	bestsellers (featured_courses)	Single card carousel with description
+Top Courses	TopCourses	topCourses (featured_courses)	3-card carousel
+6. MOBILE APP API ENDPOINT
+For the mobile app, use the existing REST API or call the edge function directly:
+
+POST https://{SUPABASE_URL}/functions/v1/homepage-data
+Headers:
+  apikey: {SUPABASE_ANON_KEY}
+  Content-Type: application/json
+Response is the full JSON with all sections. Cache it for 2-5 minutes.
+
+Alternative: Direct Supabase queries (if you need individual sections):
+
+
+-- All active courses with thumbnails
+SELECT c.id, c.name, c.slug, c.short_description, c.price_inr, 
+       c.original_price_inr, c.duration_months, c.student_count, 
+       c.rating, c.instructor_name, c.is_coming_soon,
+       ct.storage_url as thumbnail_url
+FROM courses c
+LEFT JOIN course_thumbnails ct ON ct.course_id = c.id
+WHERE c.is_active = true
+ORDER BY c.student_count DESC
+LIMIT 50;
+
+-- Featured courses (bestsellers/top_courses/most_popular)
+SELECT fc.*, c.id, c.name, c.slug, c.price_inr, c.original_price_inr,
+       c.instructor_name, c.rating, c.student_count, c.duration_months,
+       c.is_coming_soon, ct.storage_url as thumbnail_url
+FROM featured_courses fc
+JOIN courses c ON c.id = fc.course_id
+LEFT JOIN course_thumbnails ct ON ct.course_id = c.id
+WHERE fc.section_type = 'bestsellers' AND fc.is_active = true
+ORDER BY fc.display_order;
+7. NAVIGATION ROUTES
+Course detail page: /course/{slug}
+Enrollment page: /enroll/{slug}
+All programs: /programs
+Programs filtered by category: /programs?category={category_slug}

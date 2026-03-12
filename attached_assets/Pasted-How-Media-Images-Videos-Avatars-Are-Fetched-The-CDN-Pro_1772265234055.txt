@@ -1,0 +1,65 @@
+How Media (Images, Videos, Avatars) Are Fetched
+The CDN Proxy Pattern
+All media in the player goes through a Supabase Edge Function proxy to avoid CORS issues and hide the origin server IP. The edge function is:
+
+GET https://oxwhqvsoelqqsblmqkxx.supabase.co/functions/v1/video-generation-proxy
+Query Parameters
+Param	Required	Description
+action	Yes	Always cdn_proxy for student-facing media
+job_id	Yes	The video generation job UUID (e.g., 0d01675f-...)
+file_path	Yes	Relative path within the job folder
+cdn_base_url	Yes	The CDN origin (default: https://server1.simplelecture.com/video)
+How the Proxy Works
+The edge function constructs the final URL as:
+
+{cdn_base_url}/{job_id}/{file_path}
+Example:
+
+https://server1.simplelecture.com/video/0d01675f/images/myopia_diagram.png
+It fetches this server-side and returns the response with proper CORS headers, content-type detection, and range request support (for video streaming).
+
+Full Example URLs
+Image:
+
+https://oxwhqvsoelqqsblmqkxx.supabase.co/functions/v1/video-generation-proxy?action=cdn_proxy&job_id=0d01675f&file_path=images/topic_3_image_0.png&cdn_base_url=https://server1.simplelecture.com/video
+Avatar Video:
+
+https://oxwhqvsoelqqsblmqkxx.supabase.co/functions/v1/video-generation-proxy?action=cdn_proxy&job_id=0d01675f&file_path=avatars/section_3_avatar.mp4&cdn_base_url=https://server1.simplelecture.com/video
+Beat/Manim Video:
+
+https://oxwhqvsoelqqsblmqkxx.supabase.co/functions/v1/video-generation-proxy?action=cdn_proxy&job_id=0d01675f&file_path=videos/topic_3_beat_0.mp4&cdn_base_url=https://server1.simplelecture.com/video
+Audio:
+
+https://oxwhqvsoelqqsblmqkxx.supabase.co/functions/v1/video-generation-proxy?action=cdn_proxy&job_id=0d01675f&file_path=audio/3.mp3&cdn_base_url=https://server1.simplelecture.com/video
+File Path Conventions
+Media Type	Path Pattern	Example
+Images	images/{image_id}.png	images/topic_3_image_0.png
+Avatar (English)	avatars/section_{id}_avatar.mp4	avatars/section_3_avatar.mp4
+Avatar (Other lang)	avatars/{language}/section_{id}_avatar.mp4	avatars/hindi/section_3_avatar.mp4
+Beat/Manim videos	videos/{video_name}.mp4	videos/topic_3_beat_0.mp4
+Audio narration	audio/{section_id}.mp3	audio/3.mp3
+Note: Images are always normalized to .png extension regardless of original format.
+
+For Mobile App (Direct Access)
+Since mobile apps don't have CORS restrictions, you can skip the proxy and fetch directly:
+
+https://server1.simplelecture.com/video/{job_id}/{file_path}
+Example:
+
+https://server1.simplelecture.com/video/0d01675f/images/topic_3_image_0.png
+This is simpler and faster for native mobile apps. The proxy is only needed in browsers for CORS.
+
+Where the job_id Comes From
+The job_id is stored in the database table video_generation_jobs. When a student opens a topic/chapter, the app queries:
+
+
+SELECT id, presentation_json FROM video_generation_jobs 
+WHERE topic_id = '{topic_id}' AND status = 'completed'
+The presentation_json column contains the full slide data including image_id references, avatar paths, and beat video paths that map to the file path patterns above.
+
+Rendering in the UI
+Images are rendered as simple <img> tags:
+
+
+<img src={getCdnMediaUrl(jobId, getImagePath(beat.image_id), cdnBaseUrl)} alt="" />
+Videos use standard HTML5 <video> elements with the same URL pattern. The avatar uses WebGL chroma-key rendering on a <canvas> overlaid on the video.

@@ -1,0 +1,129 @@
+import * as SelectPrimitive from "@radix-ui/react-select";
+import {
+  Select,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  SelectScrollUpButton,
+  SelectScrollDownButton,
+} from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { 
+  Play, 
+  List, 
+  BookOpen, 
+  Brain, 
+  RefreshCw, 
+  FileText,
+  HelpCircle,
+} from 'lucide-react';
+import { PresentationSection } from './types';
+import { cn } from '@/lib/utils';
+
+interface SectionPickerProps {
+  sections: PresentationSection[];
+  currentIndex: number;
+  onSectionChange: (index: number) => void;
+  container?: HTMLElement | null;
+  className?: string;
+}
+
+const getSectionIcon = (type: string) => {
+  switch (type) {
+    case 'intro':
+      return <Play className="h-4 w-4" />;
+    case 'summary':
+      return <List className="h-4 w-4" />;
+    case 'content':
+    case 'example':
+      return <BookOpen className="h-4 w-4" />;
+    case 'memory':
+      return <Brain className="h-4 w-4" />;
+    case 'recap':
+      return <RefreshCw className="h-4 w-4" />;
+    case 'quiz':
+      return <HelpCircle className="h-4 w-4" />;
+    default:
+      return <FileText className="h-4 w-4" />;
+  }
+};
+
+const getSectionTypeColor = (type: string) => {
+  // Use lighter text colors for visibility on dark player header
+  switch (type) {
+    case 'intro':
+      return 'bg-blue-500/30 text-blue-200';
+    case 'summary':
+      return 'bg-purple-500/30 text-purple-200';
+    case 'content':
+    case 'example':
+      return 'bg-green-500/30 text-green-200';
+    case 'memory':
+      return 'bg-amber-500/30 text-amber-200';
+    case 'recap':
+      return 'bg-rose-500/30 text-rose-200';
+    case 'quiz':
+      return 'bg-cyan-500/30 text-cyan-200';
+    default:
+      return 'bg-white/10 text-gray-200';
+  }
+};
+
+export const SectionPicker = ({
+  sections,
+  currentIndex,
+  onSectionChange,
+  container,
+  className,
+}: SectionPickerProps) => {
+  const currentSection = sections[currentIndex];
+
+  return (
+    <div className={cn("flex items-center gap-2", className)}>
+      <Select
+        value={currentIndex.toString()}
+        onValueChange={(value) => onSectionChange(parseInt(value))}
+      >
+        <SelectTrigger className="w-[280px] bg-white/5 border-white/10 text-white hover:bg-white/10">
+          <SelectValue>
+            <div className="flex items-center gap-2 text-white">
+              {currentSection && getSectionIcon(currentSection.section_type)}
+              <span className="truncate">
+                {currentIndex + 1}. {currentSection?.title || 'Select Section'}
+              </span>
+            </div>
+          </SelectValue>
+        </SelectTrigger>
+        <SelectPrimitive.Portal container={container ?? undefined}>
+          <SelectPrimitive.Content
+            className="relative z-50 max-h-96 min-w-[8rem] overflow-hidden rounded-md border bg-slate-900 border-slate-700 text-popover-foreground shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1"
+            position="popper"
+          >
+            <SelectScrollUpButton />
+            <SelectPrimitive.Viewport className="p-1 h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)]">
+              {sections.map((section, index) => (
+                <SelectItem 
+                  key={section.section_id} 
+                  value={index.toString()}
+                  className="text-gray-200 focus:bg-white/10 focus:text-white"
+                >
+                  <div className="flex items-center gap-2 w-full">
+                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-slate-700 text-gray-200 flex items-center justify-center text-xs font-medium">
+                      {index + 1}
+                    </span>
+                    {getSectionIcon(section.section_type)}
+                    <span className="truncate flex-1">{section.title}</span>
+                    <Badge className={cn("text-xs ml-auto", getSectionTypeColor(section.section_type))}>
+                      {section.section_type}
+                    </Badge>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectPrimitive.Viewport>
+            <SelectScrollDownButton />
+          </SelectPrimitive.Content>
+        </SelectPrimitive.Portal>
+    </Select>
+    </div>
+  );
+};

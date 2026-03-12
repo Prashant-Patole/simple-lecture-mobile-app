@@ -1,0 +1,126 @@
+import { 
+  Play, 
+  Pause, 
+  SkipBack, 
+  SkipForward,
+  Volume2,
+  VolumeX,
+  Maximize,
+  Minimize,
+} from 'lucide-react';
+import { formatTime } from './utils/timingUtils';
+import { cn } from '@/lib/utils';
+import { useState, useCallback } from 'react';
+import '@/components/learning/player/player.css';
+
+interface PlayerControlsProps {
+  isPlaying: boolean;
+  currentTime: number;
+  duration: number;
+  onPlayPause: () => void;
+  onSeek: (time: number) => void;
+  onPrevious?: () => void;
+  onNext?: () => void;
+  hasPrevious?: boolean;
+  hasNext?: boolean;
+  isFullscreen?: boolean;
+  onToggleFullscreen?: () => void;
+  audioRef?: React.RefObject<HTMLAudioElement>;
+  sectionPicker?: React.ReactNode;
+  className?: string;
+}
+
+export const PlayerControls = ({
+  isPlaying,
+  currentTime,
+  duration,
+  onPlayPause,
+  onSeek,
+  onPrevious,
+  onNext,
+  hasPrevious = false,
+  hasNext = false,
+  isFullscreen = false,
+  onToggleFullscreen,
+  audioRef,
+  sectionPicker,
+  className,
+}: PlayerControlsProps) => {
+  const [isMuted, setIsMuted] = useState(false);
+  const [volume, setVolume] = useState(1);
+
+  const handleVolumeToggle = useCallback(() => {
+    if (audioRef?.current) {
+      if (isMuted) {
+        audioRef.current.volume = volume || 1;
+        setIsMuted(false);
+      } else {
+        audioRef.current.volume = 0;
+        setIsMuted(true);
+      }
+    }
+  }, [audioRef, isMuted, volume]);
+
+  const handleTimelineClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const percentage = clickX / rect.width;
+    const newTime = percentage * duration;
+    onSeek(Math.max(0, Math.min(duration, newTime)));
+  }, [duration, onSeek]);
+
+  const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+
+  return (
+    <div className={cn("player-controls", className)}>
+      {/* Left - Volume & Time */}
+      <div className="controls-left">
+        <button 
+          className="control-button" 
+          onClick={handleVolumeToggle}
+          title={isMuted ? "Unmute" : "Mute"}
+        >
+          {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+        </button>
+        <span className="time-display">
+          {formatTime(currentTime)} / {formatTime(duration)}
+        </span>
+      </div>
+
+      {/* Timeline - Now in middle */}
+      <div className="timeline-container" onClick={handleTimelineClick}>
+        <div className="timeline-progress" style={{ width: `${progress}%` }} />
+        <div className="timeline-handle" style={{ left: `${progress}%` }} />
+      </div>
+      
+      {/* Center - Playback */}
+      <div className="controls-center">
+        <button className="control-button" onClick={onPrevious} disabled={!hasPrevious} title="Previous Section">
+          <SkipBack className="h-5 w-5" />
+        </button>
+        <button className="control-button primary" onClick={onPlayPause} title={isPlaying ? "Pause" : "Play"}>
+          {isPlaying ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6 ml-0.5" />}
+        </button>
+        <button className="control-button" onClick={onNext} disabled={!hasNext} title="Next Section">
+          <SkipForward className="h-5 w-5" />
+        </button>
+      </div>
+
+      {/* Section Picker - Between playback and fullscreen */}
+      {sectionPicker && (
+        <div className="controls-section-picker">
+          {sectionPicker}
+        </div>
+      )}
+      
+      {/* Right - Fullscreen */}
+      <div className="controls-right">
+        {onToggleFullscreen && (
+          <button className="control-button" onClick={onToggleFullscreen} title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}>
+            {isFullscreen ? <Minimize className="h-5 w-5" /> : <Maximize className="h-5 w-5" />}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};

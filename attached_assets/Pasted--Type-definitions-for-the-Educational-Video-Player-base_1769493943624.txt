@@ -1,0 +1,96 @@
+// Type definitions for the Educational Video Player based on presentation.json structure
+
+export interface NarrationSegment {
+  segment_id?: string;
+  text: string;
+  start_time?: number;
+  end_time?: number;
+  duration_seconds: number;
+  display_directives?: {
+    visual_layer?: 'teach' | 'show' | string;
+    text_layer?: 'show' | 'hide' | string;
+    [key: string]: unknown;
+  };
+  beat_videos?: string[];
+  visual_content?: {
+    bullet_points?: (string | { text: string; level?: number })[];
+    items?: (string | { text: string })[];
+  };
+}
+
+export interface Narration {
+  full_text: string;
+  segments: NarrationSegment[];
+  total_duration_seconds: number;
+}
+
+export interface VisualBeat {
+  beat_id: string;
+  visual_type: 'text' | 'bullet_list' | 'image' | 'latex' | 'video' | string;
+  display_text?: string | string[] | { text: string }[];
+  image_id?: string | null;
+  latex_content?: string | null;
+  segment_id?: string;
+  start_time?: number;
+  renderer?: string;
+  visual_content?: {
+    bullet_points?: (string | { text: string; level?: number })[];
+    items?: (string | { text: string })[];
+  };
+}
+
+export interface FlashCard {
+  card_id: string;
+  front: string;
+  back: string;
+}
+
+export interface ExplanationPlan {
+  visual_beats: VisualBeat[];
+}
+
+export interface PresentationSection {
+  section_id: number | string;
+  section_type: 'intro' | 'summary' | 'content' | 'memory' | 'recap' | 'example' | 'quiz' | string;
+  title: string;
+  renderer?: string;
+  narration: Narration;
+  visual_beats: VisualBeat[];
+  explanation_plan?: ExplanationPlan;
+  flashcards?: FlashCard[];
+  intro_background_video?: string;
+  avatar_video?: string;
+  avatar?: {
+    video_path?: string;
+    position?: 'center' | 'right' | 'left';
+  };
+  slide?: {
+    title?: string;
+    visual_content?: {
+      bullet_points?: (string | { text: string })[];
+      images?: string[];
+    };
+  };
+}
+
+export interface PresentationData {
+  presentation_title: string;
+  sections: PresentationSection[];
+}
+
+export interface SegmentTiming {
+  segmentId: string;
+  startTime: number;
+  endTime: number;
+  text: string;
+  beatVideos?: string[];
+}
+
+export interface PlayerState {
+  currentSectionIndex: number;
+  isPlaying: boolean;
+  currentTime: number;
+  duration: number;
+  revealedBeatIndices: number[];
+  currentSegmentIndex: number;
+}
