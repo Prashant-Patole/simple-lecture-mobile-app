@@ -2432,6 +2432,50 @@ class SupabaseService {
     }
   }
 
+  async getTopCoursesByCategory(
+    categoryIds: string | string[],
+    limit: number = 3
+  ): Promise<{ success: boolean; courses?: ExploreCourse[]; error?: string }> {
+    try {
+      const ids = Array.isArray(categoryIds) ? categoryIds : [categoryIds];
+      const filter = ids.length === 1
+        ? `category_id=eq.${ids[0]}`
+        : `category_id=in.("${ids.join('","')}")`;
+      const response = await fetch(
+        `${SUPABASE_URL}/rest/v1/course_categories?select=courses:course_id(id,name,slug,student_count,rating,review_count,price_inr,is_active,course_thumbnails(storage_url))&${filter}`,
+        {
+          method: 'GET',
+          headers: this.headers,
+        }
+      );
+
+      const data = await response.json();
+      if (!response.ok) {
+        return { success: false, error: data.message || 'Failed to fetch top courses' };
+      }
+
+      const seen = new Set<string>();
+      const courses = data
+        ?.filter((cc: any) => {
+          if (!cc.courses?.is_active) return false;
+          if (seen.has(cc.courses.id)) return false;
+          seen.add(cc.courses.id);
+          return true;
+        })
+        .map((cc: any) => ({
+          ...cc.courses,
+          thumbnail_url: extractThumbnailUrl(cc.courses.course_thumbnails),
+        }))
+        .sort((a: any, b: any) => (b.student_count || 0) - (a.student_count || 0))
+        .slice(0, limit);
+
+      return { success: true, courses };
+    } catch (error) {
+      console.error('Error fetching top courses by category:', error);
+      return { success: false, error: 'Network error.' };
+    }
+  }
+
   async getFeaturedCourses(limit: number = 5): Promise<{ success: boolean; courses?: ExploreCourse[]; error?: string }> {
     try {
       const response = await fetch(

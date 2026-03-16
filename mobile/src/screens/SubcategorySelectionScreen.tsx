@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import { useState, useEffect, useRef } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { supabase, Category } from '../services/supabase';
+import { supabase, Category, ExploreCourse } from '../services/supabase';
 import { useAuth } from '../context/AuthContext';
 import { colors, spacing, borderRadius, fontSize, fontFamily } from '../constants/theme';
 
@@ -13,12 +13,63 @@ interface SubcategoryGroup {
   subcategories: Category[];
 }
 
+interface CourseHint {
+  id: string;
+  name: string;
+  rating: number | null;
+  student_count: number | null;
+}
+
+function formatStudentCount(count: number | null): string {
+  if (!count) return '0';
+  if (count >= 1000) return `${(count / 1000).toFixed(1)}k`;
+  return count.toString();
+}
+
+function CourseHintCard({ courses }: { courses: CourseHint[] }) {
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 250,
+      useNativeDriver: true,
+    }).start();
+  }, []);
+
+  if (courses.length === 0) return null;
+
+  return (
+    <Animated.View style={[styles.hintContainer, { opacity: fadeAnim, transform: [{ translateY: fadeAnim.interpolate({ inputRange: [0, 1], outputRange: [6, 0] }) }] }]}>
+      <View style={styles.hintHeader}>
+        <Ionicons name="trending-up" size={12} color={colors.primary} />
+        <Text style={styles.hintTitle}>Top Courses</Text>
+      </View>
+      {courses.map((course, index) => (
+        <View key={course.id} style={[styles.hintRow, index < courses.length - 1 && styles.hintRowBorder]} data-testid={`hint-course-${course.id}`}>
+          <Text style={styles.hintCourseName} numberOfLines={1}>{course.name}</Text>
+          <View style={styles.hintMeta}>
+            <View style={styles.hintRating}>
+              <Ionicons name="star" size={10} color={colors.yellow[400]} />
+              <Text style={styles.hintRatingText}>{course.rating != null ? course.rating.toFixed(1) : '—'}</Text>
+            </View>
+            <Text style={styles.hintStudents}>{formatStudentCount(course.student_count)} students</Text>
+          </View>
+        </View>
+      ))}
+    </Animated.View>
+  );
+}
+
 export default function SubcategorySelectionScreen({ navigation, route }: any) {
   const { markInterestsSelected } = useAuth();
   const selectedCategoryIds: string[] = route.params?.selectedCategoryIds || [];
   const [groups, setGroups] = useState<SubcategoryGroup[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [courseHints, setCourseHints] = useState<Record<string, CourseHint[]>>({});
+  const fetchingRef = useRef<Set<string>>(new Set());
+  const childCategoryMapRef = useRef<Record<string, string[]>>({});
 
   useEffect(() => {
     fetchSubcategories();
@@ -36,6 +87,16 @@ export default function SubcategorySelectionScreen({ navigation, route }: any) {
       const subcats = allCategories.filter(
         (c) => c.level === 2 && c.parent_id && selectedCategoryIds.includes(c.parent_id)
       );
+
+      const level3Cats = allCategories.filter((c) => c.level === 3);
+      const childMap: Record<string, string[]> = {};
+      subcats.forEach((sub) => {
+        const childIds = level3Cats
+          .filter((c) => c.parent_id === sub.id)
+          .map((c) => c.id);
+        childMap[sub.id] = childIds;
+      });
+      childCategoryMapRef.current = childMap;
 
       const grouped: SubcategoryGroup[] = [];
       parentMap.forEach((parent) => {
@@ -57,8 +118,39 @@ export default function SubcategorySelectionScreen({ navigation, route }: any) {
       }
 
       setGroups(grouped);
+      prefetchCourseHints(subcats, childMap);
     }
     setLoading(false);
+  };
+
+  const getCategoryIdsForLookup = (subId: string): string[] => {
+    const children = childCategoryMapRef.current[subId] || [];
+    return [subId, ...children];
+  };
+
+  const prefetchCourseHints = async (subcats: Category[], childMap: Record<string, string[]>) => {
+    const promises = subcats.map(async (sub) => {
+      if (fetchingRef.current.has(sub.id)) return;
+      fetchingRef.current.add(sub.id);
+      try {
+        const lookupIds = [sub.id, ...(childMap[sub.id] || [])];
+        const result = await supabase.getTopCoursesByCategory(lookupIds, 3);
+        if (result.success && result.courses && result.courses.length > 0) {
+          const hints: CourseHint[] = result.courses.map((c: ExploreCourse) => ({
+            id: c.id,
+            name: c.name,
+            rating: c.rating,
+            student_count: c.student_count,
+          }));
+          setCourseHints((prev) => ({ ...prev, [sub.id]: hints }));
+        } else if (!result.success) {
+          fetchingRef.current.delete(sub.id);
+        }
+      } catch {
+        fetchingRef.current.delete(sub.id);
+      }
+    });
+    await Promise.allSettled(promises);
   };
 
   const getCategoryIcon = (icon: string | null, name: string) => {
@@ -81,9 +173,29 @@ export default function SubcategorySelectionScreen({ navigation, route }: any) {
   };
 
   const toggleSubcategory = (id: string) => {
+    const wasSelected = selectedIds.includes(id);
     setSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
     );
+    if (!wasSelected && !courseHints[id] && !fetchingRef.current.has(id)) {
+      fetchingRef.current.add(id);
+      const lookupIds = getCategoryIdsForLookup(id);
+      supabase.getTopCoursesByCategory(lookupIds, 3).then((result) => {
+        if (result.success && result.courses && result.courses.length > 0) {
+          const hints: CourseHint[] = result.courses.map((c: ExploreCourse) => ({
+            id: c.id,
+            name: c.name,
+            rating: c.rating,
+            student_count: c.student_count,
+          }));
+          setCourseHints((p) => ({ ...p, [id]: hints }));
+        } else if (!result.success) {
+          fetchingRef.current.delete(id);
+        }
+      }).catch(() => {
+        fetchingRef.current.delete(id);
+      });
+    }
   };
 
   const completeOnboarding = async () => {
@@ -136,26 +248,31 @@ export default function SubcategorySelectionScreen({ navigation, route }: any) {
             <View style={styles.grid}>
               {group.subcategories.map((sub) => {
                 const isSelected = selectedIds.includes(sub.id);
+                const hints = courseHints[sub.id];
                 return (
-                  <TouchableOpacity
-                    key={sub.id}
-                    style={[styles.categoryCard, isSelected && styles.categoryCardSelected]}
-                    onPress={() => toggleSubcategory(sub.id)}
-                    activeOpacity={0.7}
-                    data-testid={`button-subcategory-${sub.id}`}
-                  >
-                    <Text style={styles.categoryIcon}>
-                      {getCategoryIcon(sub.icon, sub.name)}
-                    </Text>
-                    <Text style={[styles.categoryName, isSelected && styles.categoryNameSelected]}>
-                      {sub.name}
-                    </Text>
-                    {isSelected && (
-                      <View style={styles.checkmark}>
-                        <Ionicons name="checkmark-circle" size={20} color={colors.primary} />
-                      </View>
+                  <View key={sub.id} style={styles.cardWrapper}>
+                    <TouchableOpacity
+                      style={[styles.categoryCard, isSelected && styles.categoryCardSelected]}
+                      onPress={() => toggleSubcategory(sub.id)}
+                      activeOpacity={0.7}
+                      data-testid={`button-subcategory-${sub.id}`}
+                    >
+                      <Text style={styles.categoryIcon}>
+                        {getCategoryIcon(sub.icon, sub.name)}
+                      </Text>
+                      <Text style={[styles.categoryName, isSelected && styles.categoryNameSelected]}>
+                        {sub.name}
+                      </Text>
+                      {isSelected && (
+                        <View style={styles.checkmark}>
+                          <Ionicons name="checkmark-circle" size={20} color={colors.primary} />
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                    {isSelected && hints && hints.length > 0 && (
+                      <CourseHintCard courses={hints} />
                     )}
-                  </TouchableOpacity>
+                  </View>
                 );
               })}
             </View>
@@ -246,8 +363,10 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: spacing.md,
   },
-  categoryCard: {
+  cardWrapper: {
     width: '47%',
+  },
+  categoryCard: {
     backgroundColor: colors.white,
     borderWidth: 1.5,
     borderColor: colors.border,
@@ -279,6 +398,60 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 8,
     right: 8,
+  },
+  hintContainer: {
+    marginTop: spacing.xs,
+    backgroundColor: '#F0FDF4',
+    borderRadius: borderRadius.sm,
+    padding: spacing.sm,
+    borderWidth: 1,
+    borderColor: '#D1FAE5',
+  },
+  hintHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 6,
+  },
+  hintTitle: {
+    fontSize: fontSize.xs,
+    fontFamily: fontFamily.bold,
+    color: colors.primary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  hintRow: {
+    paddingVertical: 4,
+  },
+  hintRowBorder: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#D1FAE5',
+  },
+  hintCourseName: {
+    fontSize: fontSize.xs,
+    fontFamily: fontFamily.semiBold,
+    color: colors.text,
+    marginBottom: 2,
+  },
+  hintMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  hintRating: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  hintRatingText: {
+    fontSize: 9,
+    fontFamily: fontFamily.medium,
+    color: colors.textSecondary,
+  },
+  hintStudents: {
+    fontSize: 9,
+    fontFamily: fontFamily.regular,
+    color: colors.textSecondary,
   },
   bottomBar: {
     position: 'absolute',

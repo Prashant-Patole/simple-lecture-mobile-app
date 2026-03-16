@@ -63,3 +63,9 @@ The application includes:
 - **Text-to-Speech**: Sarvam TTS
 - **Backend-as-a-Service**: Supabase
 - **Payment Gateway**: Razorpay
+
+## Source Control
+
+- **GitHub Repository**: https://github.com/Prashant-Patole/simple-lecture-mobile-app.git
+- **Authentication**: Uses `GITHUB_PERSONAL_ACCESS_TOKEN` secret for push access
+- **Push command**: From a fresh temp repo to avoid Replit's internal git object conflicts; future pushes should sync histories first

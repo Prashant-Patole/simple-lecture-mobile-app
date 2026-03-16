@@ -1,0 +1,787 @@
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+
+  C++ build system [clean] failed while executing:
+      @echo off
+      "C:\\Users\\dell\\AppData\\Local\\Android\\Sdk\\cmake\\3.22.1\\bin\\ninja.exe" ^
+        -C ^
+        "C:\\Users\\dell\\Desktop\\simple-lecture-app\\simple-lecture-mobile-app\\mobile\\node_modules\\react-native-screens\\android\\.cxx\\RelWithDebInfo\\20e59226\\armeabi-v7a" ^
+        clean
+    from C:\Users\dell\Desktop\simple-lecture-app\simple-lecture-mobile-app\mobile\node_modules\react-native-screens\android
+  ninja: error: manifest 'build.ninja' still dirty after 100 tries
+
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 1m 49s
+43 actionable tasks: 38 executed, 5 up-to-date
+
+> Configure project :expo
+
+Using expo modules
+  - expo-application (6.0.2)
+  - expo-asset (11.0.5)
+  - expo-av (15.0.2)
+  - expo-constants (17.0.8)
+  - expo-crypto (14.0.2)
+  - expo-device (7.0.3)
+  - expo-file-system (18.0.12)
+  - expo-font (13.0.4)
+  - expo-gl (15.0.5)
+  - expo-linear-gradient (14.0.2)
+  - expo-linking (7.0.5)
+  - expo-modules-core (2.2.3)
+  - expo-notifications (0.29.14)
+  - expo-screen-orientation (8.0.4)
+  - expo-speech (13.0.1)
+  - expo-web-browser (14.0.2)
+
+
+> Task :expo-constants:createExpoConfig
+The NODE_ENV environment variable is required but was not specified. Ensure the project is bundled with Expo CLI or NODE_ENV is set.
+Proceeding without mode-specific .env
+
+> Task :app:createBundleReleaseJsAndAssets
+Starting Metro Bundler
+warning: Bundler cache is empty, rebuilding (this may take a minute)
+Android Bundled 30691ms index.ts (1196 modules)
+Writing bundle output to: android\app\build\generated\assets\createBundleReleaseJsAndAssets\index.android.bundle
+Writing sourcemap output to: android\app\build\intermediates\sourcemaps\react\release\index.android.bundle.packager.map
+Copying 66 asset files
+Done writing bundle output
+Done writing sourcemap output
+android\app\build\generated\assets\createBundleReleaseJsAndAssets\index.android.bundle:3976:16: warning: the variable "SharedArrayBuffer" was not declared in function "from"
+    if (typeof SharedArrayBuffer !== 'undefined' && (isInstance(value, Shared...
+               ^~~~~~~~~~~~~~~~~
+android\app\build\generated\assets\createBundleReleaseJsAndAssets\index.android.bundle:7864:23: warning: the variable "DebuggerInternal" was not declared in function "__shouldPauseOnThrow"
+        return typeof DebuggerInternal !== 'undefined' && DebuggerInternal.sh...
+                      ^~~~~~~~~~~~~~~~
+android\app\build\generated\assets\createBundleReleaseJsAndAssets\index.android.bundle:18219:7: warning: the variable "setTimeout" was not declared in function "logCapturedError"
+      setTimeout(function () {
+      ^~~~~~~~~~
+android\app\build\generated\assets\createBundleReleaseJsAndAssets\index.android.bundle:16453:31: warning: the variable "nativeFabricUIManager" was not declared in anonymous function " 391#"
+  var _nativeFabricUIManage = nativeFabricUIManager,
+                              ^~~~~~~~~~~~~~~~~~~~~
+android\app\build\generated\assets\createBundleReleaseJsAndAssets\index.android.bundle:16481:21: warning: the variable "clearTimeout" was not declared in anonymous function " 391#"
+    cancelTimeout = clearTimeout;
+                    ^~~~~~~~~~~~
+android\app\build\generated\assets\createBundleReleaseJsAndAssets\index.android.bundle:16494:51: warning: the variable "RN$enableMicrotasksInReact" was not declared in anonymous function " 391#"
+... "undefined" !== typeof RN$enableMicrotasksInReact && !!RN$enableMicrotask...
+                           ^~~~~~~~~~~~~~~~~~~~~~~~~~
+android\app\build\generated\assets\createBundleReleaseJsAndAssets\index.android.bundle:16495:47: warning: the variable "queueMicrotask" was not declared in anonymous function " 391#"
+...otask = "function" === typeof queueMicrotask ? queueMicrotask : scheduleTi...
+                                 ^~~~~~~~~~~~~~
+android\app\build\generated\assets\createBundleReleaseJsAndAssets\index.android.bundle:20916:30: warning: the variable "__REACT_DEVTOOLS_GLOBAL_HOOK__" was not declared in anonymous function " 391#"
+  if ("undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__) {
+                             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+android\app\build\generated\assets\createBundleReleaseJsAndAssets\index.android.bundle:22350:5: warning: the variable "setImmediate" was not declared in function "handleResolved"
+    setImmediate(function () {
+    ^~~~~~~~~~~~
+android\app\build\generated\assets\createBundleReleaseJsAndAssets\index.android.bundle:25616:5: warning: the variable "fetch" was not declared in anonymous function " 614#"
+    fetch,
+    ^~~~~
+android\app\build\generated\assets\createBundleReleaseJsAndAssets\index.android.bundle:25617:5: warning: the variable "Headers" was not declared in anonymous function " 614#"
+    Headers,
+    ^~~~~~~
+android\app\build\generated\assets\createBundleReleaseJsAndAssets\index.android.bundle:25618:5: warning: the variable "Request" was not declared in anonymous function " 614#"
+    Request,
+    ^~~~~~~
+android\app\build\generated\assets\createBundleReleaseJsAndAssets\index.android.bundle:25619:5: warning: the variable "Response" was not declared in anonymous function " 614#"
+    Response
+    ^~~~~~~~
+android\app\build\generated\assets\createBundleReleaseJsAndAssets\index.android.bundle:25776:24: warning: the variable "FileReader" was not declared in function "readBlobAsArrayBuffer"
+      var reader = new FileReader();
+                       ^~~~~~~~~~
+android\app\build\generated\assets\createBundleReleaseJsAndAssets\index.android.bundle:25831:44: warning: the variable "URLSearchParams" was not declared in anonymous function " 625#"
+...e if (support.searchParams && URLSearchParams.prototype.isPrototypeOf(body...
+                                 ^~~~~~~~~~~~~~~
+android\app\build\generated\assets\createBundleReleaseJsAndAssets\index.android.bundle:25950:26: warning: the variable "AbortController" was not declared in anonymous function " 631#"
+          var ctrl = new AbortController();
+                         ^~~~~~~~~~~~~~~
+android\app\build\generated\assets\createBundleReleaseJsAndAssets\index.android.bundle:26084:23: warning: the variable "XMLHttpRequest" was not declared in anonymous function " 635#"
+        var xhr = new XMLHttpRequest();
+                      ^~~~~~~~~~~~~~
+android\app\build\generated\assets\createBundleReleaseJsAndAssets\index.android.bundle:25629:71: warning: the variable "self" was not declared in anonymous function " 617#"
+...undefined' && globalThis || typeof self !== 'undefined' && self ||
+                                      ^~~~
+android\app\build\generated\assets\createBundleReleaseJsAndAssets\index.android.bundle:28471:26: warning: the variable "navigator" was not declared in anonymous function " 794#"
+  "undefined" !== typeof navigator && undefined !== navigator.scheduling && u...
+                         ^~~~~~~~~
+android\app\build\generated\assets\createBundleReleaseJsAndAssets\index.android.bundle:28581:37: warning: the variable "MessageChannel" was not declared in anonymous function " 794#"
+  };else if ("undefined" !== typeof MessageChannel) {
+                                    ^~~~~~~~~~~~~~
+android\app\build\generated\assets\createBundleReleaseJsAndAssets\index.android.bundle:28596:34: warning: the variable "nativeRuntimeScheduler" was not declared in anonymous function " 794#"
+... = "undefined" !== typeof nativeRuntimeScheduler ? nativeRuntimeScheduler....
+                             ^~~~~~~~~~~~~~~~~~~~~~
+android\app\build\generated\assets\createBundleReleaseJsAndAssets\index.android.bundle:38445:34: warning: the variable "requestAnimationFrame" was not declared in function "start 9#"
+...    this._animationFrame = requestAnimationFrame(this.onUpdate.bind(this));
+                              ^~~~~~~~~~~~~~~~~~~~~
+android\app\build\generated\assets\createBundleReleaseJsAndAssets\index.android.bundle:86153:25: warning: the variable "Atomics" was not declared in anonymous function " 2198#"
+    '%Atomics%': typeof Atomics === 'undefined' ? undefined : Atomics,
+                        ^~~~~~~
+android\app\build\generated\assets\createBundleReleaseJsAndAssets\index.android.bundle:86168:30: warning: the variable "Float16Array" was not declared in anonymous function " 2198#"
+    '%Float16Array%': typeof Float16Array === 'undefined' ? undefined : Float...
+                             ^~~~~~~~~~~~
+android\app\build\generated\assets\createBundleReleaseJsAndAssets\index.android.bundle:86171:38: warning: the variable "FinalizationRegistry" was not declared in anonymous function " 2198#"
+...lizationRegistry%': typeof FinalizationRegistry === 'undefined' ? undefine...
+                              ^~~~~~~~~~~~~~~~~~~~
+android\app\build\generated\assets\createBundleReleaseJsAndAssets\index.android.bundle:86211:25: warning: the variable "WeakRef" was not declared in anonymous function " 2198#"
+    '%WeakRef%': typeof WeakRef === 'undefined' ? undefined : WeakRef,
+                        ^~~~~~~
+android\app\build\generated\assets\createBundleReleaseJsAndAssets\index.android.bundle:87165:14: warning: the variable "document" was not declared in anonymous function " 2243#"
+  if (typeof document === 'object') {
+             ^~~~~~~~
+android\app\build\generated\assets\createBundleReleaseJsAndAssets\index.android.bundle:109089:9: warning: the variable "REACT_NAVIGATION_DEVTOOLS" was not declared in anonymous arrow function " 3392#"
+        REACT_NAVIGATION_DEVTOOLS.set(refContainer.current, {
+        ^~~~~~~~~~~~~~~~~~~~~~~~~
+android\app\build\generated\assets\createBundleReleaseJsAndAssets\index.android.bundle:114444:16: warning: the variable "requestIdleCallback" was not declared in anonymous arrow function " 3602#"
+      var id = requestIdleCallback(() => {
+               ^~~~~~~~~~~~~~~~~~~
+android\app\build\generated\assets\createBundleReleaseJsAndAssets\index.android.bundle:114447:20: warning: the variable "cancelIdleCallback" was not declared in anonymous arrow function " 3604#"
+      return () => cancelIdleCallback(id);
+                   ^~~~~~~~~~~~~~~~~~
+android\app\build\generated\assets\createBundleReleaseJsAndAssets\index.android.bundle:142708:5: warning: the property "questionImage" was set multiple times in the object definition.
+    questionImage: {
+    ^~~~~~~~~~~~~~~~
+android\app\build\generated\assets\createBundleReleaseJsAndAssets\index.android.bundle:140238:5: note: The first definition was here.
+    questionImage: {
+    ^~~~~~~~~~~~~~~~
+
+> Task :expo-file-system:processReleaseManifest
+C:\Users\dell\Desktop\simple-lecture-app\simple-lecture-mobile-app\mobile\node_modules\expo-file-system\android\src\main\AndroidManifest.xml:6:9-8:20 Warning:
+        provider#expo.modules.filesystem.FileSystemFileProvider@android:authorities was tagged at AndroidManifest.xml:6 to replace other declarations but no other declaration present
+
+> Task :expo-modules-core:processReleaseManifest
+C:\Users\dell\Desktop\simple-lecture-app\simple-lecture-mobile-app\mobile\node_modules\expo-modules-core\android\src\main\AndroidManifest.xml:8:9-11:45 Warning:
+        meta-data#com.facebook.soloader.enabled@android:value was tagged at AndroidManifest.xml:8 to replace other declarations but no other declaration present
+
+> Task :react-native-async-storage_async-storage:processReleaseManifest
+package="com.reactnativecommunity.asyncstorage" found in source AndroidManifest.xml: C:\Users\dell\Desktop\simple-lecture-app\simple-lecture-mobile-app\mobile\node_modules\@react-native-async-storage\async-storage\android\src\main\AndroidManifest.xml.
+Setting the namespace via the package attribute in the source AndroidManifest.xml is no longer supported, and the value is ignored.
+Recommendation: remove package="com.reactnativecommunity.asyncstorage" from the source AndroidManifest.xml: C:\Users\dell\Desktop\simple-lecture-app\simple-lecture-mobile-app\mobile\node_modules\@react-native-async-storage\async-storage\android\src\main\AndroidManifest.xml.
+
+> Task :react-native-razorpay:processReleaseManifest
+package="com.razorpay.rn" found in source AndroidManifest.xml: C:\Users\dell\Desktop\simple-lecture-app\simple-lecture-mobile-app\mobile\node_modules\react-native-razorpay\android\src\main\AndroidManifest.xml.
+Setting the namespace via the package attribute in the source AndroidManifest.xml is no longer supported, and the value is ignored.
+Recommendation: remove package="com.razorpay.rn" from the source AndroidManifest.xml: C:\Users\dell\Desktop\simple-lecture-app\simple-lecture-mobile-app\mobile\node_modules\react-native-razorpay\android\src\main\AndroidManifest.xml.
+
+> Task :react-native-safe-area-context:processReleaseManifest
+package="com.th3rdwave.safeareacontext" found in source AndroidManifest.xml: C:\Users\dell\Desktop\simple-lecture-app\simple-lecture-mobile-app\mobile\node_modules\react-native-safe-area-context\android\src\main\AndroidManifest.xml.
+Setting the namespace via the package attribute in the source AndroidManifest.xml is no longer supported, and the value is ignored.
+Recommendation: remove package="com.th3rdwave.safeareacontext" from the source AndroidManifest.xml: C:\Users\dell\Desktop\simple-lecture-app\simple-lecture-mobile-app\mobile\node_modules\react-native-safe-area-context\android\src\main\AndroidManifest.xml.
+
+> Task :app:processReleaseMainManifest
+[com.razorpay:standard-core:1.7.1] C:\Users\dell\.gradle\caches\8.10.2\transforms\21867759e68c6431a122acb4371454eb\transformed\standard-core-1.7.1\AndroidManifest.xml Warning:
+        Namespace 'com.razorpay' is used in multiple modules and/or libraries: com.razorpay:standard-core:1.7.1, com.razorpay:core:1.0.1. Please ensure that all modules and libraries have a unique namespace. For more information, See https://developer.android.com/studio/build/configure-app-module#set-namespace
+C:\Users\dell\Desktop\simple-lecture-app\simple-lecture-mobile-app\mobile\android\app\src\main\AndroidManifest.xml Warning:
+        provider#expo.modules.filesystem.FileSystemFileProvider@android:authorities was tagged at AndroidManifest.xml:0 to replace other declarations but no other declaration present
+
+> Task :react-native-async-storage_async-storage:compileReleaseJavaWithJavac
+C:\Users\dell\Desktop\simple-lecture-app\simple-lecture-mobile-app\mobile\node_modules\@react-native-async-storage\async-storage\android\src\main\java\com\reactnativecommunity\asyncstorage\AsyncStorageModule.java:84: warning: [removal] onCatalystInstanceDestroy() in NativeModule has been deprecated and marked for removal
+  public void onCatalystInstanceDestroy() {
+              ^
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.                                                                       
+Note: C:\Users\dell\Desktop\simple-lecture-app\simple-lecture-mobile-app\mobile\node_modules\@react-native-async-storage\async-storage\android\src\javaPackage\java\com\reactnativecommunity\asyncstorage\AsyncStoragePackage.java uses unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.                                                                         
+1 warning
+
+> Task :react-native-razorpay:compileReleaseJavaWithJavac
+Note: C:\Users\dell\Desktop\simple-lecture-app\simple-lecture-mobile-app\mobile\node_modules\react-native-razorpay\android\src\main\java\com\razorpay\rn\RazorpayModule.java uses or overrides a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+
+> Task :react-native-safe-area-context:compileReleaseKotlin
+w: file:///C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-safe-area-context/android/src/main/java/com/th3rdwave/safeareacontext/SafeAreaContextPackage.kt:27:11 'constructor ReactModuleInfo(String, String, Boolean, Boolean, Boolean, Boolean, Boolean)' is deprecated. use ReactModuleInfo(String, String, boolean, boolean, boolean, boolean)]
+w: file:///C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-safe-area-context/android/src/main/java/com/th3rdwave/safeareacontext/SafeAreaContextPackage.kt:33:27 'getter for hasConstants: Boolean' is deprecated. This property is unused and it's planning to be removed in a future version of
+        React Native. Please refrain from using it.
+w: file:///C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-safe-area-context/android/src/main/java/com/th3rdwave/safeareacontext/SafeAreaView.kt:59:23 'getter for uiImplementation: UIImplementation!' is deprecated. Deprecated in Java
+
+> Task :react-native-gesture-handler:compileReleaseKotlin
+w: file:///C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-gesture-handler/android/src/main/java/com/swmansion/gesturehandler/RNGestureHandlerPackage.kt:69:42 'constructor ReactModuleInfo(String, String, Boolean, Boolean, Boolean, Boolean, Boolean)' is deprecated. use ReactModuleInfo(String, String, boolean, boolean, boolean, boolean)]
+w: file:///C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-gesture-handler/android/src/main/java/com/swmansion/gesturehandler/core/FlingGestureHandler.kt:25:26 Parameter 'event' is never used
+w: file:///C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-gesture-handler/android/src/main/java/com/swmansion/gesturehandler/react/RNGestureHandlerButtonViewManager.kt:72:62 The corresponding parameter in the supertype 'ViewGroupManager' is named 'borderRadius'. This may cause problems when calling this function with named arguments.
+w: file:///C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-gesture-handler/android/src/main/java/com/swmansion/gesturehandler/react/RNGestureHandlerButtonViewManager.kt:77:63 The corresponding parameter in the supertype 'ViewGroupManager' is named 'borderRadius'. This may cause problems when calling this function with named arguments.
+w: file:///C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-gesture-handler/android/src/main/java/com/swmansion/gesturehandler/react/RNGestureHandlerButtonViewManager.kt:82:65 The corresponding parameter in the supertype 'ViewGroupManager' is named 'borderRadius'. This may cause problems when calling this function with named arguments.
+w: file:///C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-gesture-handler/android/src/main/java/com/swmansion/gesturehandler/react/RNGestureHandlerButtonViewManager.kt:87:66 The corresponding parameter in the supertype 'ViewGroupManager' is named 'borderRadius'. This may cause problems when calling this function with named arguments.
+
+> Task :react-native-screens:buildCMakeRelWithDebInfo[armeabi-v7a] FAILED
+C/C++: ninja: error: manifest 'build.ninja' still dirty after 100 tries
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':react-native-screens:buildCMakeRelWithDebInfo[armeabi-v7a]'.
+> com.android.ide.common.process.ProcessException: ninja: Entering directory `C:\Users\dell\Desktop\simple-lecture-app\simple-lecture-mobile-app\mobile\node_modules\react-native-screens\android\.cxx\RelWithDebInfo\20e59226\armeabi-v7a'
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+  [0/1] Re-running CMake...
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: C:/Users/dell/Desktop/simple-lecture-app/simple-lecture-mobile-app/mobile/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/20e59226/armeabi-v7a
+
+  C++ build system [build] failed while executing:
+      @echo off
+      "C:\\Users\\dell\\AppData\\Local\\Android\\Sdk\\cmake\\3.22.1\\bin\\ninja.exe" ^
+        -C ^
+        "C:\\Users\\dell\\Desktop\\simple-lecture-app\\simple-lecture-mobile-app\\mobile\\node_modules\\react-native-screens\\android\\.cxx\\RelWithDebInfo\\20e59226\\armeabi-v7a" ^
+        rnscreens
+    from C:\Users\dell\Desktop\simple-lecture-app\simple-lecture-mobile-app\mobile\node_modules\react-native-screens\android
+  ninja: error: manifest 'build.ninja' still dirty after 100 tries
+
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 2m 47s
+404 actionable tasks: 332 executed, 72 up-to-date
+PS C:\Users\dell\Desktop\simple-lecture-app\simple-lecture-mobile-app\mobile\android> 
