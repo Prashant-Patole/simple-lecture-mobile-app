@@ -33,21 +33,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const checkAuth = async () => {
+    console.log('[Auth] checkAuth started');
     try {
       const storedUser = await supabase.getStoredUser();
       const interestsFlag = await AsyncStorage.getItem('@interests_selected');
       setHasSelectedInterests(interestsFlag === 'true');
+      console.log('[Auth] storedUser:', storedUser ? 'found' : 'none', '| interests:', interestsFlag);
       if (storedUser) {
         setUser(storedUser);
-        const refreshResult = await supabase.refreshSession();
+        const refreshWithTimeout = Promise.race([
+          supabase.refreshSession(),
+          new Promise<{ success: false; error: string }>((resolve) =>
+            setTimeout(() => resolve({ success: false, error: 'Auth check timeout' }), 5000)
+          ),
+        ]);
+        const refreshResult = await refreshWithTimeout;
+        console.log('[Auth] refreshSession result:', refreshResult.success, refreshResult.error || '');
         if (!refreshResult.success) {
           const freshUser = await supabase.getStoredUser();
           if (freshUser) setUser(freshUser);
         }
       }
     } catch (error) {
+      console.log('[Auth] checkAuth error:', error);
       setUser(null);
     } finally {
+      console.log('[Auth] checkAuth complete, setting isLoading=false');
       setIsLoading(false);
     }
   };

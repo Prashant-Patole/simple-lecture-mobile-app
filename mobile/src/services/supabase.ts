@@ -1123,14 +1123,22 @@ class SupabaseService {
     try {
       const refreshToken = await AsyncStorage.getItem(REFRESH_TOKEN_KEY);
       if (!refreshToken) return { success: false, error: 'No refresh token' };
-      const response = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
-        method: 'POST',
-        headers: this.headers,
-        body: JSON.stringify({ refresh_token: refreshToken }),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        return { success: false, error: data.error_description || 'Session refresh failed' };
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
+      let data;
+      try {
+        const response = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+          method: 'POST',
+          headers: this.headers,
+          body: JSON.stringify({ refresh_token: refreshToken }),
+          signal: controller.signal,
+        });
+        data = await response.json();
+        if (!response.ok) {
+          return { success: false, error: data.error_description || 'Session refresh failed' };
+        }
+      } finally {
+        clearTimeout(timeoutId);
       }
       await this.saveTokens(data.access_token, data.refresh_token);
       const user: User = {
@@ -1142,6 +1150,9 @@ class SupabaseService {
       await this.saveUser(user);
       return { success: true };
     } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        return { success: false, error: 'Request timeout' };
+      }
       return { success: false, error: 'Network error' };
     }
   }
@@ -7300,27 +7311,21 @@ class SupabaseService {
     }
   }
 
-  async getPyqQuestions(subjectId: string, pyqType: string, chapterId?: string, topicId?: string): Promise<{ success: boolean; questions?: PyqQuestion[]; error?: string }> {
+  async getPyqQuestions(subjectId: string, pyqType: string, _chapterId?: string, _topicId?: string, limit: number = 50, offset: number = 0): Promise<{ success: boolean; questions?: PyqQuestion[]; hasMore?: boolean; error?: string }> {
+    // NOTE: chapter_id/topic_id params kept for API compat but ignored — all PYQ data is subject-level (chapter_id=null in DB)
     try {
       const accessToken = await this.getAccessToken();
-      if (!accessToken) {
-        return { success: false, error: 'Not authenticated' };
-      }
+      const fields = 'id,subject_id,chapter_id,topic_id,pyq_type,question_text,question_format,options,marks,difficulty,question_image_url';
+      let url = `${SUPABASE_URL}/rest/v1/pyq_questions?select=${fields}&subject_id=eq.${subjectId}&pyq_type=eq.${pyqType}&order=created_at.desc&limit=${limit + 1}&offset=${offset}`;
 
-      let url = `${SUPABASE_URL}/rest/v1/pyq_questions?select=*&subject_id=eq.${subjectId}&pyq_type=eq.${pyqType}&order=created_at.desc&limit=1000`;
-      if (chapterId) {
-        url += `&chapter_id=eq.${chapterId}`;
-      }
-      if (topicId) {
-        url += `&topic_id=eq.${topicId}`;
+      const headers: Record<string, string> = { ...this.headers };
+      if (accessToken) {
+        headers['Authorization'] = `Bearer ${accessToken}`;
       }
 
       const response = await fetch(url, {
         method: 'GET',
-        headers: {
-          ...this.headers,
-          'Authorization': `Bearer ${accessToken}`,
-        },
+        headers,
       });
 
       const data = await response.json();
@@ -7329,7 +7334,10 @@ class SupabaseService {
         return { success: false, error: data.message || 'Failed to fetch PYQ questions' };
       }
 
-      return { success: true, questions: data };
+      const hasMore = data.length > limit;
+      const questions = hasMore ? data.slice(0, limit) : data;
+
+      return { success: true, questions, hasMore };
     } catch (error) {
       console.error('[getPyqQuestions] Error:', error);
       return { success: false, error: 'Network error' };

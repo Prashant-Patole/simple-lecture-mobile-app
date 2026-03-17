@@ -1,22 +1,20 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef, memo } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   Image,
   ActivityIndicator,
 } from 'react-native';
+import { WebView } from 'react-native-webview';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '../constants/theme';
+import { colors, fontSize } from '../constants/theme';
 import { supabase, PyqQuestion } from '../services/supabase';
-import MathText from './MathText';
+import MathText, { containsLatex, buildKatexHtml, escapeHtml } from './MathText';
 
 interface PYQTabProps {
   subjectId?: string;
-  chapterId?: string;
-  topicId?: string;
 }
 
 const PYQ_TYPES = [
@@ -32,6 +30,8 @@ const DIFFICULTY_COLORS: Record<string, string> = {
   Advanced: '#EF4444',
 };
 
+const PAGE_SIZE = 50;
+
 function convertMathpixToStandard(text: string): string {
   if (!text) return '';
   let result = text;
@@ -46,32 +46,140 @@ function getOptionText(value: string | { text: string }): string {
   return String(value);
 }
 
-export default function PYQTab({ subjectId, chapterId, topicId }: PYQTabProps) {
+function stripLatex(text: string): string {
+  return text
+    .replace(/\$\$(.*?)\$\$/gs, '$1')
+    .replace(/\$(.*?)\$/g, '$1')
+    .replace(/\\frac\{([^}]*)\}\{([^}]*)\}/g, '($1/$2)')
+    .replace(/\\[a-zA-Z]+/g, ' ')
+    .replace(/[{}]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+const MathOptionsWebView = memo(({ options }: { options: Record<string, any> }) => {
+  const [height, setHeight] = useState(40);
+  const [timedOut, setTimedOut] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    timerRef.current = setTimeout(() => setTimedOut(true), 2000);
+    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
+  }, []);
+
+  const onMessage = useCallback((event: any) => {
+    const h = parseInt(event.nativeEvent.data, 10);
+    if (h && h > 0) {
+      setHeight(h);
+      if (timerRef.current) clearTimeout(timerRef.current);
+    }
+  }, []);
+
+  const entries = Object.entries(options);
+
+  if (timedOut && height <= 40) {
+    return (
+      <View style={styles.optionsList}>
+        {entries.map(([key, value]) => {
+          const text = convertMathpixToStandard(getOptionText(value));
+          return (
+            <View key={key} style={styles.optionPill}>
+              <Text style={styles.optionLabel}>{key}.</Text>
+              <View style={styles.optionTextContainer}>
+                <Text style={styles.optionPlainText}>{stripLatex(text)}</Text>
+              </View>
+            </View>
+          );
+        })}
+      </View>
+    );
+  }
+
+  const optionsHtml = entries.map(([key, value]) => {
+    const text = convertMathpixToStandard(getOptionText(value));
+    return `<div style="display:flex;align-items:baseline;gap:6px;background:#F9FAFB;border-radius:8px;padding:6px 10px;margin-bottom:5px;">
+<span style="font-weight:600;color:#6B7280;min-width:18px;">${key}.</span>
+<span style="flex:1;color:#374151;">${escapeHtml(text)}</span>
+</div>`;
+  }).join('');
+
+  const html = buildKatexHtml(optionsHtml, '#374151');
+
+  return (
+    <View style={[styles.optionsList, { height, overflow: 'hidden' }]}>
+      <WebView
+        originWhitelist={['*']}
+        source={{ html }}
+        style={{ flex: 1, backgroundColor: 'transparent' }}
+        scrollEnabled={false}
+        nestedScrollEnabled={false}
+        showsHorizontalScrollIndicator={false}
+        showsVerticalScrollIndicator={false}
+        onMessage={onMessage}
+        javaScriptEnabled={true}
+        domStorageEnabled={true}
+        scalesPageToFit={false}
+        cacheEnabled={true}
+        startInLoadingState={false}
+      />
+    </View>
+  );
+});
+
+export default function PYQTab({ subjectId }: PYQTabProps) {
   const [activePyqType, setActivePyqType] = useState<string>('consolidated');
   const [questions, setQuestions] = useState<PyqQuestion[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const loadedCountRef = useRef(0);
 
-  const fetchQuestions = useCallback(async () => {
+  const fetchQuestions = useCallback(async (append: boolean = false) => {
     if (!subjectId) return;
-    setLoading(true);
+    const offset = append ? loadedCountRef.current : 0;
+    if (append) {
+      setLoadingMore(true);
+    } else {
+      setLoading(true);
+    }
     try {
-      const result = await supabase.getPyqQuestions(subjectId, activePyqType, chapterId, topicId);
+      const result = await supabase.getPyqQuestions(subjectId, activePyqType, undefined, undefined, PAGE_SIZE, offset);
       if (result.success && result.questions) {
-        setQuestions(result.questions);
-      } else {
+        if (append) {
+          setQuestions(prev => {
+            const next = [...prev, ...result.questions!];
+            loadedCountRef.current = next.length;
+            return next;
+          });
+        } else {
+          setQuestions(result.questions);
+          loadedCountRef.current = result.questions.length;
+        }
+        setHasMore(result.hasMore || false);
+      } else if (!append) {
         setQuestions([]);
+        loadedCountRef.current = 0;
+        setHasMore(false);
       }
     } catch (error) {
       console.error('[PYQTab] Error fetching questions:', error);
-      setQuestions([]);
+      if (!append) {
+        setQuestions([]);
+        loadedCountRef.current = 0;
+        setHasMore(false);
+      }
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
-  }, [subjectId, activePyqType, chapterId, topicId]);
+  }, [subjectId, activePyqType]);
 
   useEffect(() => {
-    fetchQuestions();
-  }, [fetchQuestions]);
+    setQuestions([]);
+    setHasMore(false);
+    loadedCountRef.current = 0;
+    fetchQuestions(false);
+  }, [subjectId, activePyqType]);
 
   const renderSkeleton = () => (
     <View style={styles.skeletonContainer}>
@@ -106,16 +214,24 @@ export default function PYQTab({ subjectId, chapterId, topicId }: PYQTabProps) {
 
     if (question.question_format === 'mcq' && question.options) {
       const entries = Object.entries(question.options);
+      const anyLatex = entries.some(([, value]) => {
+        const text = convertMathpixToStandard(getOptionText(value));
+        return containsLatex(text);
+      });
+
+      if (anyLatex) {
+        return <MathOptionsWebView options={question.options} />;
+      }
+
       return (
         <View style={styles.optionsList}>
           {entries.map(([key, value]) => {
-            const optionText = getOptionText(value);
-            const normalizedText = convertMathpixToStandard(optionText);
+            const optionText = convertMathpixToStandard(getOptionText(value));
             return (
               <View key={key} style={styles.optionPill}>
                 <Text style={styles.optionLabel}>{key}.</Text>
                 <View style={styles.optionTextContainer}>
-                  <MathText content={normalizedText} color={colors.gray700} />
+                  <Text style={styles.optionPlainText}>{optionText}</Text>
                 </View>
               </View>
             );
@@ -149,14 +265,21 @@ export default function PYQTab({ subjectId, chapterId, topicId }: PYQTabProps) {
     </View>
   );
 
+  const renderQuestionText = (text: string) => {
+    const normalized = convertMathpixToStandard(text);
+    if (containsLatex(normalized)) {
+      return <MathText content={normalized} color={colors.gray800} />;
+    }
+    return <Text style={styles.questionPlainText}>{normalized}</Text>;
+  };
+
   const renderQuestionCard = (question: PyqQuestion, index: number) => {
-    const normalizedText = convertMathpixToStandard(question.question_text);
     return (
       <View key={question.id} style={styles.questionCard} data-testid={`card-pyq-question-${question.id}`}>
         <View style={styles.questionHeader}>
           <Text style={styles.questionNumber}>Q{index + 1}.</Text>
           <View style={styles.questionTextContainer}>
-            <MathText content={normalizedText} color={colors.gray800} />
+            {renderQuestionText(question.question_text)}
           </View>
         </View>
         {question.question_image_url ? (
@@ -209,6 +332,20 @@ export default function PYQTab({ subjectId, chapterId, topicId }: PYQTabProps) {
       {loading ? renderSkeleton() : questions.length === 0 ? renderEmpty() : (
         <View style={styles.questionsList}>
           {questions.map((q, i) => renderQuestionCard(q, i))}
+          {hasMore && (
+            <TouchableOpacity
+              style={styles.loadMoreButton}
+              onPress={() => fetchQuestions(true)}
+              disabled={loadingMore}
+              data-testid="button-load-more-pyq"
+            >
+              {loadingMore ? (
+                <ActivityIndicator size="small" color={colors.white} />
+              ) : (
+                <Text style={styles.loadMoreText}>Load More Questions</Text>
+              )}
+            </TouchableOpacity>
+          )}
         </View>
       )}
     </View>
@@ -259,22 +396,21 @@ const styles = StyleSheet.create({
   },
   questionsList: {
     paddingHorizontal: 16,
-    gap: 12,
   },
   questionCard: {
     backgroundColor: '#fff',
     borderRadius: 12,
-    padding: 16,
+    padding: 14,
     borderWidth: 1,
     borderColor: colors.gray200,
-    marginBottom: 12,
+    marginBottom: 10,
   },
   questionHeader: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 6,
   },
   questionNumber: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '700',
     color: colors.primary,
     marginTop: 2,
@@ -282,91 +418,114 @@ const styles = StyleSheet.create({
   questionTextContainer: {
     flex: 1,
   },
+  questionPlainText: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: colors.gray800,
+  },
   questionImage: {
     width: '100%',
     height: 192,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: colors.gray200,
-    marginTop: 12,
+    marginTop: 10,
   },
   optionsList: {
-    marginTop: 12,
-    gap: 8,
+    marginTop: 10,
   },
   optionPill: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     backgroundColor: colors.gray50,
     borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    gap: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    marginBottom: 5,
   },
   optionLabel: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
     color: colors.gray600,
-    marginTop: 2,
+    marginTop: 1,
+    minWidth: 18,
   },
   optionTextContainer: {
     flex: 1,
   },
+  optionPlainText: {
+    fontSize: 13,
+    lineHeight: 18,
+    color: colors.gray700,
+  },
   trueFalseRow: {
     flexDirection: 'row',
-    gap: 12,
-    marginTop: 12,
+    gap: 10,
+    marginTop: 10,
   },
   trueFalsePill: {
     flex: 1,
     backgroundColor: colors.gray50,
     borderRadius: 8,
-    paddingVertical: 10,
+    paddingVertical: 8,
     alignItems: 'center',
   },
   trueFalseText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
     color: colors.gray600,
   },
   badgeRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 12,
+    gap: 6,
+    marginTop: 10,
   },
   badgeOutline: {
     borderWidth: 1,
     borderColor: colors.gray300,
     borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
   },
   badgeOutlineText: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '600',
     color: colors.gray500,
     textTransform: 'uppercase',
   },
   badgeFilled: {
     borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
   },
   badgeFilledText: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '600',
   },
   badgeSecondary: {
     backgroundColor: colors.gray100,
     borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
   },
   badgeSecondaryText: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '600',
     color: colors.gray500,
+  },
+  loadMoreButton: {
+    backgroundColor: colors.primary,
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginTop: 4,
+    marginBottom: 16,
+  },
+  loadMoreText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.white,
   },
   emptyContainer: {
     alignItems: 'center',
