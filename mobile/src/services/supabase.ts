@@ -1004,17 +1004,21 @@ class SupabaseService {
       if (!response.ok) {
         return { success: false, error: data.error || data.message || 'OTP verification failed' };
       }
-      if (data.session) {
-        await this.saveTokens(data.session.access_token, data.session.refresh_token);
+      const accessToken = data.session?.access_token || data.access_token;
+      const refreshToken = data.session?.refresh_token || data.refresh_token;
+      console.log('[OTP Phone] session present:', !!data.session, '| root token:', !!data.access_token);
+      if (accessToken && refreshToken) {
+        await this.saveTokens(accessToken, refreshToken);
         const user: User = {
-          id: data.user?.id || '',
-          email: data.user?.email || signupData?.email || '',
-          full_name: data.user?.user_metadata?.full_name || signupData?.full_name,
+          id: data.user?.id || data.session?.user?.id || '',
+          email: data.user?.email || data.session?.user?.email || signupData?.email || '',
+          full_name: data.user?.user_metadata?.full_name || data.session?.user?.user_metadata?.full_name || signupData?.full_name,
           phone: phone,
         };
         await this.saveUser(user);
         return { success: true, user };
       }
+      console.log('[OTP Phone] No tokens in response — session not saved');
       return { success: true };
     } catch (error) {
       return { success: false, error: 'Network error. Please try again.' };
@@ -1051,17 +1055,21 @@ class SupabaseService {
       if (!response.ok) {
         return { success: false, error: data.error || data.message || 'OTP verification failed' };
       }
-      if (data.session) {
-        await this.saveTokens(data.session.access_token, data.session.refresh_token);
+      const accessToken = data.session?.access_token || data.access_token;
+      const refreshToken = data.session?.refresh_token || data.refresh_token;
+      console.log('[OTP Email] session present:', !!data.session, '| root token:', !!data.access_token);
+      if (accessToken && refreshToken) {
+        await this.saveTokens(accessToken, refreshToken);
         const user: User = {
-          id: data.user?.id || '',
+          id: data.user?.id || data.session?.user?.id || '',
           email: email,
-          full_name: data.user?.user_metadata?.full_name || signupData?.full_name,
-          phone: data.user?.user_metadata?.phone || signupData?.phone,
+          full_name: data.user?.user_metadata?.full_name || data.session?.user?.user_metadata?.full_name || signupData?.full_name,
+          phone: data.user?.user_metadata?.phone || data.session?.user?.user_metadata?.phone || signupData?.phone,
         };
         await this.saveUser(user);
         return { success: true, user };
       }
+      console.log('[OTP Email] No tokens in response — session not saved');
       return { success: true };
     } catch (error) {
       return { success: false, error: 'Network error. Please try again.' };

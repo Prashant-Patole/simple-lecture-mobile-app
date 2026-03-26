@@ -120,7 +120,7 @@ function TabNavigator() {
 }
 
 export default function AppNavigator() {
-  const { isAuthenticated, isLoading, hasSelectedInterests, isNewSignup } = useAuth();
+  const { isAuthenticated, isLoading, hasSelectedInterests, hasSeenOnboarding, isNewSignup } = useAuth();
 
   if (isLoading) {
     return (
@@ -131,7 +131,9 @@ export default function AppNavigator() {
   }
 
   const getInitialRoute = () => {
-    if (!isAuthenticated) return 'Onboarding';
+    if (!isAuthenticated) {
+      return hasSeenOnboarding ? 'Login' : 'Onboarding';
+    }
     if (isNewSignup || !hasSelectedInterests) return 'InterestSelection';
     return 'MainTabs';
   };

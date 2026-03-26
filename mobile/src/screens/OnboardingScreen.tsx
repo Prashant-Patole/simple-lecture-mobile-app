@@ -12,6 +12,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { colors, spacing, fontSize, borderRadius } from '../constants/theme';
+import { useAuth } from '../context/AuthContext';
 
 const { width, height } = Dimensions.get('window');
 
@@ -39,18 +40,29 @@ export default function OnboardingScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const navigation = useNavigation<NavigationProp>();
   const flatListRef = useRef<FlatList>(null);
+  const { markOnboardingSeen } = useAuth();
+
+  const navigateToLogin = async () => {
+    await markOnboardingSeen();
+    navigation.navigate('Login');
+  };
+
+  const navigateToSignup = async () => {
+    await markOnboardingSeen();
+    navigation.navigate('Signup');
+  };
 
   const handleNext = () => {
     if (currentIndex < slides.length - 1) {
       flatListRef.current?.scrollToIndex({ index: currentIndex + 1 });
       setCurrentIndex(currentIndex + 1);
     } else {
-      navigation.navigate('Login');
+      navigateToLogin();
     }
   };
 
   const handleSkip = () => {
-    navigation.navigate('Login');
+    navigateToLogin();
   };
 
   const renderSlide = ({ item }: { item: typeof slides[0] }) => (
@@ -94,13 +106,13 @@ export default function OnboardingScreen() {
           <View style={styles.authButtons}>
             <TouchableOpacity
               style={styles.loginButton}
-              onPress={() => navigation.navigate('Login')}
+              onPress={navigateToLogin}
             >
               <Text style={styles.loginButtonText}>Login</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.signupButton}
-              onPress={() => navigation.navigate('Signup')}
+              onPress={navigateToSignup}
             >
               <Text style={styles.signupButtonText}>Sign up</Text>
             </TouchableOpacity>

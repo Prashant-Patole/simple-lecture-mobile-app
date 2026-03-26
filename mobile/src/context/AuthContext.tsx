@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase, User } from '../services/supabase';
 import { sendWelcomeLoginNotification } from '../services/scheduledNotifications';
@@ -8,15 +8,15 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   hasSelectedInterests: boolean;
+  hasSeenOnboarding: boolean;
   isNewSignup: boolean;
-  pushToken: string | null;
-  setPushToken: (token: string | null) => void;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   signup: (email: string, password: string, fullName: string, phone: string) => Promise<{ success: boolean; error?: string }>;
   loginWithOtp: (user: User, isSignup?: boolean) => void;
   loginWithGoogle: (idToken: string, isSignup?: boolean) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   markInterestsSelected: () => void;
+  markOnboardingSeen: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -24,21 +24,28 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [pushToken, setPushToken] = useState<string | null>(null);
   const [hasSelectedInterests, setHasSelectedInterests] = useState(true);
+  const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
   const [isNewSignup, setIsNewSignup] = useState(false);
 
   useEffect(() => {
     checkAuth();
   }, []);
 
+  const markOnboardingSeen = async () => {
+    await AsyncStorage.setItem('@onboarding_seen', 'true');
+    setHasSeenOnboarding(true);
+  };
+
   const checkAuth = async () => {
     console.log('[Auth] checkAuth started');
     try {
       const storedUser = await supabase.getStoredUser();
       const interestsFlag = await AsyncStorage.getItem('@interests_selected');
+      const onboardingFlag = await AsyncStorage.getItem('@onboarding_seen');
       setHasSelectedInterests(interestsFlag === 'true');
-      console.log('[Auth] storedUser:', storedUser ? 'found' : 'none', '| interests:', interestsFlag);
+      setHasSeenOnboarding(onboardingFlag === 'true');
+      console.log('[Auth] storedUser:', storedUser ? 'found' : 'none', '| interests:', interestsFlag, '| onboarding:', onboardingFlag);
       if (storedUser) {
         setUser(storedUser);
         const refreshWithTimeout = Promise.race([
@@ -104,10 +111,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
-    if (pushToken) {
-      await supabase.removePushToken(pushToken);
-      setPushToken(null);
-    }
     await supabase.logout();
     setUser(null);
   };
@@ -119,15 +122,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading,
         isAuthenticated: !!user,
         hasSelectedInterests,
+        hasSeenOnboarding,
         isNewSignup,
-        pushToken,
-        setPushToken,
         login,
         signup,
         loginWithOtp,
         loginWithGoogle,
         logout,
         markInterestsSelected,
+        markOnboardingSeen,
       }}
     >
       {children}
